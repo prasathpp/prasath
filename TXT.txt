@@ -1,0 +1,84 @@
+Public WithEvents screen As Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmScreen
+Public Sub GetDataFromIBMScreen()
+    'Declare an object variable for the Reflection object
+    Dim app As Attachmate_Reflection_Objects_Framework.ApplicationObject
+   
+    'Declare additional Reflection objects, such as frame, terminal, and view
+    Dim frame As Attachmate_Reflection_Objects.frame
+    Dim terminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmTerminal
+    Dim view As Attachmate_Reflection_Objects.view
+   
+    'Create a new instance of Reflection
+    Set app = New Attachmate_Reflection_Objects_Framework.ApplicationObject
+ 
+    'wait until Reflection initializes
+    Do While app.IsInitialized = False
+        app.Wait (200)
+    Loop
+ 
+    'Create controls to open and display the session document.
+    Set frame = app.GetObject("Frame")
+    frame.Visible = True
+   
+    Set terminal = app.CreateControl2("09E5A1B4-0BA6-4546-A27D-FE4762B7ACE1")
+                          
+    terminal.HostAddress = "demo:ibm3270.sim"
+    Set view = frame.CreateView(terminal)
+    Set screen = terminal.screen
+End Sub
+Private Sub screen_NewScreenReady(ByVal sender As Variant)
+    'In this IbmScreen
+ 
+    Dim screenID1 As String, screenID2 As String, screenID3 As String
+    Dim rCode As ReturnCode
+    Dim rowText As String
+    Dim rowFromHost() As String
+    Dim col As Integer, row As Integer
+ 
+    screenID1 = screen.GetText(1, 2, 6) 'ATM VM ispf
+    screenID2 = screen.GetText(1, 7, 4) 'option 2
+    screenID3 = screen.GetText(1, 25, 13) 'option 2
+    
+    If screenID1 = "ATM VM" Then
+        rCode = screen.SendControlKey(ControlKeyCode_Transmit)
+    End If
+ 
+    If screenID2 = "ATM5" Then
+        rCode = screen.PutText2("kayak", 23, 1)
+        rCode = screen.SendControlKey(ControlKeyCode_Transmit)
+    End If
+ 
+    If screenID3 = "INTERNATIONAL" Then
+     
+        'Start on row 7 and get the first row of text from the screen
+        row = 7
+        rowText = screen.GetText(row, 9, 65)
+        'Gather data until an empty row is encountered
+        Do
+            'Replace spaces between compound words in first column and remove extra spaces
+            rowText = Replace(rowText, " ", "_", 1, 1)
+            rowText = Application.WorksheetFunction.Trim(rowText)
+         
+            'Place each column into an array
+            rowFromHost = Split(rowText, " ")
+         
+            For col = LBound(rowFromHost) To UBound(rowFromHost)
+                'Replace delimiter that was added for compound words
+                rowFromHost(col) = Replace(rowFromHost(col), "_", " ", 1, 1)
+                'Write each column in the row to the spreadsheet
+                Cells(row, (col + 5)).Value = rowFromHost(col)
+            Next col
+         
+            row = row + 1
+         
+            'Get the new row of text from the screen
+            rowText = screen.GetText(row, 9, 65)
+          
+            Debug.Print row
+      
+        'Check string length after removing all extra spaces
+        Loop While Len(Application.WorksheetFunction.Trim(rowText)) > 0
+     
+    End If
+     
+End Sub
