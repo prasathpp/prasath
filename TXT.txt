@@ -82,3 +82,32 @@ Private Sub screen_NewScreenReady(ByVal sender As Variant)
     End If
      
 End Sub
+
+
+Sub AutomateReflection()
+    Dim ReflectionSession As Object
+    Dim ReflectionScreen As Object
+    Dim ExcelSheet As Worksheet
+    Dim DataToWrite As String
+    Dim DataRead As String
+    
+    ' Set the Reflection session
+    Set ReflectionSession = CreateObject("ReflectionIBM.Session")
+    Set ReflectionScreen = ReflectionSession.Screen
+    Set ExcelSheet = ThisWorkbook.Sheets("Sheet1") ' Replace with your sheet name
+    
+    ' Example: Write data to terminal at coordinates (Row 8, Column 22)
+    DataToWrite = ExcelSheet.Cells(1, 1).Value ' Get data from cell A1
+    ReflectionScreen.PutString DataToWrite, 8, 22
+    
+    ' Example: Read data from terminal at coordinates (Row 8, Column 22)
+    DataRead = ReflectionScreen.GetString(8, 22, 10) ' Reads 10 characters
+    ExcelSheet.Cells(2, 1).Value = DataRead ' Write the data to cell A2
+    
+    ' Example: Press Enter
+    ReflectionScreen.SendKeys "<Enter>"
+    
+    ' Cleanup
+    Set ReflectionScreen = Nothing
+    Set ReflectionSession = Nothing
+End Sub
