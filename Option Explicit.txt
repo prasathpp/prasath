@@ -1,3 +1,56 @@
+' Attribute VB_Name = "mod_InterestAmendment_Navigation"
+Option Explicit
+
+' --- Attachmate Reflection Object Declarations (Assumed to be set by a connection Sub) ---
+Public objReflectionApp As Object
+Public objFrame As Object
+Public objView As Object
+Public objTerminal As Object
+Public objScreen As Object
+
+' --- Constants for Screen Titles & Key Info ---
+Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x" ' For connection
+
+Private Const SCREEN_APP_SELECTION_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_OPT_HANDLER As String = "OPTION HANDLER FUNCTION SCREEN"
+Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM"
+Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
+Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
+Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
+Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
+
+' --- Input Field Coordinates (Based on your provided values) ---
+' Application Selection Menu
+Private Const ROW_APP_SEL_CMD As Long = 21
+Private Const COL_APP_SEL_CMD As Long = 13 ' For TERM ALL and Brand Code
+
+' Option Handler Function Screen
+Private Const ROW_OPT_HANDLER_INPUT As Long = 21
+Private Const COL_OPT_HANDLER_INPUT As Long = 16 ' For Option "19"
+
+' Back Office System Screen
+Private Const ROW_BO_SYS_INPUT As Long = 22
+Private Const COL_BO_SYS_INPUT As Long = 16 ' For Option "1" (or "01")
+
+' Master Index Screen
+Private Const ROW_MASTER_IDX_INDEX As Long = 22
+Private Const COL_MASTER_IDX_INDEX As Long = 8    ' For Index "20"
+Private Const ROW_MASTER_IDX_BRANCH As Long = 22
+Private Const COL_MASTER_IDX_BRANCH As Long = 74  ' For Sort Code
+
+' File Maintenance Input Index Screen
+Private Const ROW_FILEMAINT_IDX_INDEX As Long = 22
+Private Const COL_FILEMAINT_IDX_INDEX As Long = 8    ' For Index "20"
+Private Const ROW_FILEMAINT_IDX_ACCOUNT As Long = 22
+Private Const COL_FILEMAINT_IDX_ACCOUNT As Long = 21 ' For Account Number
+
+' Internal Transactions Screen
+Private Const ROW_INTERNALTXN_IDX_INDEX As Long = 22
+Private Const COL_INTERNALTXN_IDX_INDEX As Long = 8    ' For Index "4" (or "04")
+
+' --- Other Constants ---
+Private Const SCRIPT_TITLE As String = "Interest Amendment Navigation"
+Private Const BRAND_CODE_EXAMPLE As String = "PRCIN#T#" ' Example, make dynamic if needed
 ' --- Main Sub to Process Excel Rows ---
 Sub ProcessInterestAmendments()
     Dim ws As Worksheet
@@ -62,3 +115,188 @@ Sub ProcessInterestAmendments()
     ' --- 6. Cleanup ---
     ReleaseReflectionObjects
 End Sub
+
+
+' --- Placeholder for your working Reflection Connection Logic ---
+Private Function ConnectToReflection() As Boolean
+    On Error GoTo ConnectErrorHandler
+    ConnectToReflection = False
+
+    Debug.Print "ConnectToReflection: Attempting GetObject(""Reflection Workspace"")"
+    On Error Resume Next
+    Set objReflectionApp = GetObject("Reflection Workspace")
+    If Err.Number <> 0 Or objReflectionApp Is Nothing Then
+        Err.Clear
+        Debug.Print "ConnectToReflection: GetObject(""Reflection Workspace"") FAILED."
+        MsgBox "Reflection Workspace not found.", vbCritical, SCRIPT_TITLE
+        Exit Function
+    End If
+    Debug.Print "ConnectToReflection: GetObject SUCCEEDED. TypeName(objReflectionApp): " & TypeName(objReflectionApp)
+    On Error GoTo ConnectErrorHandler
+
+    Set objFrame = objReflectionApp.GetObject("Frame")
+    If objFrame Is Nothing Then Debug.Print "ConnectToReflection: Frame object is Nothing.": Exit Function
+    Debug.Print "ConnectToReflection: objFrame set. TypeName(objFrame): " & TypeName(objFrame)
+
+    If Not objFrame.Visible Then objFrame.Visible = True
+    objFrame.Activate
+    Debug.Print "ConnectToReflection: Frame Visible/Activated."
+
+    Debug.Print "ConnectToReflection: Attempting objFrame.GetViewByTitleText(""" & TARGET_SESSION_ID_PART & """)..."
+    On Error Resume Next
+    Set objView = objFrame.GetViewByTitleText(TARGET_SESSION_ID_PART)
+    If Err.Number <> 0 Or objView Is Nothing Then
+        Err.Clear
+        Debug.Print "ConnectToReflection: objFrame.GetViewByTitleText FAILED for '" & TARGET_SESSION_ID_PART & "'. Error: " & Err.Description
+        MsgBox "Target Reflection session '" & TARGET_SESSION_ID_PART & "' not found.", vbCritical, SCRIPT_TITLE
+        Exit Function
+    End If
+    Debug.Print "ConnectToReflection: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.titleText & "'. TypeName(objView): " & TypeName(objView)
+    On Error GoTo ConnectErrorHandler
+        
+    Set objTerminal = objView.Control
+    If objTerminal Is Nothing Then Debug.Print "ConnectToReflection: objTerminal is Nothing.": Exit Function
+    Debug.Print "ConnectToReflection: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
+    
+    Set objScreen = objTerminal.Screen
+    If objScreen Is Nothing Then Debug.Print "ConnectToReflection: objScreen is Nothing.": Exit Function
+    Debug.Print "ConnectToReflection: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
+    
+    objTerminal.DisableKeystrokeProductivity = True
+    objTerminal.DisableScreenHistory = True
+
+    ConnectToReflection = True
+    Debug.Print "ConnectToReflection: Successfully connected and initialized session."
+    Exit Function
+
+ConnectErrorHandler:
+    Debug.Print "ConnectToReflection: Error - " & Err.Number & ": " & Err.Description
+    MsgBox "Error connecting to Reflection: " & Err.Description, vbCritical, SCRIPT_TITLE
+    ConnectToReflection = False
+End Function
+
+Private Sub ReleaseReflectionObjects()
+    Set objScreen = Nothing
+    Set objTerminal = Nothing
+    Set objView = Nothing
+    Set objFrame = Nothing
+    Set objReflectionApp = Nothing
+    Debug.Print "Reflection objects released."
+End Sub
+
+
+' --- Helper Function: Navigates from App Selection Menu to Interest Amendment Screen ---
+Private Function NavigateToInterestAmendmentScreen(ByVal sortCode As String, ByVal accountNumber As String) As Boolean
+    Dim currentScreenText As String
+    Dim brandCode As String
+    
+    NavigateToInterestAmendmentScreen = False ' Default to failure
+    brandCode = BRAND_CODE_EXAMPLE
+
+    If objScreen Is Nothing Then
+        Debug.Print "NavigateToIAS: objScreen is Nothing. Cannot navigate."
+        Exit Function
+    End If
+
+    ' --- Step 1: Ensure on APPLICATION SELECTION MENU ---
+    ' Screen title check: Row 1, Col 28, Length based on SCREEN_APP_SELECTION_MENU constant
+    Call WaitAndSettle(1000)
+    currentScreenText = Trim(objScreen.GetText(1, 28, Len(SCREEN_APP_SELECTION_MENU)))
+    If UCase(currentScreenText) <> UCase(SCREEN_APP_SELECTION_MENU) Then
+        Debug.Print "NavigateToIAS: Not starting on " & SCREEN_APP_SELECTION_MENU & ". Current: '" & currentScreenText & "'"
+        MsgBox "Macro must start on '" & SCREEN_APP_SELECTION_MENU & "'. Please navigate manually and restart.", vbCritical, SCRIPT_TITLE
+        Exit Function
+    End If
+    Debug.Print "NavigateToIAS: Confirmed on " & SCREEN_APP_SELECTION_MENU
+
+    ' --- Step 2: TERM ALL ---
+    objScreen.PutText2 "TERM ALL", ROW_APP_SEL_CMD, COL_APP_SEL_CMD
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent TERM ALL"
+    Call WaitAndSettle(3000) ' Allow time for TERM ALL to process
+
+    ' --- Step 3: Brand Code ---
+    objScreen.PutText2 brandCode, ROW_APP_SEL_CMD, COL_APP_SEL_CMD
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Brand Code: " & brandCode
+    ' Update title check for Option Handler: Title "OPTION HANDLER FUNCTION SCREEN" is at Row 2. "SP2001" is also part of it.
+    If Not WaitAndVerifyScreen(SCREEN_OPT_HANDLER, 2, 28, Len(SCREEN_OPT_HANDLER), 5000, "SP2001") Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_OPT_HANDLER
+
+    ' --- Step 4: Option 19 ---
+    objScreen.PutText2 "19", ROW_OPT_HANDLER_INPUT, COL_OPT_HANDLER_INPUT
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Option 19"
+    ' Update title check for Back Office System: Title is at Row 1, possibly col 32 (centered)
+    If Not WaitAndVerifyScreen(SCREEN_BO_SYSTEM, 1, 32, Len(SCREEN_BO_SYSTEM), 5000) Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_BO_SYSTEM
+    
+    ' --- Step 5: Option 1 ---
+    objScreen.PutText2 "1", ROW_BO_SYS_INPUT, COL_BO_SYS_INPUT
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Option 1"
+    ' Update title check for Master Index: Title at Row 1, possibly col 32 (centered)
+    If Not WaitAndVerifyScreen(SCREEN_MASTER_INDEX, 1, 32, Len(SCREEN_MASTER_INDEX), 5000) Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_MASTER_INDEX
+    
+    ' --- Step 6: Master Index - Input 20 and Sort Code ---
+    objScreen.PutText2 "20", ROW_MASTER_IDX_INDEX, COL_MASTER_IDX_INDEX
+    objScreen.PutText2 sortCode, ROW_MASTER_IDX_BRANCH, COL_MASTER_IDX_BRANCH
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Index 20, Sort Code " & sortCode
+    ' Update title check for File Maint Index: Title at Row 1, possibly col 27 (centered)
+    If Not WaitAndVerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 27, Len(SCREEN_FILE_MAINT_IDX), 5000) Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_FILE_MAINT_IDX
+
+    ' --- Step 7: File Maintenance Input Index - Input 20 and Account Number ---
+    objScreen.PutText2 "20", ROW_FILEMAINT_IDX_INDEX, COL_FILEMAINT_IDX_INDEX
+    objScreen.PutText2 accountNumber, ROW_FILEMAINT_IDX_ACCOUNT, COL_FILEMAINT_IDX_ACCOUNT
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Index 20, Account " & accountNumber
+    ' Update title check for Internal Txns: Title at Row 1, possibly col 30 (centered)
+    If Not WaitAndVerifyScreen(SCREEN_INTERNAL_TXNS, 1, 30, Len(SCREEN_INTERNAL_TXNS), 5000) Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_INTERNAL_TXNS
+
+    ' --- Step 8: Internal Transactions - Input 4 (or 04) ---
+    objScreen.PutText2 "4", ROW_INTERNALTXN_IDX_INDEX, COL_INTERNALTXN_IDX_INDEX
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print "NavigateToIAS: Sent Index 4"
+    ' Update title check for Interest Amendments: Title at Row 1, possibly col 30 (centered)
+    ' The target screen has "INTEREST AMENDMENTS" on Line 1 and "INTEREST DETAILS" on Line 2.
+    ' We can check for "INTEREST AMENDMENTS" on Line 1.
+    If Not WaitAndVerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 30, Len(SCREEN_INTEREST_AMENDMENTS), 5000) Then Exit Function
+    Debug.Print "NavigateToIAS: On " & SCREEN_INTEREST_AMENDMENTS & " / INTEREST DETAILS"
+
+    NavigateToInterestAmendmentScreen = True ' Navigation successful
+End Function
+
+' --- Helper Sub: Waits for screen to settle ---
+Private Sub WaitAndSettle(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
+    If objScreen Is Nothing Then Exit Sub
+    Dim startTime As Date: startTime = Now
+    Do While objScreen.OIA.XStatus <> 0
+        If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
+            Debug.Print "WaitAndSettle: Timeout XStatus."
+            Exit Do
+        End If
+        objScreen.WaitForHostSettle 100, 50: DoEvents
+    Loop
+    objScreen.WaitForHostSettle 500, 200
+End Sub
+
+' --- Helper Function: Waits and Verifies Screen Text ---
+Private Function WaitAndVerifyScreen(ByVal expectedText As String, ByVal rowNum As Long, ByVal colNum As Long, ByVal textLen As Long, ByVal timeoutMs As Long, Optional ByVal partialTitleCheck As String = "") As Boolean
+    Call WaitAndSettle(timeoutMs)
+    Dim actualText As String
+    actualText = Trim(objScreen.GetText(rowNum, colNum, textLen))
+    
+    If UCase(actualText) = UCase(expectedText) Then
+        WaitAndVerifyScreen = True
+    ElseIf partialTitleCheck <> "" And InStr(1, UCase(Trim(objScreen.GetText(rowNum, 1, 80))), UCase(partialTitleCheck), vbTextCompare) > 0 And InStr(1, UCase(Trim(objScreen.GetText(rowNum, 1, 80))), UCase(expectedText), vbTextCompare) > 0 Then
+        WaitAndVerifyScreen = True
+    Else
+        Debug.Print "WaitAndVerifyScreen: FAILED. Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & textLen & ". Found '" & actualText & "'"
+        WaitAndVerifyScreen = False
+    End If
+End Function
+
