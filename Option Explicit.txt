@@ -1,17 +1,26 @@
 ' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V6"
 Option Explicit
 
-' --- Attachmate Reflection Object Declarations (same) ---
+' --- Attachmate Reflection Object Declarations ---
 Public objReflectionApp As Object
 Public objFrame As Object
 Public objView As Object
 Public objTerminal As Object
 Public objScreen As Object
 
-' --- Constants (same) ---
+' --- Constants for this specific automation ---
 Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
+
 Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
-' ... (other constants remain the same)
+Private Const SCREEN_APP_MENU_ROW As Long = 1       ' <<< ENSURE THIS IS CORRECTLY DEFINED
+Private Const SCREEN_APP_MENU_COL As Long = 28       ' <<< ENSURE THIS IS CORRECTLY DEFINED
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30    ' <<< ENSURE THIS IS CORRECTLY DEFINED
+
+Private Const CMD_TERM_ALL As String = "TERM ALL"
+Private Const CMD_TERM_ALL_ROW As Long = 21
+Private Const CMD_TERM_ALL_COL As Long = 13
+
+Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
 Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V6"
 
 
@@ -26,10 +35,12 @@ Sub PerformTermAllEntry_V6()
                "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
-    ' ... rest of PerformTermAllEntry remains the same, calling _V6 helpers
     Debug.Print SCRIPT_TITLE & ": Successfully connected to and activated session: " & objView.TitleText
 
+    ' --- THIS IS THE LINE WHERE THE ERROR OCCURRED ---
+    ' Ensure all constants SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH are defined
     success = NavigateToScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
+    
     If Not success Then
         MsgBox "Failed to navigate to '" & SCREEN_APP_MENU & "'.", vbExclamation, SCRIPT_TITLE
         GoTo CleanupAndExit
@@ -58,13 +69,12 @@ ErrorHandler:
     Resume CleanupAndExit
 End Sub
 
-
-' --- Helper Function: Connects and activates session (Version 6) ---
+' --- Helper Function: Connects and activates session (Version 6 - from previous correct response) ---
 Private Function ConnectAndActivateReflectionSession_V6(ByVal uniquePartOfSessionTitle As String) As Boolean
     On Error GoTo ConnectErrorHandler
     ConnectAndActivateReflectionSession_V6 = False
 
-    Dim tempView As Object ' Not used for iteration anymore, but kept for structure
+    Dim tempView As Object 
     Dim method1Succeeded As Boolean: method1Succeeded = False
 
     Debug.Print "Connect_V6: Attempting Method 1: GetObject(""Reflection Workspace"")"
@@ -130,40 +140,31 @@ Private Function ConnectAndActivateReflectionSession_V6(ByVal uniquePartOfSessio
     objFrame.Activate
     Debug.Print "Connect_V6: Frame Visible/Activated."
 
-    ' --- MODIFIED APPROACH: Try to get ActiveView first ---
     Debug.Print "Connect_V6: Attempting to get objFrame.ActiveView..."
-    On Error Resume Next ' Specifically for ActiveView
+    On Error Resume Next 
     Set objView = objFrame.ActiveView
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear
         Debug.Print "Connect_V6: Could not get objFrame.ActiveView or it's Nothing. Error: " & Err.Description
-        Debug.Print "Connect_V6: This Frame object might not support .ActiveView or no view is active."
-        ' Fallback: If .Views was the issue, this ActiveView attempt might also fail.
-        ' If we absolutely needed to iterate and ActiveView is not supported by *this* Frame object,
-        ' then this connection method is fundamentally limited by the object returned by GetObject("Reflection Workspace").
-        GoTo FinalConnectErrorHandling ' Can't proceed if we can't get a view
+        GoTo FinalConnectErrorHandling 
     Else
         Debug.Print "Connect_V6: objFrame.ActiveView obtained. Title: '" & objView.TitleText & "'"
-        ' Now check if this active view is the one we want
         If InStr(1, objView.TitleText, uniquePartOfSessionTitle, vbTextCompare) > 0 Then
             Debug.Print "Connect_V6: ActiveView matches target session."
-            ' objView is already set, proceed
         Else
             Debug.Print "Connect_V6: ActiveView ('" & objView.TitleText & "') does NOT match target ('" & uniquePartOfSessionTitle & "')."
-            Debug.Print "Connect_V6: This script currently relies on the target session being the ActiveView if .Views collection isn't available."
-            Set objView = Nothing ' Clear it as it's not the right one
-            Exit Function ' Or handle differently if multiple sessions could be open and active one isn't target
+            Set objView = Nothing 
+            Exit Function 
         End If
     End If
     On Error GoTo ConnectErrorHandler
 
 
-    If objView Is Nothing Then ' Should have exited if ActiveView didn't match or was not obtainable
+    If objView Is Nothing Then 
         Debug.Print "Connect_V6: objView is Nothing after attempting to get ActiveView."
         Exit Function
     End If
 
-    ' Activate the specific view (might be redundant if already active, but safe)
     objView.Activate
     Set objTerminal = objView.Control
     Set objScreen = objTerminal.Screen
