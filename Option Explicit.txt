@@ -1,5 +1,4 @@
-' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V6"
-Option Explicit
+Option Explicit ' Should be the very first line
 
 ' --- Attachmate Reflection Object Declarations ---
 Public objReflectionApp As Object
@@ -12,9 +11,9 @@ Public objScreen As Object
 Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
 
 Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
-Private Const SCREEN_APP_MENU_ROW As Long = 1       ' <<< ENSURE THIS IS CORRECTLY DEFINED
-Private Const SCREEN_APP_MENU_COL As Long = 28       ' <<< ENSURE THIS IS CORRECTLY DEFINED
-Private Const SCREEN_APP_MENU_LENGTH As Long = 30    ' <<< ENSURE THIS IS CORRECTLY DEFINED
+Private Const SCREEN_APP_MENU_ROW As Long = 1       ' Definition for the row
+Private Const SCREEN_APP_MENU_COL As Long = 28       ' Definition for the column
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30    ' Definition for the length
 
 Private Const CMD_TERM_ALL As String = "TERM ALL"
 Private Const CMD_TERM_ALL_ROW As Long = 21
@@ -22,7 +21,6 @@ Private Const CMD_TERM_ALL_COL As Long = 13
 
 Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
 Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V6"
-
 
 ' --- Main Entry Point (same, just calls _V6 connect function) ---
 Sub PerformTermAllEntry_V6()
