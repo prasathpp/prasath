@@ -1,53 +1,49 @@
-' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V5"
+' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V6"
 Option Explicit
 
 ' --- Attachmate Reflection Object Declarations (same) ---
 Public objReflectionApp As Object
-Public objFrame As Object        
-Public objView As Object         
-Public objTerminal As Object     
-Public objScreen As Object       
+Public objFrame As Object
+Public objView As Object
+Public objTerminal As Object
+Public objScreen As Object
 
 ' --- Constants (same) ---
 Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
 Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
-Private Const SCREEN_APP_MENU_ROW As Long = 1
-Private Const SCREEN_APP_MENU_COL As Long = 28
-Private Const SCREEN_APP_MENU_LENGTH As Long = 30
-Private Const CMD_TERM_ALL As String = "TERM ALL"
-Private Const CMD_TERM_ALL_ROW As Long = 21
-Private Const CMD_TERM_ALL_COL As Long = 13
-Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
-Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry"
+' ... (other constants remain the same)
+Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V6"
 
-' --- Main Entry Point (same, just calls _V5 connect function) ---
-Sub PerformTermAllEntry_V5()
+
+' --- Main Entry Point (same, just calls _V6 connect function) ---
+Sub PerformTermAllEntry_V6()
     On Error GoTo ErrorHandler
     Dim success As Boolean
 
-    success = ConnectAndActivateReflectionSession_V5(TARGET_SESSION_ID_PART)
+    success = ConnectAndActivateReflectionSession_V6(TARGET_SESSION_ID_PART)
     If Not success Then
         MsgBox "Failed to connect/activate Reflection session: '" & TARGET_SESSION_ID_PART & "'." & vbCrLf & _
                "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
-    Debug.Print "PerformTermAllEntry_V5: Successfully connected to and activated session: " & objView.TitleText
+    ' ... rest of PerformTermAllEntry remains the same, calling _V6 helpers
+    Debug.Print SCRIPT_TITLE & ": Successfully connected to and activated session: " & objView.TitleText
 
-    success = NavigateToScreen_V5(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
+    success = NavigateToScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
     If Not success Then
         MsgBox "Failed to navigate to '" & SCREEN_APP_MENU & "'.", vbExclamation, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
-    Debug.Print "PerformTermAllEntry_V5: Successfully navigated to: " & SCREEN_APP_MENU
+    Debug.Print SCRIPT_TITLE & ": Successfully navigated to: " & SCREEN_APP_MENU
 
-    Call WaitHostSettle_V5(1000)
+    Call WaitHostSettle_V6(1000)
     objScreen.PutText2 CMD_TERM_ALL, CMD_TERM_ALL_ROW, CMD_TERM_ALL_COL
-    Debug.Print "PerformTermAllEntry_V5: Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
+    Debug.Print SCRIPT_TITLE & ": Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
     
     objScreen.SendControlKey ControlKeyCode_Transmit
-    Debug.Print "PerformTermAllEntry_V5: Sent Transmit key."
+    Debug.Print SCRIPT_TITLE & ": Sent Transmit key."
     
-    Call WaitHostSettle_V5(5000)
+    Call WaitHostSettle_V6(5000)
     MsgBox "'" & CMD_TERM_ALL & "' entered successfully.", vbInformation, SCRIPT_TITLE
 
 CleanupAndExit:
@@ -62,211 +58,172 @@ ErrorHandler:
     Resume CleanupAndExit
 End Sub
 
-' --- Helper Function: Connects and activates session (Version 5) ---
-Private Function ConnectAndActivateReflectionSession_V5(ByVal uniquePartOfSessionTitle As String) As Boolean
-    On Error GoTo ConnectErrorHandler ' General error handler for this function
-    ConnectAndActivateReflectionSession_V5 = False
 
-    Dim tempView As Object
-    Dim foundView As Boolean
+' --- Helper Function: Connects and activates session (Version 6) ---
+Private Function ConnectAndActivateReflectionSession_V6(ByVal uniquePartOfSessionTitle As String) As Boolean
+    On Error GoTo ConnectErrorHandler
+    ConnectAndActivateReflectionSession_V6 = False
+
+    Dim tempView As Object ' Not used for iteration anymore, but kept for structure
     Dim method1Succeeded As Boolean: method1Succeeded = False
 
-    ' --- TRY METHOD 1: From your working mod_PEVE_ReflectionCommon ---
-    Debug.Print "Connect_V5: Attempting Method 1: GetObject(""Reflection Workspace"")"
-    On Error Resume Next 
+    Debug.Print "Connect_V6: Attempting Method 1: GetObject(""Reflection Workspace"")"
+    On Error Resume Next
     Set objReflectionApp = GetObject("Reflection Workspace")
     If Err.Number = 0 And Not objReflectionApp Is Nothing Then
         method1Succeeded = True
-        Debug.Print "Connect_V5: Method 1 (GetObject(""Reflection Workspace"")) SUCCEEDED in setting objReflectionApp."
+        Debug.Print "Connect_V6: Method 1 SUCCEEDED setting objReflectionApp."
     Else
         Err.Clear
-        Debug.Print "Connect_V5: Method 1 failed. Trying Method 2 (GetObject for ""ReflectionWorkspace.Application"")..."
+        Debug.Print "Connect_V6: Method 1 failed. Trying Method 2 (GetObject for ""ReflectionWorkspace.Application"")..."
         Set objReflectionApp = GetObject(, "ReflectionWorkspace.Application")
         If Err.Number <> 0 Or objReflectionApp Is Nothing Then
             Err.Clear
-            Debug.Print "Connect_V5: Method 2 failed. Trying Method 3 (CreateObject for ""ReflectionWorkspace.Application"")..."
+            Debug.Print "Connect_V6: Method 2 failed. Trying Method 3 (CreateObject for ""ReflectionWorkspace.Application"")..."
             Set objReflectionApp = CreateObject("ReflectionWorkspace.Application")
             If Err.Number <> 0 Or objReflectionApp Is Nothing Then
                 Err.Clear
-                Debug.Print "Connect_V5: Method 3 also failed. Cannot obtain Reflection Application object."
-                GoTo FinalConnectErrorHandling 
+                Debug.Print "Connect_V6: Method 3 also failed. Cannot obtain Reflection Application object."
+                GoTo FinalConnectErrorHandling
             Else
-                Debug.Print "Connect_V5: Method 3 SUCCEEDED."
+                Debug.Print "Connect_V6: Method 3 SUCCEEDED."
             End If
         Else
-            Debug.Print "Connect_V5: Method 2 SUCCEEDED."
+            Debug.Print "Connect_V6: Method 2 SUCCEEDED."
         End If
     End If
-    On Error GoTo ConnectErrorHandler ' Re-enable the main error handler
+    On Error GoTo ConnectErrorHandler
 
 
-    If objReflectionApp Is Nothing Then
-        Debug.Print "Connect_V5: objReflectionApp is still Nothing."
-        Exit Function 
-    End If
-
-    Debug.Print "Connect_V5: TypeName(objReflectionApp) is: " & TypeName(objReflectionApp)
+    If objReflectionApp Is Nothing Then Exit Function
+    Debug.Print "Connect_V6: TypeName(objReflectionApp) is: " & TypeName(objReflectionApp)
 
     If method1Succeeded Then
-        ' If Method 1 (GetObject("Reflection Workspace")) was used.
-        ' It returned ApplicationObject, so it should have GetObject("Frame")
-        On Error Resume Next ' Isolate error for GetObject("Frame")
+        On Error Resume Next
         Set objFrame = objReflectionApp.GetObject("Frame")
         If Err.Number <> 0 Or objFrame Is Nothing Then
             Err.Clear
-            Debug.Print "Connect_V5: Error getting Frame from objReflectionApp (Method 1). Error: " & Err.Description
-            Debug.Print "Connect_V5: Attempting fallback to get Frame via new ""ReflectionWorkspace.Application"" instance..."
+            Debug.Print "Connect_V6: Error getting Frame from objReflectionApp (Method 1). Error: " & Err.Description
             Dim tempAppForFrame As Object
-            Set tempAppForFrame = GetObject(, "ReflectionWorkspace.Application") ' Try standard way for frame
+            Set tempAppForFrame = GetObject(, "ReflectionWorkspace.Application")
             If Not tempAppForFrame Is Nothing Then
                 Set objFrame = tempAppForFrame.GetObject("Frame")
-                Debug.Print "Connect_V5: Got Frame using fallback."
+                Debug.Print "Connect_V6: Got Frame using fallback."
                 Set tempAppForFrame = Nothing
             End If
-            If objFrame Is Nothing Then
-                Debug.Print "Connect_V5: Still could not get Frame object after Method 1 path."
-                Exit Function
-            End If
+            If objFrame Is Nothing Then Debug.Print "Connect_V6: Still couldn't get Frame (Method 1 path).": Exit Function
         Else
-            Debug.Print "Connect_V5: Successfully got Frame using objReflectionApp.GetObject(""Frame"") after Method 1."
+            Debug.Print "Connect_V6: Successfully got Frame (Method 1 path)."
         End If
         On Error GoTo ConnectErrorHandler
     Else
-        ' For Method 2 or 3, objReflectionApp should be ReflectionWorkspace.Application
-        Do While objReflectionApp.IsInitialized = False ' This should be safe here
+        Do While objReflectionApp.IsInitialized = False
             objReflectionApp.Wait 200
         Loop
         Set objFrame = objReflectionApp.GetObject("Frame")
     End If
 
-    If objFrame Is Nothing Then
-        Debug.Print "Connect_V5: Frame object could not be set in the end."
-        Exit Function
-    End If
-    Debug.Print "Connect_V5: objFrame is set. TypeName(objFrame) is: " & TypeName(objFrame)
+    If objFrame Is Nothing Then Debug.Print "Connect_V6: Frame object is Nothing.": Exit Function
+    Debug.Print "Connect_V6: objFrame is set. TypeName(objFrame) is: " & TypeName(objFrame)
 
+    If Not objFrame.Visible Then objFrame.Visible = True
+    objFrame.Activate
+    Debug.Print "Connect_V6: Frame Visible/Activated."
 
-    ' --- Isolate error around Frame properties/methods ---
-    Debug.Print "Connect_V5: Attempting to check/set objFrame.Visible..."
-    On Error Resume Next
-    If Not objFrame.Visible Then
-        objFrame.Visible = True
-    End If
-    If Err.Number <> 0 Then
-        Debug.Print "Connect_V5: Error with objFrame.Visible. Error " & Err.Number & ": " & Err.Description
+    ' --- MODIFIED APPROACH: Try to get ActiveView first ---
+    Debug.Print "Connect_V6: Attempting to get objFrame.ActiveView..."
+    On Error Resume Next ' Specifically for ActiveView
+    Set objView = objFrame.ActiveView
+    If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear
-        ' Continue, as this might not be critical if frame is already visible
+        Debug.Print "Connect_V6: Could not get objFrame.ActiveView or it's Nothing. Error: " & Err.Description
+        Debug.Print "Connect_V6: This Frame object might not support .ActiveView or no view is active."
+        ' Fallback: If .Views was the issue, this ActiveView attempt might also fail.
+        ' If we absolutely needed to iterate and ActiveView is not supported by *this* Frame object,
+        ' then this connection method is fundamentally limited by the object returned by GetObject("Reflection Workspace").
+        GoTo FinalConnectErrorHandling ' Can't proceed if we can't get a view
     Else
-        Debug.Print "Connect_V5: objFrame.Visible checked/set."
-    End If
-    
-    Debug.Print "Connect_V5: Attempting objFrame.Activate..."
-    objFrame.Activate ' This should bring Reflection to front
-    If Err.Number <> 0 Then
-        Debug.Print "Connect_V5: Error with objFrame.Activate. Error " & Err.Number & ": " & Err.Description
-        Err.Clear
-        ' Continue, activation might fail if already active or due to other window focus
-    Else
-        Debug.Print "Connect_V5: objFrame.Activate attempted."
-    End If
-    On Error GoTo ConnectErrorHandler ' Restore main error handler
-
-    foundView = False
-    Debug.Print "Connect_V5: Attempting to access objFrame.Views.Count..."
-    On Error Resume Next ' Specifically for Views.Count
-    Dim viewCount As Long
-    viewCount = -1 ' Default to indicate not accessed or error
-    viewCount = objFrame.Views.Count
-    If Err.Number <> 0 Then
-        Debug.Print "Connect_V5: Error accessing objFrame.Views.Count. Error " & Err.Number & ": " & Err.Description
-        Err.Clear
-        GoTo FinalConnectErrorHandling ' If we can't get Views.Count, we can't proceed
-    Else
-        Debug.Print "Connect_V5: objFrame.Views.Count = " & viewCount
+        Debug.Print "Connect_V6: objFrame.ActiveView obtained. Title: '" & objView.TitleText & "'"
+        ' Now check if this active view is the one we want
+        If InStr(1, objView.TitleText, uniquePartOfSessionTitle, vbTextCompare) > 0 Then
+            Debug.Print "Connect_V6: ActiveView matches target session."
+            ' objView is already set, proceed
+        Else
+            Debug.Print "Connect_V6: ActiveView ('" & objView.TitleText & "') does NOT match target ('" & uniquePartOfSessionTitle & "')."
+            Debug.Print "Connect_V6: This script currently relies on the target session being the ActiveView if .Views collection isn't available."
+            Set objView = Nothing ' Clear it as it's not the right one
+            Exit Function ' Or handle differently if multiple sessions could be open and active one isn't target
+        End If
     End If
     On Error GoTo ConnectErrorHandler
 
-    If viewCount > 0 Then
-        Debug.Print "Connect_V5: Searching for session containing '" & uniquePartOfSessionTitle & "'..."
-        For Each tempView In objFrame.Views ' If Views.Count errored, this loop won't run or will error
-            Debug.Print "Connect_V5: Checking view - '" & tempView.TitleText & "'"
-            If InStr(1, tempView.TitleText, uniquePartOfSessionTitle, vbTextCompare) > 0 Then
-                Set objView = tempView
-                foundView = True
-                Exit For
-            End If
-        Next tempView
-    Else
-        Debug.Print "Connect_V5: No views reported by objFrame.Views.Count or count is 0."
-    End If
 
-    If Not foundView Or objView Is Nothing Then
-        Debug.Print "Connect_V5: Session containing '" & uniquePartOfSessionTitle & "' not found."
+    If objView Is Nothing Then ' Should have exited if ActiveView didn't match or was not obtainable
+        Debug.Print "Connect_V6: objView is Nothing after attempting to get ActiveView."
         Exit Function
     End If
 
+    ' Activate the specific view (might be redundant if already active, but safe)
     objView.Activate
     Set objTerminal = objView.Control
     Set objScreen = objTerminal.Screen
 
     If objTerminal Is Nothing Or objScreen Is Nothing Then
-        Debug.Print "Connect_V5: Failed to get Terminal/Screen from view '" & objView.TitleText & "'."
+        Debug.Print "Connect_V6: Failed to get Terminal/Screen from view '" & objView.TitleText & "'."
         Exit Function
     End If
 
     objTerminal.DisableKeystrokeProductivity = True
     objTerminal.DisableScreenHistory = True
 
-    ConnectAndActivateReflectionSession_V5 = True
-    Debug.Print "Connect_V5: Successfully connected to '" & objView.TitleText & "'."
+    ConnectAndActivateReflectionSession_V6 = True
+    Debug.Print "Connect_V6: Successfully targeted session '" & objView.TitleText & "'."
     Exit Function
 
-FinalConnectErrorHandling: 
-    Debug.Print "Connect_V5: Unrecoverable error in obtaining Reflection objects."
-    ConnectAndActivateReflectionSession_V5 = False ' Ensure return is False
-    ' Let error propagate if one is active, otherwise just exit function returning False
+FinalConnectErrorHandling:
+    Debug.Print "Connect_V6: Unrecoverable error in obtaining Reflection objects."
+    ConnectAndActivateReflectionSession_V6 = False
     If Err.Number = 0 Then Exit Function
-    ' If an error is active here (e.g. from GoTo), it will go to ConnectErrorHandler
 
 ConnectErrorHandler:
-    Debug.Print "Connect_V5: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
-    ConnectAndActivateReflectionSession_V5 = False
+    Debug.Print "Connect_V6: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
+    ConnectAndActivateReflectionSession_V6 = False
 End Function
 
-' --- Helper Subs for WaitHostSettle and NavigateToScreen (_V5) (no changes from _V4, just renaming for consistency) ---
-Private Sub WaitHostSettle_V5(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
-    If objScreen Is Nothing Then Debug.Print "WaitHostSettle_V5: objScreen is Nothing.": Exit Sub
+' --- Helper Subs (_V6) ---
+Private Sub WaitHostSettle_V6(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
+    If objScreen Is Nothing Then Debug.Print "WaitHostSettle_V6: objScreen is Nothing.": Exit Sub
     Dim startTime As Date: startTime = Now
     Do While objScreen.OIA.XStatus <> 0
         If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
-            Debug.Print "WaitHostSettle_V5: Timeout XStatus."
+            Debug.Print "WaitHostSettle_V6: Timeout XStatus."
             Exit Do
         End If
         objScreen.WaitForHostSettle 100, 50: DoEvents
     Loop
     objScreen.WaitForHostSettle 500, 200
-    Debug.Print "WaitHostSettle_V5: Screen ready (XStatus=" & objScreen.OIA.XStatus & ")."
+    Debug.Print "WaitHostSettle_V6: Screen ready (XStatus=" & objScreen.OIA.XStatus & ")."
 End Sub
 
-Private Function NavigateToScreen_V5(ByVal targetScreenText As String, _
+Private Function NavigateToScreen_V6(ByVal targetScreenText As String, _
                                   ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
                                   ByVal maxAttempts As Integer) As Boolean
     On Error Resume Next
-    NavigateToScreen_V5 = False
-    If objScreen Is Nothing Then Debug.Print "Navigate_V5: objScreen is Nothing.": Exit Function
+    NavigateToScreen_V6 = False
+    If objScreen Is Nothing Then Debug.Print "Navigate_V6: objScreen is Nothing.": Exit Function
 
     Dim attempts As Integer, currentScreenContent As String
     For attempts = 1 To maxAttempts
-        Call WaitHostSettle_V5(2000)
+        Call WaitHostSettle_V6(2000)
         currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
-        Debug.Print "Navigate_V5: Attempt " & attempts & " - Text at R" & targetRow & "C" & targetCol & ": '" & currentScreenContent & "'"
+        Debug.Print "Navigate_V6: Attempt " & attempts & " - Text at R" & targetRow & "C" & targetCol & ": '" & currentScreenContent & "'"
         If UCase(currentScreenContent) = UCase(targetScreenText) Then
-            NavigateToScreen_V5 = True: Exit Function
+            NavigateToScreen_V6 = True: Exit Function
         End If
         If attempts < maxAttempts Then
             objScreen.SendControlKey ControlKeyCode_PageDown
-            Debug.Print "Navigate_V5: Sent PageDown."
+            Debug.Print "Navigate_V6: Sent PageDown."
         End If
     Next attempts
-    Debug.Print "Navigate_V5: Failed to reach '" & targetScreenText & "'."
+    Debug.Print "Navigate_V6: Failed to reach '" & targetScreenText & "'."
 End Function
