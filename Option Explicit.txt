@@ -1,253 +1,270 @@
-Attribute VB_Name = "mod_PEVE_ReflectionCommon"
+Attribute VB_Name = "mod_ProcessInterestAmendments_Integrated"
 Option Explicit
 
-'''''''''''''''''''''''''''''''''''Attachmate Declaration''''''''''''''''''''''''''''''''''''''''''''''
-Public obScreen As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen
-Public ibmTerminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal
-Public app As Attachmate_Reflection_Objects_Framework.ApplicationObject ' Reflection Workspace Application
-Public ThisFrame As Attachmate_Reflection_Objects.frame                 ' The main Reflection window frame
-Public sessionName As String                                            ' Name of the specific session file (e.g., "NTS Back Office - Prod.rd3x")
-Public Mysession As Variant ' Used to extract sessionName from path
-Public osView As Attachmate_Reflection_Objects.View                     ' Represents an open session window/tab
+' --- Constants for Screen Titles (ensure these match exactly what Validate_Screen expects) ---
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_RBS_WELCOME As String = "ROYAL BANK OF SCOTLAND"
+Private Const SCREEN_OPT_HANDLER As String = "OPTION HANDLER FUNCTION SCREEN" ' Main text part for Validate_Screen
+Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM"
+Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
+Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
+Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
+Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
 
-' --- Variables used by ConnectExtra, should be declared at module level if not passed ---
-' These were Public in your General Declarations. If that module is separate and not imported,
-' they need to be handled (e.g., pass as params, or re-declare here if this module is standalone for connection)
-Public strBoPath As String ' Full path to the .rd3x session file
-Private stEDPFile As String ' Temporary variable for file path in ConnectExtra
+' --- Input Field Coordinates ---
+Private Const ROW_CMD_LINE As Long = 21
+Private Const COL_CMD_LINE As Long = 13
+Private Const ROW_OPT_HANDLER_INPUT As Long = 21
+Private Const COL_OPT_HANDLER_INPUT As Long = 16
+Private Const ROW_BO_SYSTEM_INPUT As Long = 22
+Private Const COL_BO_SYSTEM_INPUT As Long = 16
+Private Const ROW_MASTER_IDX_ACTION As Long = 22
+Private Const COL_MASTER_IDX_ACTION As Long = 8
+Private Const ROW_MASTER_IDX_SC As Long = 22
+Private Const COL_MASTER_IDX_SC As Long = 74
+Private Const ROW_FILEMAINT_IDX_ACTION As Long = 22
+Private Const COL_FILEMAINT_IDX_ACTION As Long = 8
+Private Const ROW_FILEMAINT_IDX_ACC As Long = 22
+Private Const COL_FILEMAINT_IDX_ACC As Long = 21
+Private Const ROW_INTERNALTXN_ACTION As Long = 22
+Private Const COL_INTERNALTXN_ACTION As Long = 8
 
+Private Const SCRIPT_PROCESS_TITLE As String = "Interest Amendment V-Integrated"
+' Public strAppName As String ' If your Validate_Screen uses this for MsgBox, ensure it's set globally
 
-' --- Assumed from your General Declarations, used in MsgBox in BackToMasterIndex ---
-' Public sPrj_Name As String ' If this is used, ensure it's defined globally or pass it.
-                             ' For this example, I'll use a generic title if sPrj_Name isn't available.
-Private Const COMMON_SCRIPT_TITLE As String = "Reflection Common" ' Fallback title
+' --- Main Sub to Loop Through Excel Data ---
+Sub ProcessAllInterestAmendmentsFromSheet()
+    Dim ws As Worksheet
+    Dim i As Long ' Current row in Excel
+    Dim lastRow As Long
+    Dim processStatus As String
+    Dim criticalErrorEncountered As Boolean
 
-'===============================================================================
-' DESCRIPTION:      This sub is used to connect to an Attachmate Reflection session.
-'                   It initializes the public obScreen object.
-'===============================================================================
-Sub ConnectExtra()
-    On Error GoTo MyHandler
+    criticalErrorEncountered = False
+    ' strAppName = "Interest Amendment Tool" ' Example if you need to set it
 
-    ' Ensure Sheet4 exists and txtEDPPath is a valid TextBox name on that sheet
-    ' Using CodeName (e.g., Sheet4) is generally robust.
-    If Sheet4.txtEDPPath.Text = "" Then ' Assuming Sheet4 is the CodeName of your sheet
-        stEDPFile = Application.GetOpenFilename(Title:="Please choose a Reflection Session: Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
-        If stEDPFile = "False" Then ' User cancelled
-            MsgBox "Reflection session selection cancelled. Exiting.", vbExclamation, COMMON_SCRIPT_TITLE
-            End ' Critical to stop if no session
+    ' --- Ensure Connection ---
+    If obScreen Is Nothing Then ' obScreen should be Public from mod_PEVE_ReflectionCommon
+        Debug.Print "ProcessAll...: obScreen is Nothing. Calling ConnectExtra."
+        On Error Resume Next
+        Call ConnectExtra ' From mod_PEVE_ReflectionCommon
+        If Err.Number <> 0 Or obScreen Is Nothing Then
+            MsgBox "Failed to connect to Reflection via ConnectExtra.", vbCritical, SCRIPT_PROCESS_TITLE
+            Exit Sub
         End If
+        On Error GoTo 0
     Else
-        stEDPFile = Sheet4.txtEDPPath.Text
+        Debug.Print "ProcessAll...: Reflection connection already active."
     End If
 
-    If strBoPath = "" Then
-       strBoPath = stEDPFile
-    End If
-    
-    If strBoPath = "" Then
-        MsgBox "Reflection session file path (strBoPath) is not set. Cannot connect.", vbCritical, COMMON_SCRIPT_TITLE
-        End
-    End If
-
-    Mysession = Split(strBoPath, "\")
-    sessionName = Mysession(UBound(Mysession)) ' e.g., "NTS Back Office - Prod.rd3x"
-    
-    ' Get existing Reflection Workspace or create it
     On Error Resume Next
-    Set app = GetObject(, "ReflectionWorkspace.Application") ' Try to get running instance
-    If Err.Number <> 0 Then
-        Err.Clear
-        Debug.Print "ConnectExtra: Reflection Workspace not running, attempting to create new instance."
-        Set app = CreateObject("ReflectionWorkspace.Application")
-        If Err.Number <> 0 Or app Is Nothing Then
-            MsgBox "Could not connect to or create Reflection Workspace." & vbCrLf & Err.Description, vbCritical, COMMON_SCRIPT_TITLE
-            End
-        End If
-    End If
-    On Error GoTo MyHandler ' Restore specific error handler for subsequent operations
-
-    If app Is Nothing Then
-        MsgBox "Failed to initialize Reflection Workspace application object.", vbCritical, COMMON_SCRIPT_TITLE
-        End
-    End If
-    
-    With app
-         Do While .IsInitialized = False
-           .Wait 200 ' Milliseconds
-         Loop
-         Set ThisFrame = .GetObject("Frame")
-         If Not ThisFrame.Visible Then ThisFrame.Visible = True ' Make sure it's visible
-         ThisFrame.Activate ' Bring to front
-    End With
-    
-    ' Try to get the view; if not open, try to open it
-    On Error Resume Next
-    Set osView = ThisFrame.GetViewByTitleText(sessionName) ' Check if session window is already open
-    If Err.Number <> 0 Or osView Is Nothing Then
-        Err.Clear
-        Debug.Print "ConnectExtra: View '" & sessionName & "' not found by title. Attempting to create/open view with path: " & strBoPath
-        Set osView = ThisFrame.CreateView(strBoPath) ' Open the session file
-        If Err.Number <> 0 Or osView Is Nothing Then
-             MsgBox "Failed to open or find Reflection session: " & sessionName & vbCrLf & "Path: " & strBoPath & vbCrLf & Err.Description, vbCritical, COMMON_SCRIPT_TITLE
-             End
-        End If
-        ' Wait for the newly created view to connect if it was just opened
-        Dim tempTerminal As Object
-        Set tempTerminal = osView.Control
-        If Not tempTerminal Is Nothing Then
-            Dim connectStartTime As Date
-            connectStartTime = Now
-            Do While Not tempTerminal.IsConnected
-                If DateDiff("s", connectStartTime, Now) > 30 Then ' 30 second timeout for connection
-                    MsgBox "Timeout waiting for session '" & sessionName & "' to connect to host.", vbExclamation, COMMON_SCRIPT_TITLE
-                    End
-                End If
-                app.Wait 500 ' Wait before re-checking connection status
-            Loop
-            Debug.Print "ConnectExtra: Session '" & sessionName & "' is connected to host."
-        Else
-            MsgBox "Failed to get terminal control for new view: " & sessionName, vbCritical, COMMON_SCRIPT_TITLE
-            End
-        End If
-        Set tempTerminal = Nothing
-    End If
-    On Error GoTo MyHandler ' Restore error handler
-
-    If osView Is Nothing Then
-        MsgBox "Could not obtain the Reflection session view: " & sessionName, vbCritical, COMMON_SCRIPT_TITLE
-        End
-    End If
-    
-    osView.Activate ' Ensure the specific session view is active
-
-    Set ibmTerminal = osView.Control
-    Set obScreen = ibmTerminal.Screen
-    
-    If obScreen Is Nothing Then
-        MsgBox "Failed to set the obScreen object. Cannot interact with session.", vbCritical, COMMON_SCRIPT_TITLE
-        End
-    End If
-
-    ibmTerminal.DisableKeystrokeProductivity = True
-    ibmTerminal.DisableScreenHistory = True
-    
-    Debug.Print "ConnectExtra: Successfully connected to session and set obScreen."
-    Exit Sub
-                         
-MyHandler:
-    MsgBox "Error in ConnectExtra:" & vbCrLf & Err.Number & ": " & Err.Description & _
-           vbCrLf & vbCrLf & "Session targeted: " & sessionName, vbCritical, "Reflection Connection Error"
-    End ' Stop execution on unhandled error in ConnectExtra
-End Sub
-
-'===============================================================================
-' DESCRIPTION:      This function is used to validate screen text.
-' RETURN VALUE:     TRUE if text matches, FALSE otherwise.
-'===============================================================================
-Function Validate_Screen(strText As String, iRow As Integer, iCol As Integer, iLen As Integer) As Boolean
-    If obScreen Is Nothing Then
-        Debug.Print "Validate_Screen: obScreen object is not set!"
-        Validate_Screen = False
-        Exit Function
-    End If
-    
-    ' Wait for screen to be ready before reading text
-    Dim startTime As Date
-    startTime = Now
-    Do While obScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) > 10 Then ' 10 second timeout for screen ready
-            Debug.Print "Validate_Screen: Timeout waiting for XStatus before reading text."
-            Validate_Screen = False
-            Exit Function
-        End If
-        obScreen.WaitForHostSettle 50, 20  ' Milliseconds
-        DoEvents
-    Loop
-    
-    Dim actualText As String
-    actualText = VBA.Trim(obScreen.GetText(iRow, iCol, iLen))
-    
-    If UCase(actualText) = UCase(VBA.Trim(strText)) Then
-        Validate_Screen = True
-    Else
-        Validate_Screen = False
-        Debug.Print "Validate_Screen FAILED: Expected=[" & strText & "], Found=[" & actualText & "] at R" & iRow & "C" & iCol & "L" & iLen
-    End If
-End Function
-
-'===============================================================================
-' DESCRIPTION:      This sub waits until the Back Office screen is ready and handles security pop-ups.
-'===============================================================================
-Sub WaitForScreen()
-    If obScreen Is Nothing Then
-        Debug.Print "WaitForScreen: obScreen object is not set!"
+    Set ws = ThisWorkbook.ActiveSheet ' Or specify: ThisWorkbook.Worksheets("YourSheetName")
+    If ws Is Nothing Then
+        MsgBox "Could not set worksheet. Ensure a sheet is active.", vbCritical, SCRIPT_PROCESS_TITLE
         Exit Sub
     End If
+    On Error GoTo 0
+    Debug.Print "Processing data from sheet: " & ws.Name
 
-    Dim startTime As Date
-    startTime = Now
-    Do While obScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) > 20 Then ' 20 second timeout for screen ready
-            Debug.Print "WaitForScreen: Timeout waiting for XStatus."
-            Exit Sub ' Or raise an error
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    If lastRow < 2 Then
+        MsgBox "No data in sheet (Column A, starting row 2).", vbInformation, SCRIPT_PROCESS_TITLE
+        Exit Sub
+    End If
+    Debug.Print "Data found from row 2 to " & lastRow
+
+    For i = 2 To lastRow
+        Debug.Print vbCrLf & "--- Processing Excel Row " & i & " ---"
+        processStatus = PerformAmendmentForOneAccount(ws, i)
+        
+        ws.Cells(i, "H").Value = processStatus ' Update status in Column H
+        
+        If processStatus = "STOPPED_CRITICAL_ERROR" Or processStatus = "Error - Not on App Menu" Then
+            criticalErrorEncountered = True
+            MsgBox "Critical error on row " & i & ". Aborting. Status: " & processStatus, vbCritical, SCRIPT_PROCESS_TITLE
+            Exit For
         End If
-        obScreen.WaitForHostSettle 50, 20  ' Milliseconds
-        DoEvents
-    Loop
-    ' Additional settle time can be useful after XStatus is 0 but before host is fully done painting
-    obScreen.WaitForHostSettle 100, 50 ' Short extra settle
+    Next i
 
-    Call Check_SecurityScreen
-End Sub
-
-'===============================================================================
-' DESCRIPTION:      This sub checks for and handles the "SECURITY REMINDER" screen.
-'===============================================================================
-Sub Check_SecurityScreen()
-    If obScreen Is Nothing Then Exit Sub
-
-    ' Coordinates for "SECURITY REMINDER": Row 1, Col 29, Length 20 (as per your original)
-    ' Assuming "SECURITY REMINDER" is the exact text for the constant.
-    Const SCREEN_SECURITY_TITLE As String = "SECURITY REMINDER"
-    If Validate_Screen(SCREEN_SECURITY_TITLE, 1, 29, Len(SCREEN_SECURITY_TITLE)) = True Then
-        Debug.Print "Check_SecurityScreen: Security Reminder found. Acknowledging..."
-        obScreen.PutText2 "Y", 22, 11 ' Assuming "Y" at R22,C11
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen ' Wait for the screen to change after acknowledging
+    If criticalErrorEncountered Then
+        Debug.Print "Processing stopped due to critical error."
+    Else
+        MsgBox "Finished processing all rows.", vbInformation, SCRIPT_PROCESS_TITLE
     End If
 End Sub
 
-'===============================================================================
-' DESCRIPTION:      This sub navigates back to the "MASTER INDEX" screen.
-'===============================================================================
-Sub BackToMasterIndex()
-    If obScreen Is Nothing Then Exit Sub
+' --- Function to Process a Single Account from Excel ---
+Private Function PerformAmendmentForOneAccount(ByVal dataSheet As Worksheet, ByVal currentRow As Long) As String
+    Dim sortCode As String
+    Dim accountNumber As String
+    Dim brand As String
+    Dim confirmCode As String
+    Dim l_loop As Long
 
-    Dim iCount As Integer
-    Dim targetScreenText As String
-    targetScreenText = "MASTER INDEX" ' As per your original code's check
+    PerformAmendmentForOneAccount = "Unknown Error"
 
-    iCount = 0
-    Call WaitForScreen ' Ensure current screen is ready before sending F2
+    sortCode = Trim(CStr(dataSheet.Cells(currentRow, "A").Value))
+    accountNumber = Trim(CStr(dataSheet.Cells(currentRow, "B").Value))
+    brand = UCase(Trim(CStr(dataSheet.Cells(currentRow, "C").Value)))
 
-    ' Text "MASTER INDEX" is checked at R1, C27, L13 in your original
-    Do While Trim(obScreen.GetText(1, 27, 13)) <> targetScreenText
-        obScreen.SendControlKey ControlKeyCode_F2
-        Debug.Print "BackToMasterIndex: Sent F2 (Attempt " & iCount + 1 & ")"
-        Call WaitForScreen ' Wait for screen to change
-        iCount = iCount + 1
-        If iCount > 10 Then ' Max 10 attempts to prevent infinite loop
-            ' Assuming sPrj_Name is a globally defined variable for your project name
-            ' If not, replace sPrj_Name with a string like "Reflection Automation"
-            Dim msgBoxTitle As String
-            On Error Resume Next ' In case sPrj_Name isn't defined
-            msgBoxTitle = sPrj_Name
-            If Err.Number <> 0 Then msgBoxTitle = "Back Office Error"
-            On Error GoTo 0
-            MsgBox "Unexpected Back Office Error! Could not return to MASTER INDEX after " & iCount & " F2 presses.", vbCritical, msgBoxTitle
-            End ' Critical failure
+    If sortCode = "" Or accountNumber = "" Or brand = "" Then
+        Debug.Print "Row " & currentRow & ": Skipped - Missing S/C, A/N, or Brand."
+        PerformAmendmentForOneAccount = "Skipped - Missing Data"
+        Exit Function
+    End If
+    Debug.Print "Data: S/C=" & sortCode & ", A/N=" & accountNumber & ", Brand=" & brand
+
+    Select Case brand
+        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
+        Case "UBN": confirmCode = "PRCIJ#T#"
+        Case "UBR": confirmCode = "PRCIK#T#"
+        Case Else
+            Debug.Print "Row " & currentRow & ": Invalid Brand '" & brand & "'."
+            PerformAmendmentForOneAccount = "Skipped - Invalid Brand"
+            Exit Function
+    End Select
+    Debug.Print "Using confirm code: " & confirmCode
+
+    Call WaitForScreen ' Uses your common function
+    obScreen.WaitForHostSettle 200, 100
+
+    ' Validate_Screen parameters: Text, Row, Col, Length
+    If Validate_Screen(SCREEN_APP_MENU, 1, 28, Len(SCREEN_APP_MENU)) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_APP_MENU & ". Current: '" & Trim(obScreen.GetText(1, 28, Len(SCREEN_APP_MENU))) & "'"
+        PerformAmendmentForOneAccount = "Error - Not on App Menu"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_APP_MENU
+
+    objScreen.PutText2 "TERM ALL", ROW_CMD_LINE, COL_CMD_LINE
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Call WaitForScreen
+    Debug.Print "Sent: TERM ALL"
+
+    objScreen.PutText2 confirmCode, ROW_CMD_LINE, COL_CMD_LINE
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Call WaitForScreen
+    Debug.Print "Sent: " & confirmCode
+    obScreen.WaitForHostSettle 500, 200
+    
+    If Validate_Screen("Command not recognized", 20, 36, 22) = True Then
+        Debug.Print "Row " & currentRow & ": Brand code " & confirmCode & " not recognized."
+        PerformAmendmentForOneAccount = "Error - Brand Code Invalid"
+        Exit Function
+    End If
+
+    If Validate_Screen(SCREEN_RBS_WELCOME, 1, 1, Len(SCREEN_RBS_WELCOME)) = True Then
+        Debug.Print "On: " & SCREEN_RBS_WELCOME & " - sending Transmit."
+        objScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitForScreen: obScreen.WaitForHostSettle 200, 100
+        
+        If Validate_Screen("", 1, 1, 80) = True Then
+            Debug.Print "Attempting STAR loop..."
+            l_loop = 1
+            Do
+                If Validate_Screen("", 1, 1, 80) = True Then
+                    objScreen.PutText2 "STAR", 1, 1
+                    objScreen.SendControlKey ControlKeyCode_Transmit
+                    Call WaitForScreen: obScreen.WaitForHostSettle 200, 100
+                    Debug.Print "Sent: STAR (Loop " & l_loop & ")"
+                ElseIf Validate_Screen(SCREEN_RBS_WELCOME, 1, 1, Len(SCREEN_RBS_WELCOME)) = True Then
+                    objScreen.SendControlKey ControlKeyCode_Transmit
+                    Call WaitForScreen: obScreen.WaitForHostSettle 200, 100
+                    Debug.Print "Resent Transmit on RBS Welcome (Loop " & l_loop & ")"
+                End If
+                l_loop = l_loop + 1
+                If l_loop > 5 Then
+                    Debug.Print "Row " & currentRow & ": Stuck in STAR loop."
+                    PerformAmendmentForOneAccount = "Error - STAR Loop Stuck"
+                    Exit Function
+                End If
+            ' Your original InterestCheck used R1,C26,L35 for Opt Handler. Screenshot 2 has title at R2,C28.
+            ' Using your InterestCheck parameters for Validate_Screen here.
+            Loop While Validate_Screen(SCREEN_OPT_HANDLER, 1, 26, 35) = False And l_loop <= 5
         End If
-    Loop
-    Debug.Print "BackToMasterIndex: Successfully returned to MASTER INDEX."
-End Sub
+    End If
+    
+    ' Option Handler Screen: Your InterestCheck used R1,C26,L35.
+    If Validate_Screen(SCREEN_OPT_HANDLER, 1, 26, 35) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_OPT_HANDLER & ". Found: '" & Trim(obScreen.GetText(1, 26, 35)) & "'"
+        PerformAmendmentForOneAccount = "Error - Not on Opt Handler"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_OPT_HANDLER
+
+    objScreen.PutText2 "19", ROW_OPT_HANDLER_INPUT, COL_OPT_HANDLER_INPUT
+    objScreen.SendControlKey ControlKeyCode_Transmit: Call WaitForScreen
+    Debug.Print "Sent: Option 19"
+
+    ' Back Office System: Your InterestCheck used R1,C7,L20.
+    If Validate_Screen(SCREEN_BO_SYSTEM, 1, 7, Len(SCREEN_BO_SYSTEM)) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_BO_SYSTEM & ". Found: " & Trim(obScreen.GetText(1, 7, Len(SCREEN_BO_SYSTEM)))
+        PerformAmendmentForOneAccount = "Error - Not on BO System"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_BO_SYSTEM
+    
+    objScreen.PutText2 "01", ROW_BO_SYSTEM_INPUT, COL_BO_SYSTEM_INPUT
+    objScreen.SendControlKey ControlKeyCode_Transmit: Call WaitForScreen
+    Debug.Print "Sent: Option 01"
+
+    ' Master Index: Your InterestCheck used R1,C28,L12. Len(SCREEN_MASTER_INDEX) is 12.
+    If Validate_Screen(SCREEN_MASTER_INDEX, 1, 28, Len(SCREEN_MASTER_INDEX)) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_MASTER_INDEX & ". Found: " & Trim(obScreen.GetText(1, 28, Len(SCREEN_MASTER_INDEX)))
+        PerformAmendmentForOneAccount = "Error - Not on Master Index"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_MASTER_INDEX
+
+    objScreen.PutText2 "20", ROW_MASTER_IDX_ACTION, COL_MASTER_IDX_ACTION
+    objScreen.PutText2 Format(sortCode, "000000"), ROW_MASTER_IDX_SC, COL_MASTER_IDX_SC
+    objScreen.SendControlKey ControlKeyCode_Transmit: Call WaitForScreen
+    Debug.Print "Sent: Action 20, S/C " & sortCode
+
+    ' File Maintenance Input Index: Your InterestCheck used R1,C21,L40. Len(SCREEN_FILE_MAINT_IDX) is 28.
+    If Validate_Screen(SCREEN_FILE_MAINT_IDX, 1, 21, Len(SCREEN_FILE_MAINT_IDX)) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_FILE_MAINT_IDX & ". Found: " & Trim(obScreen.GetText(1, 21, Len(SCREEN_FILE_MAINT_IDX)))
+        PerformAmendmentForOneAccount = "Error - Not on File Maint Idx"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_FILE_MAINT_IDX
+
+    objScreen.PutText2 "20", ROW_FILEMAINT_IDX_ACTION, COL_FILEMAINT_IDX_ACTION
+    objScreen.PutText2 Format(accountNumber, "00000000"), ROW_FILEMAINT_IDX_ACC, COL_FILEMAINT_IDX_ACC
+    objScreen.SendControlKey ControlKeyCode_Transmit: Call WaitForScreen
+    Debug.Print "Sent: Action 20, A/N " & accountNumber
+
+    ' Internal Transactions: Using your specified R1,C19. Len(SCREEN_INTERNAL_TXNS) is 20.
+    If Validate_Screen(SCREEN_INTERNAL_TXNS, 1, 19, Len(SCREEN_INTERNAL_TXNS)) <> True Then
+        Debug.Print "Row " & currentRow & ": Not on " & SCREEN_INTERNAL_TXNS & ". Found: " & Trim(obScreen.GetText(1, 19, Len(SCREEN_INTERNAL_TXNS)))
+        PerformAmendmentForOneAccount = "Error - Not on Internal Txns"
+        Exit Function
+    End If
+    Debug.Print "On: " & SCREEN_INTERNAL_TXNS
+
+    objScreen.PutText2 "04", ROW_INTERNALTXN_ACTION, COL_INTERNALTXN_ACTION
+    objScreen.SendControlKey ControlKeyCode_Transmit: Call WaitForScreen
+    Debug.Print "Sent: Action 04"
+
+    ' Interest Amendments Screen: Using estimate R1,C30. Len(SCREEN_INTEREST_AMENDMENTS) is 19.
+    If Validate_Screen(SCREEN_INTEREST_AMENDMENTS, 1, 30, Len(SCREEN_INTEREST_AMENDMENTS)) <> True Then
+        If Validate_Screen("INTEREST DETAILS", 2, 30, Len("INTEREST DETAILS")) <> True Then 
+            Debug.Print "Row " & currentRow & ": Not on " & SCREEN_INTEREST_AMENDMENTS & ". Found: " & Trim(obScreen.GetText(1, 30, Len(SCREEN_INTEREST_AMENDMENTS)))
+            PerformAmendmentForOneAccount = "Error - Not on Interest Amend Screen"
+            Exit Function
+        End If
+    End If
+    Debug.Print "Successfully navigated to: " & SCREEN_INTEREST_AMENDMENTS
+    navigationSuccessful = True
+
+    If navigationSuccessful Then
+        Debug.Print "Row " & currentRow & ": On Interest Amendments screen. Pausing..."
+        MsgBox "SCRIPT PAUSED." & vbCrLf & "Verify INTEREST AMENDMENTS screen for:" & vbCrLf & _
+               "S/C: " & sortCode & ", A/N: " & accountNumber & vbCrLf & vbCrLf & _
+               "Click OK to simulate completion and proceed.", vbInformation, SCRIPT_PROCESS_TITLE
+        PerformAmendmentForOneAccount = "Navigated - Manual Checkpoint"
+    Else
+        PerformAmendmentForOneAccount = "Navigation Failed Critically"
+    End If
+End Function
