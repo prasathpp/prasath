@@ -1,18 +1,33 @@
-Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V8"
+' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V8"
 Option Explicit
 
-' --- Declarations and Constants (remain the same as _V7) ---
+' --- Attachmate Reflection Object Declarations ---
 Public objReflectionApp As Object
 Public objFrame As Object
 Public objView As Object
 Public objTerminal As Object
 Public objScreen As Object
 
+' --- Constants for this specific automation ---
 Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
-' ... (other constants) ...
+
+' --- Screen Text and Coordinate Constants ---
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU" ' Ensure this exact name is used
+Private Const SCREEN_APP_MENU_ROW As Long = 1
+Private Const SCREEN_APP_MENU_COL As Long = 28
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30
+
+' --- Command Constants ---
+Private Const CMD_TERM_ALL As String = "TERM ALL"
+Private Const CMD_TERM_ALL_ROW As Long = 21
+Private Const CMD_TERM_ALL_COL As Long = 13
+
+' --- Other Control Constants ---
+Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
 Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V8"
 
-' --- Main Sub (calls _V8 connect) ---
+
+' --- Main Sub ---
 Sub PerformTermAllEntry_V8()
     On Error GoTo ErrorHandler
     Dim success As Boolean
@@ -24,15 +39,22 @@ Sub PerformTermAllEntry_V8()
         GoTo CleanupAndExit
     End If
     
-    ' Check if objScreen was set, as it's critical for subsequent operations
-    If objScreen Is Nothing Then
-        MsgBox "Critical error: Screen object was not set after successful connection. Cannot proceed.", vbCritical, SCRIPT_TITLE
+    If objScreen Is Nothing Then ' Critical check after connection attempt
+        MsgBox "Critical error: Screen object (objScreen) was not set after connection attempt. Cannot proceed.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
+    ' objView should also be set if success is True and objScreen is set from a proper view
+    If objView Is Nothing And success Then ' Check if objView is also set
+         MsgBox "Warning: objView was not set, but connection reported success. Debugging objView.TitleText will fail.", vbExclamation, SCRIPT_TITLE
+         Debug.Print SCRIPT_TITLE & ": Successfully connected, but objView is Nothing." ' Log this anomaly
+    ElseIf success Then
+         Debug.Print SCRIPT_TITLE & ": Successfully connected. View Title: '" & objView.TitleText & "'"
+    End If
 
-    Debug.Print SCRIPT_TITLE & ": Successfully connected. View Title: '" & objView.TitleText & "'"
 
+    ' --- USING THE CORRECTLY DEFINED CONSTANTS ---
     success = NavigateToScreen_V8(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
+    
     If Not success Then
         MsgBox "Failed to navigate to '" & SCREEN_APP_MENU & "'.", vbExclamation, SCRIPT_TITLE
         GoTo CleanupAndExit
@@ -61,7 +83,7 @@ ErrorHandler:
     Resume CleanupAndExit
 End Sub
 
-' --- Helper Function: Connects and activates session (Version 8) ---
+' --- Helper Function: Connects and activates session (Version 8 - from previous correct response) ---
 Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitleOrUniquePart As String) As Boolean
     On Error GoTo ConnectErrorHandler
     ConnectAndActivateReflectionSession_V8 = False
@@ -75,7 +97,7 @@ Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitle
         GoTo FinalConnectErrorHandling
     End If
     Debug.Print "Connect_V8: Method 1 SUCCEEDED setting objReflectionApp. TypeName: " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler ' Restore main error handler
+    On Error GoTo ConnectErrorHandler 
 
     Set objFrame = objReflectionApp.GetObject("Frame")
     If objFrame Is Nothing Then Debug.Print "Connect_V8: Frame object is Nothing.": Exit Function
@@ -91,20 +113,18 @@ Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitle
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear
         Debug.Print "Connect_V8: objFrame.GetViewByTitleText FAILED. Error: " & Err.Description
-        GoTo FinalConnectErrorHandling ' If we can't get the view this way, we're stuck with this method
+        GoTo FinalConnectErrorHandling 
     End If
     Debug.Print "Connect_V8: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
-    On Error GoTo ConnectErrorHandler ' Restore main error handler
+    On Error GoTo ConnectErrorHandler 
 
 
-    ' --- objView is now set. Let's test its properties/methods ---
     Debug.Print "Connect_V8: Attempting objView.Activate..."
     On Error Resume Next
     objView.Activate
     If Err.Number <> 0 Then
         Debug.Print "Connect_V8: Error on objView.Activate. Error " & Err.Number & ": " & Err.Description
         Err.Clear
-        ' This might not be fatal if it's already active.
     Else
         Debug.Print "Connect_V8: objView.Activate attempted."
     End If
@@ -116,7 +136,7 @@ Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitle
     If Err.Number <> 0 Or objTerminal Is Nothing Then
         Debug.Print "Connect_V8: Error on Set objTerminal = objView.Control. Error " & Err.Number & ": " & Err.Description
         Err.Clear
-        GoTo FinalConnectErrorHandling ' Fatal if we can't get Terminal
+        GoTo FinalConnectErrorHandling 
     Else
         Debug.Print "Connect_V8: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
     End If
@@ -128,13 +148,12 @@ Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitle
     If Err.Number <> 0 Or objScreen Is Nothing Then
         Debug.Print "Connect_V8: Error on Set objScreen = objTerminal.Screen. Error " & Err.Number & ": " & Err.Description
         Err.Clear
-        GoTo FinalConnectErrorHandling ' Fatal if we can't get Screen
+        GoTo FinalConnectErrorHandling
     Else
         Debug.Print "Connect_V8: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
     End If
     On Error GoTo ConnectErrorHandler
     
-    ' Optional settings - proceed even if they error, but log it
     Debug.Print "Connect_V8: Attempting objTerminal.DisableKeystrokeProductivity = True..."
     On Error Resume Next
     objTerminal.DisableKeystrokeProductivity = True
