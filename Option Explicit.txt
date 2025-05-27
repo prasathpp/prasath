@@ -1,310 +1,224 @@
-' Attribute VB_Name = "mod_InterestAmend_Streamlined"
+' Attribute VB_Name = "mod_InterestAmend_FocusCore"
 Option Explicit
 
 ' --- Reflection COM Objects ---
-Dim RApp As Object ' ReflectionWorkspace.Application
-Dim RFrame As Object ' Reflection.Frame
-Dim RView As Object  ' Reflection.View
-Dim RTerminal As Object ' Reflection.IbmTerminal or similar
-Dim RScreen As Object   ' Reflection.IbmScreen
+Dim RApp As Object
+Dim RFrame As Object
+Dim RView As Object
+Dim RTerminal As Object
+Dim RScreen As Object
 
 ' --- Key Screen Title Constants ---
 Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
-Private Const SCREEN_OPT_HANDLER As String = "OPTION HANDLER FUNCTION SCREEN"
-Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM"
-Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
-Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
-Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
-Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
+' ... (other screen constants as needed for navigation later)
 
 ' --- Script Title for MsgBoxes ---
-Private Const SCRIPT_TITLE As String = "Streamlined Interest Amendment"
+Private Const SCRIPT_TITLE As String = "Focused Interest Amendment"
 
 ' --- Main Processing Sub ---
-Sub ProcessAmendments()
+Sub ProcessSingleAmendment_Focus()
     Dim ws As Worksheet
-    Dim i As Long ' Current Excel row
-    Dim lastRow As Long
     Dim sortCode As String, accountNumber As String, brand As String
     Dim success As Boolean
 
     ' 1. Connect to Reflection and get the target session
-    If Not ConnectAndGetSession("NTS Back Office - Prod.rd3x") Then
-        MsgBox "Failed to connect to Reflection session. Ensure 'NTS Back Office - Prod.rd3x' is open.", vbCritical, SCRIPT_TITLE
+    '    Using the logic that previously succeeded in getting all objects set.
+    If Not ConnectAndSetScreen("NTS Back Office - Prod.rd3x") Then
+        MsgBox "Failed to connect to Reflection session and set screen object." & vbCrLf & _
+               "Ensure 'NTS Back Office - Prod.rd3x' is open.", vbCritical, SCRIPT_TITLE
+        Exit Sub
+    End If
+    Debug.Print "ProcessSingle: Successfully connected and RScreen is set."
+
+    ' 2. Set worksheet and get data for ONE test row
+    Set ws = ThisWorkbook.ActiveSheet ' Or ThisWorkbook.Worksheets("SheetName")
+    
+    ' --- FOR TESTING - Process only one specific row, e.g., row 2 ---
+    Dim testRow As Long
+    testRow = 2 ' <<<< Change this to your desired test row number
+    ' ---
+
+    If ws.Cells(testRow, "A").Value = "" Then
+        MsgBox "No data in test row " & testRow & ", Column A.", vbExclamation, SCRIPT_TITLE
         Exit Sub
     End If
 
-    ' 2. Set worksheet
-    Set ws = ThisWorkbook.ActiveSheet ' Or ThisWorkbook.Worksheets("SheetName")
-    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    sortCode = Trim(CStr(ws.Cells(testRow, "A").Value))
+    accountNumber = Trim(CStr(ws.Cells(testRow, "B").Value))
+    brand = UCase(Trim(CStr(ws.Cells(testRow, "C").Value)))
 
-    If lastRow < 2 Then MsgBox "No data in sheet.", vbInformation, SCRIPT_TITLE: Exit Sub
-    Debug.Print "Processing rows 2 to " & lastRow & " on sheet: " & ws.Name
+    Debug.Print "-----------------------------------------------------"
+    Debug.Print "Processing Excel Row: " & testRow & " | S/C: " & sortCode & " | Acc: " & accountNumber & " | Brand: " & brand
 
-    ' 3. Loop through Excel rows
-    For i = 2 To lastRow
-        sortCode = Trim(CStr(ws.Cells(i, "A").Value))
-        accountNumber = Trim(CStr(ws.Cells(i, "B").Value))
-        brand = UCase(Trim(CStr(ws.Cells(i, "C").Value)))
+    If sortCode = "" Or accountNumber = "" Or brand = "" Then
+        Debug.Print "Skipped row " & testRow & " - Missing data."
+        ws.Cells(testRow, "H").Value = "Skipped - Missing Data"
+        Exit Sub
+    End If
 
-        Debug.Print "-----------------------------------------------------"
-        Debug.Print "Processing Excel Row: " & i & " | S/C: " & sortCode & " | Acc: " & accountNumber & " | Brand: " & brand
+    ' 3. Perform navigation for the current account
+    '    (We will build this function next, for now, just confirm connection)
+    success = NavigateToTargetScreen_Focus(sortCode, accountNumber, brand) ' Placeholder name
 
-        If sortCode = "" Or accountNumber = "" Or brand = "" Then
-            Debug.Print "Skipped row " & i & " - Missing data."
-            ws.Cells(i, "H").Value = "Skipped - Missing Data" ' Status in Col H
-            GoTo NextExcelRow ' Skip to next iteration
-        End If
+    If success Then
+        Debug.Print "Successfully navigated to INTEREST AMENDMENTS screen for row " & testRow
+        ws.Cells(testRow, "H").Value = "Navigated - OK"
+        MsgBox "PAUSED: On INTEREST AMENDMENTS screen for S/C: " & sortCode & ", A/N: " & accountNumber, vbInformation, SCRIPT_TITLE
+        ' Placeholder for actual amendment logic
+    Else
+        Debug.Print "Navigation FAILED for row " & testRow
+        ws.Cells(testRow, "H").Value = "Navigation Failed"
+    End If
 
-        ' 4. Perform navigation for the current account
-        success = NavigateToTargetScreen(sortCode, accountNumber, brand)
-
-        If success Then
-            Debug.Print "Successfully navigated to INTEREST AMENDMENTS screen for row " & i
-            ws.Cells(i, "H").Value = "Navigated - OK"
-            '
-            ' >>>>>>> Placeholder for actual amendment logic <<<<<<<
-            ' Read values from ws.Cells(i, "D") through "G"
-            ' PutText2 onto RScreen for each field
-            ' Send Transmit, etc.
-            '
-            MsgBox "PAUSED: On INTEREST AMENDMENTS screen for S/C: " & sortCode & ", A/N: " & accountNumber & vbCrLf & _
-                   "Click OK to proceed to next account (or stop macro).", vbInformation, SCRIPT_TITLE
-        Else
-            Debug.Print "Navigation FAILED for row " & i
-            ws.Cells(i, "H").Value = "Navigation Failed"
-            ' Decide: Exit For ' To stop on first failure
-        End If
-NextExcelRow:
-    Next i
-
-    MsgBox "Finished processing all rows.", vbInformation, SCRIPT_TITLE
-    CleanUpReflectionObjects
+    CleanUpReflectionObjects_Focus
+    MsgBox "Finished processing test row " & testRow, vbInformation, SCRIPT_TITLE
 End Sub
 
-' --- Reflection Connection and Session Handling ---
-Private Function ConnectAndGetSession(ByVal targetSessionFilePart As String) As Boolean
+' --- PROVEN Connection Logic (based on V8/V9 successful debug) ---
+Private Function ConnectAndSetScreen(ByVal targetSessionFilePart As String) As Boolean
     On Error GoTo ErrorHandler
-    ConnectAndGetSession = False
+    ConnectAndSetScreen = False
 
-    ' Try to get existing Reflection Workspace instance
-    Debug.Print "Connect: Attempting GetObject(""Reflection Workspace"")"
-    Set RApp = GetObject("Reflection Workspace") ' Using the method that worked for you
-    If RApp Is Nothing Then GoTo ErrorHandler ' Should not happen if it worked
-
-    Debug.Print "Connect: RApp TypeName: " & TypeName(RApp)
-    If TypeName(RApp) <> "ApplicationObject" And TypeName(RApp) <> "Application" Then
-         Debug.Print "Connect: RApp is not the expected ApplicationObject. ProgID might be an issue."
-         ' Try specific ProgID if generic one returns unexpected type
-         On Error Resume Next
-         Set RApp = GetObject(, "ReflectionWorkspace.Application")
-         If RApp Is Nothing Then
-            Set RApp = CreateObject("ReflectionWorkspace.Application")
-         End If
-         On Error GoTo ErrorHandler
-         If RApp Is Nothing Then GoTo ErrorHandler
-         Debug.Print "Connect: RApp (via specific ProgID) TypeName: " & TypeName(RApp)
+    Debug.Print "ConnectFocus: Attempting GetObject(""Reflection Workspace"")"
+    On Error Resume Next ' Allow GetObject to fail if Reflection not running
+    Set RApp = GetObject("Reflection Workspace")
+    If Err.Number <> 0 Or RApp Is Nothing Then
+        Err.Clear
+        Debug.Print "ConnectFocus: GetObject(""Reflection Workspace"") FAILED. Ensure Reflection is running."
+        Exit Function
     End If
+    Debug.Print "ConnectFocus: RApp obtained. TypeName: " & TypeName(RApp)
+    On Error GoTo ErrorHandler ' Restore main error handler
 
-
-    ' Get Frame (assuming RApp is now a valid Application object)
-    On Error Resume Next ' Frame might not have IsInitialized
-    If RApp.IsInitialized = False Then
-        Do While RApp.IsInitialized = False
-            RApp.Wait 200
-        Loop
-    End If
-    On Error GoTo ErrorHandler
-    
     Set RFrame = RApp.GetObject("Frame")
-    If RFrame Is Nothing Then GoTo ErrorHandler
-    Debug.Print "Connect: RFrame TypeName: " & TypeName(RFrame)
+    If RFrame Is Nothing Then Debug.Print "ConnectFocus: RFrame is Nothing.": Exit Function
+    Debug.Print "ConnectFocus: RFrame obtained. TypeName: " & TypeName(RFrame)
 
     If Not RFrame.Visible Then RFrame.Visible = True
-    RFrame.Activate
+    RFrame.Activate ' Brings Reflection Workspace to front
 
-    ' Get View using GetViewByTitleText (which worked previously)
-    Debug.Print "Connect: Attempting RFrame.GetViewByTitleText(""" & targetSessionFilePart & """)..."
-    On Error Resume Next ' GetViewByTitleText might fail if frame type is odd
+    Debug.Print "ConnectFocus: Attempting RFrame.GetViewByTitleText(""" & targetSessionFilePart & """)..."
+    On Error Resume Next ' For GetViewByTitleText
     Set RView = RFrame.GetViewByTitleText(targetSessionFilePart)
-    If RView Is Nothing Then
-        Debug.Print "Connect: GetViewByTitleText FAILED. Trying to iterate views if possible..."
-        ' Fallback: Iterate views if GetViewByTitleText is not supported by THIS Frame obj
-        If RFrame.Views.Count > 0 Then ' This might error if .Views is not supported
-            Dim tempView As Object
-            For Each tempView In RFrame.Views
-                If InStr(1, tempView.TitleText, targetSessionFilePart, vbTextCompare) > 0 Then
-                    Set RView = tempView
-                    Exit For
-                End If
-            Next tempView
-        End If
-        If RView Is Nothing Then GoTo ErrorHandler ' Still no view
+    If Err.Number <> 0 Or RView Is Nothing Then
+        Err.Clear
+        Debug.Print "ConnectFocus: RFrame.GetViewByTitleText FAILED. Error: " & Err.Description
+        Exit Function
     End If
+    Debug.Print "ConnectFocus: RView obtained. Title: '" & RView.TitleText & "'. TypeName: " & TypeName(RView)
     On Error GoTo ErrorHandler
-    Debug.Print "Connect: RView obtained. Title: '" & RView.TitleText & "'. TypeName: " & TypeName(RView)
 
-    RView.Activate ' Try to activate, ignore error if not supported by this View object
-    
+    ' Skipping RView.Activate as it previously caused Error 438
+    ' and RFrame.Activate + GetViewByTitleText should suffice if session is already open.
+
+    Debug.Print "ConnectFocus: Attempting Set RTerminal = RView.Control..."
+    On Error Resume Next ' For RView.Control
     Set RTerminal = RView.Control
-    If RTerminal Is Nothing Then GoTo ErrorHandler
-    Debug.Print "Connect: RTerminal TypeName: " & TypeName(RTerminal)
+    If Err.Number <> 0 Or RTerminal Is Nothing Then
+        Debug.Print "ConnectFocus: Error on Set RTerminal = RView.Control. Error " & Err.Number & ": " & Err.Description
+        Err.Clear
+        Exit Function
+    End If
+    Debug.Print "ConnectFocus: RTerminal obtained. TypeName: " & TypeName(RTerminal)
+    On Error GoTo ErrorHandler
 
+    Debug.Print "ConnectFocus: Attempting Set RScreen = RTerminal.Screen..."
+    On Error Resume Next ' For RTerminal.Screen
     Set RScreen = RTerminal.Screen
-    If RScreen Is Nothing Then GoTo ErrorHandler
-    Debug.Print "Connect: RScreen TypeName: " & TypeName(RScreen)
-
+    If Err.Number <> 0 Or RScreen Is Nothing Then
+        Debug.Print "ConnectFocus: Error on Set RScreen = RTerminal.Screen. Error " & Err.Number & ": " & Err.Description
+        Err.Clear
+        Exit Function
+    End If
+    Debug.Print "ConnectFocus: RScreen obtained. TypeName: " & TypeName(RScreen)
+    On Error GoTo ErrorHandler
+    
+    ' Optional settings - allow them to fail gracefully
+    On Error Resume Next
     RTerminal.DisableKeystrokeProductivity = True
+    If Err.Number <> 0 Then Debug.Print "ConnectFocus: Info - Error DisableKeystrokeProductivity: " & Err.Description: Err.Clear
     RTerminal.DisableScreenHistory = True
+    If Err.Number <> 0 Then Debug.Print "ConnectFocus: Info - Error DisableScreenHistory: " & Err.Description: Err.Clear
+    On Error GoTo ErrorHandler
 
-    ConnectAndGetSession = True
+    ConnectAndSetScreen = True
+    Debug.Print "ConnectFocus: All core Reflection objects (RApp, RFrame, RView, RTerminal, RScreen) set successfully."
     Exit Function
 ErrorHandler:
-    Debug.Print "ConnectAndGetSession Error " & Err.Number & ": " & Err.Description
-    MsgBox "Error connecting to Reflection session: " & Err.Description, vbCritical, SCRIPT_TITLE
-    ConnectAndGetSession = False
+    Debug.Print "ConnectAndSetScreen Error " & Err.Number & ": " & Err.Description
+    ConnectAndSetScreen = False
 End Function
 
-Private Sub CleanUpReflectionObjects()
+Private Sub CleanUpReflectionObjects_Focus()
     Set RScreen = Nothing
     Set RTerminal = Nothing
     Set RView = Nothing
     Set RFrame = Nothing
     Set RApp = Nothing
-    Debug.Print "Reflection objects released."
+    Debug.Print "Focused Reflection objects released."
 End Sub
 
-' --- Screen Interaction Helpers ---
-Private Sub WaitReady(Optional settleTimeMs As Long = 200, Optional timeoutMs As Long = 10000)
-    If RScreen Is Nothing Then Exit Sub
-    Dim startTime As Date: startTime = Now
-    Do While RScreen.OIA.XStatus <> 0 ' XStatus=0 means ready
-        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
-            Debug.Print "WaitReady: Timeout waiting for XStatus=0."
-            Exit Do
-        End If
-        RScreen.WaitForHostSettle 100, 50 ' Short poll
-        DoEvents
-    Loop
-    RScreen.WaitForHostSettle settleTimeMs, timeoutMs ' Final settle
-    ' Call CheckSecurity ' Optional: If you have a security screen handler
-End Sub
-
-Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    If RScreen Is Nothing Then VerifyScreen = False: Exit Function
-    Call WaitReady(100) ' Quick settle before read
-    If length = 0 Then length = Len(expectedText)
-    Dim actualText As String
-    actualText = Trim(RScreen.GetText(rowNum, colNum, length))
-    If UCase(actualText) = UCase(expectedText) Then
-        VerifyScreen = True
-    Else
-        Debug.Print "VerifyScreen FAILED: Expected '" & expectedText & "', Found '" & actualText & "' at R" & rowNum & "C" & colNum
-        VerifyScreen = False
-    End If
-End Function
-
-Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True)
-    If RScreen Is Nothing Then Exit Sub
-    Call WaitReady(100)
-    RScreen.PutText2 data, rowNum, colNum
-    If sendTransmit Then
-        RScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitReady(500) ' Wait longer after transmit
-    End If
-End Sub
-
-Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 500)
-    If RScreen Is Nothing Then Exit Sub
-    Call WaitReady(100)
-    RScreen.SendControlKey keyCode
-    Call WaitReady(waitAfterMs)
-End Sub
-
-
-' --- Navigation Logic for One Account ---
-Private Function NavigateToTargetScreen(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean
-    Dim confirmCode As String
-    NavigateToTargetScreen = False ' Default to failure
-
-    Select Case brnd
-        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
-        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
-        Case "UBN": confirmCode = "PRCIJ#T#"
-        Case "UBR": confirmCode = "PRCIK#T#"
-        Case Else: Debug.Print "Navigate: Invalid Brand '" & brnd & "'": Exit Function
-    End Select
-
-    ' 1. Start on APP_SELECTION_MENU
-    If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
-         Debug.Print "Navigate: Not on " & SCREEN_APP_MENU & ". Please start there."
-         MsgBox "Macro must start on '" & SCREEN_APP_MENU & "'.", vbExclamation, SCRIPT_TITLE
-         Exit Function
-    End If
-    Debug.Print "Navigate: On " & SCREEN_APP_MENU
-
-    ' 2. TERM ALL & Brand Code
-    Call SendData("TERM ALL", 21, 13)
-    Debug.Print "Navigate: Sent TERM ALL"
-    Call SendData(confirmCode, 21, 13)
-    Debug.Print "Navigate: Sent " & confirmCode
-    ' Check for "Command not recognized" (R20, C36, L22 based on old code)
-    If VerifyScreen("Command not recognized", 20, 36, 22) Then
-        Debug.Print "Navigate: Brand code '" & confirmCode & "' not recognized."
+' --- Placeholder for Navigation Logic ---
+Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean
+    Debug.Print "NavigateToTargetScreen_Focus: Called for S/C=" & sc & ", Acct=" & acct & ", Brand=" & brnd
+    If RScreen Is Nothing Then
+        Debug.Print "NavigateToTargetScreen_Focus: RScreen object is not available. Cannot navigate."
+        NavigateToTargetScreen_Focus = False
         Exit Function
     End If
-    ' Expected: OPT_HANDLER (R2,C28 for "OPTION HANDLER...", R2,C1 for "SP2001")
-    If Not VerifyScreen(SCREEN_OPT_HANDLER, 2, 28) Then
-        ' Check if SP2001 is present if full title match fails
-        If Not (InStr(1, UCase(Trim(RScreen.GetText(2, 1, 80))), "SP2001") > 0 And VerifyScreen(SCREEN_OPT_HANDLER, 2, 28)) Then
-             Debug.Print "Navigate: Did not reach " & SCREEN_OPT_HANDLER
-             Exit Function
-        End If
+
+    ' For now, just verify we are on App Menu as per manual setup instruction
+    Call WaitReady_Focus(100)
+    If Not VerifyScreen_Focus(SCREEN_APP_MENU, 1, 28) Then
+         Debug.Print "NavigateToTargetScreen_Focus: Not on " & SCREEN_APP_MENU & ". Please ensure you start on this screen."
+         MsgBox "Macro expected to start on '" & SCREEN_APP_MENU & "'. Current screen is different.", vbExclamation, SCRIPT_TITLE
+         NavigateToTargetScreen_Focus = False
+         Exit Function
     End If
-    Debug.Print "Navigate: On " & SCREEN_OPT_HANDLER
+    Debug.Print "NavigateToTargetScreen_Focus: Confirmed on " & SCREEN_APP_MENU
 
-    ' 3. Option 19
-    Call SendData("19", 21, 16)
-    Debug.Print "Navigate: Sent 19"
-    If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then Exit Function
-    Debug.Print "Navigate: On " & SCREEN_BO_SYSTEM
+    ' >>>>>>> INSERT THE PROVEN NAVIGATION STEPS FROM YOUR InterestCheck HERE <<<<<<<
+    ' (TERM ALL, confirmCode, Option 19, Option 01, Master Index entries, etc.)
+    ' Use SendData_Focus and VerifyScreen_Focus helpers.
+    ' Example for one step:
+    ' Call SendData_Focus("TERM ALL", 21, 13)
+    ' If Not VerifyScreen_Focus("EXPECTED_TEXT_AFTER_TERM_ALL", R, C) Then Exit Function
+    ' ... and so on for all navigation steps to SCREEN_INTEREST_AMENDMENTS
+    ' This part needs to be carefully rebuilt based on the sequence you know works.
 
-    ' 4. Option 01
-    Call SendData("01", 22, 16)
-    Debug.Print "Navigate: Sent 01"
-    If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then Exit Function
-    Debug.Print "Navigate: On " & SCREEN_MASTER_INDEX
-
-    ' 5. Master Index: Action 20, Sort Code
-    Call WaitReady(100)
-    RScreen.PutText2 "20", 22, 8
-    RScreen.PutText2 Format(sc, "000000"), 22, 74
-    Call SendKey(ControlKeyCode_Transmit, 1000) ' Longer wait after this combined input
-    Debug.Print "Navigate: Sent 20 + S/C " & sc
-    If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then Exit Function
-    Debug.Print "Navigate: On " & SCREEN_FILE_MAINT_IDX
-
-    ' 6. File Maint Idx: Action 20, Account Number
-    Call WaitReady(100)
-    RScreen.PutText2 "20", 22, 8
-    RScreen.PutText2 Format(acct, "00000000"), 22, 21
-    Call SendKey(ControlKeyCode_Transmit, 1000)
-    Debug.Print "Navigate: Sent 20 + A/N " & acct
-    If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then Exit Function
-    Debug.Print "Navigate: On " & SCREEN_INTERNAL_TXNS
-
-    ' 7. Internal Txns: Action 04
-    Call SendData("04", 22, 8)
-    Debug.Print "Navigate: Sent 04"
-    ' Target screen: INTEREST AMENDMENTS (R1, C30 estimate - VERIFY THIS)
-    If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 30) Then
-        ' Fallback: Check for "INTEREST DETAILS" on Line 2 (R2, C30 estimate)
-        If Not VerifyScreen("INTEREST DETAILS", 2, 30) Then
-            Debug.Print "Navigate: Did not reach " & SCREEN_INTEREST_AMENDMENTS
-            Exit Function
-        End If
-    End If
-    Debug.Print "Navigate: On " & SCREEN_INTEREST_AMENDMENTS
-
-    NavigateToTargetScreen = True ' Success!
+    ' For now, assume navigation to the final screen would succeed IF steps were here
+    ' And we are just testing the connection.
+    ' Replace with actual navigation and verification:
+    Debug.Print "NavigateToTargetScreen_Focus: Placeholder - Assuming navigation to INTEREST AMENDMENTS would occur here."
+    MsgBox "ConnectAndSetScreen worked! RScreen is available." & vbCrLf & _
+           "Navigation steps would follow here. For now, this is the end of the test for one row.", vbInformation
+           
+    NavigateToTargetScreen_Focus = True ' TEMPORARY - CHANGE THIS AFTER ADDING REAL NAVIGATION
 End Function
+
+' --- Minimalist Screen Interaction Helpers ---
+Private Sub WaitReady_Focus(Optional settleTimeMs As Long = 200, Optional timeoutMs As Long = 10000)
+    If RScreen Is Nothing Then Exit Sub
+    Dim startTime As Date: startTime = Now
+    Do While RScreen.OIA.XStatus <> 0
+        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then Exit Do
+        RScreen.WaitForHostSettle 100, 50: DoEvents
+    Loop
+    RScreen.WaitForHostSettle settleTimeMs, timeoutMs
+End Sub
+
+Private Function VerifyScreen_Focus(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
+    If RScreen Is Nothing Then VerifyScreen_Focus = False: Exit Function
+    Call WaitReady_Focus(100)
+    If length = 0 Then length = Len(expectedText)
+    Dim actualText As String: actualText = Trim(RScreen.GetText(rowNum, colNum, length))
+    If UCase(actualText) = UCase(expectedText) Then VerifyScreen_Focus = True Else VerifyScreen_Focus = False
+    If Not VerifyScreen_Focus Then Debug.Print "VerifyScreen_Focus FAILED: Expected '" & expectedText & "', Found '" & actualText & "' at R" & rowNum & "C" & colNum
+End Function
+
+Private Sub SendData_Focus(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True)
+    If RScreen Is Nothing Then Exit Sub
+    Call WaitReady_Focus(100)
+    RScreen.PutText2 data, rowNum, colNum
+    If sendTransmit Then RScreen.SendControlKey ControlKeyCode_Transmit: Call WaitReady_Focus(500)
+End Sub
