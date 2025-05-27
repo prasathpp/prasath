@@ -1,16 +1,28 @@
 ' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V7"
 Option Explicit
 
-' --- Declarations and Constants (remain the same as _V6) ---
+' --- Attachmate Reflection Object Declarations ---
 Public objReflectionApp As Object
 Public objFrame As Object
 Public objView As Object
 Public objTerminal As Object
 Public objScreen As Object
 
+' --- Constants for this specific automation ---
 Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x" ' This will be used as sessionName
-' ... (other constants)
+
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_APP_MENU_ROW As Long = 1
+Private Const SCREEN_APP_MENU_COL As Long = 28
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30
+
+Private Const CMD_TERM_ALL As String = "TERM ALL"
+Private Const CMD_TERM_ALL_ROW As Long = 21
+Private Const CMD_TERM_ALL_COL As Long = 13
+
+Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
 Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V7"
+
 
 ' --- Main Sub (calls _V7 connect) ---
 Sub PerformTermAllEntry_V7()
@@ -23,8 +35,7 @@ Sub PerformTermAllEntry_V7()
                "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
-    ' ... (rest of PerformTermAllEntry remains the same, calling _V7 helpers) ...
-    Debug.Print SCRIPT_TITLE & ": Successfully connected to and activated session: " & objView.TitleText
+    Debug.Print SCRIPT_TITLE & ": Successfully connected to and activated session (objView title): '" & objView.TitleText & "'"
 
     success = NavigateToScreen_V7(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
     If Not success Then
@@ -70,54 +81,62 @@ Private Function ConnectAndActivateReflectionSession_V7(ByVal targetSessionTitle
         method1Succeeded = True
         Debug.Print "Connect_V7: Method 1 SUCCEEDED setting objReflectionApp."
     Else
-        ' Not attempting Methods 2 & 3 as they previously caused Error 429 for objReflectionApp
         Err.Clear
         Debug.Print "Connect_V7: Method 1 failed. This was our best hope. Cannot obtain Reflection Application object reliably."
         GoTo FinalConnectErrorHandling
     End If
     On Error GoTo ConnectErrorHandler
 
-    If objReflectionApp Is Nothing Then Exit Function
-    Debug.Print "Connect_V7: TypeName(objReflectionApp) is: " & TypeName(objReflectionApp) ' Should be ApplicationObject
+    If objReflectionApp Is Nothing Then Exit Function ' Should be caught by above, but safeguard
+    Debug.Print "Connect_V7: TypeName(objReflectionApp) is: " & TypeName(objReflectionApp)
 
+    ' objReflectionApp should be ApplicationObject from previous successful debug
+    On Error Resume Next ' To catch error if GetObject("Frame") fails on this app object
     Set objFrame = objReflectionApp.GetObject("Frame")
-    If objFrame Is Nothing Then Debug.Print "Connect_V7: Frame object is Nothing.": Exit Function
-    Debug.Print "Connect_V7: objFrame is set. TypeName(objFrame) is: " & TypeName(objFrame) ' Should be Frame
+    If Err.Number <> 0 Or objFrame Is Nothing Then
+        Err.Clear
+        Debug.Print "Connect_V7: Failed to get Frame from objReflectionApp (obtained via Method 1). Error: " & Err.Description
+        GoTo FinalConnectErrorHandling
+    End If
+    On Error GoTo ConnectErrorHandler
+    Debug.Print "Connect_V7: objFrame is set. TypeName(objFrame) is: " & TypeName(objFrame)
 
     If Not objFrame.Visible Then objFrame.Visible = True
     objFrame.Activate
     Debug.Print "Connect_V7: Frame Visible/Activated."
 
-    ' --- MODIFIED APPROACH: Try objFrame.GetViewByTitleText, like in your original working code ---
     Debug.Print "Connect_V7: Attempting objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """)..."
-    On Error Resume Next ' Specifically for GetViewByTitleText
+    On Error Resume Next 
     Set objView = objFrame.GetViewByTitleText(targetSessionTitleOrUniquePart)
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear
         Debug.Print "Connect_V7: objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """) FAILED. Error: " & Err.Description
-        Debug.Print "Connect_V7: The Frame object obtained does not support GetViewByTitleText or no such view found with this exact title/key."
-        ' --- LAST DITCH: Try to get current/active screen if GetViewByTitleText fails ---
-        Debug.Print "Connect_V7: Last ditch - attempting to get screen from objReflectionApp if it supports current terminal..."
-        On Error Resume Next
-        Set objScreen = objReflectionApp.CurrentTerminal.Screen ' Some older Reflection app objects might have this
-        If Err.Number = 0 And Not objScreen Is Nothing Then
-            ' We got a screen, but we don't have the objView or objTerminal properly. This is very limited.
-            Debug.Print "Connect_V7: Got objScreen via objReflectionApp.CurrentTerminal.Screen. This is a limited connection."
-            ' We'd need to set objTerminal too if possible, or accept limitations
-            On Error Resume Next
-            Set objTerminal = objReflectionApp.CurrentTerminal
-            On Error GoTo ConnectErrorHandler
-            ConnectAndActivateReflectionSession_V7 = True ' Partial success, enough to get a screen
-            Exit Function
+        Debug.Print "Connect_V7: Last ditch - attempting to get screen from objReflectionApp.CurrentTerminal..."
+        On Error Resume Next ' For CurrentTerminal
+        Dim tempTerminal As Object
+        Set tempTerminal = objReflectionApp.CurrentTerminal ' Some app objects expose this
+        If Err.Number = 0 And Not tempTerminal Is Nothing Then
+            Set objScreen = tempTerminal.Screen
+            If Err.Number = 0 And Not objScreen Is Nothing Then
+                Debug.Print "Connect_V7: Got objScreen via objReflectionApp.CurrentTerminal.Screen. This is a limited connection."
+                Set objTerminal = tempTerminal ' Assign to global objTerminal
+                ' We don't have objView properly in this path, so success might be limited
+                ' For now, let's consider this a partial success if we get a screen
+                ConnectAndActivateReflectionSession_V7 = True 
+                Exit Function
+            Else
+                Err.Clear
+                Debug.Print "Connect_V7: Failed to get Screen from CurrentTerminal."
+            End If
         Else
             Err.Clear
-            Debug.Print "Connect_V7: objReflectionApp.CurrentTerminal.Screen also failed."
+            Debug.Print "Connect_V7: objReflectionApp.CurrentTerminal also failed or not supported."
         End If
         On Error GoTo ConnectErrorHandler
-        GoTo FinalConnectErrorHandling
+        GoTo FinalConnectErrorHandling ' If all attempts to get a View or Screen fail
     Else
         Debug.Print "Connect_V7: objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """) SUCCEEDED. View Title: '" & objView.TitleText & "'"
-        ' objView is set, proceed to get terminal and screen
+        ' objView is set, proceed
     End If
     On Error GoTo ConnectErrorHandler
 
@@ -140,13 +159,13 @@ Private Function ConnectAndActivateReflectionSession_V7(ByVal targetSessionTitle
     objTerminal.DisableScreenHistory = True
 
     ConnectAndActivateReflectionSession_V7 = True
-    Debug.Print "Connect_V7: Successfully targeted session '" & objView.TitleText & "' using GetViewByTitleText."
+    Debug.Print "Connect_V7: Successfully targeted session '" & objView.TitleText & "' using GetViewByTitleText or fallback."
     Exit Function
 
 FinalConnectErrorHandling:
-    Debug.Print "Connect_V7: Unrecoverable error in obtaining Reflection objects."
+    Debug.Print "Connect_V7: Unrecoverable error in obtaining usable Reflection objects."
     ConnectAndActivateReflectionSession_V7 = False
-    If Err.Number = 0 Then Exit Function
+    If Err.Number = 0 Then Exit Function ' If we jumped here without an active error
 
 ConnectErrorHandler:
     Debug.Print "Connect_V7: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
@@ -179,7 +198,7 @@ Private Function NavigateToScreen_V7(ByVal targetScreenText As String, _
     For attempts = 1 To maxAttempts
         Call WaitHostSettle_V7(2000)
         currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
-        Debug.Print "Navigate_V7: Attempt " & attempts & " - Text at R" & targetRow & "C" & targetCol & ": '" & currentScreenContent & "'"
+        Debug.Print "Navigate_V7: Attempt " & attempts & " - Text at R" & targetRow & "C" & targetCol & "L" & targetLength & ": '" & currentScreenContent & "'"
         If UCase(currentScreenContent) = UCase(targetScreenText) Then
             NavigateToScreen_V7 = True: Exit Function
         End If
