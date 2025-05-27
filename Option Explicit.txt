@@ -1,158 +1,93 @@
-' Attribute VB_Name = "mod_BackOffice_TermAllEntry_Simplified"
-Option Explicit
-
-' --- Attachmate Reflection Object Declarations ---
-Public objReflectionApp As Object
-Public objFrame As Object
-Public objView As Object
-Public objTerminal As Object
-Public objScreen As Object
-
-' --- Constants for this specific automation ---
-Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
-
-Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
-Private Const SCREEN_APP_MENU_ROW As Long = 1
-Private Const SCREEN_APP_MENU_COL As Long = 28
-Private Const SCREEN_APP_MENU_LENGTH As Long = 30 ' Length of "APPLICATION SELECTION MENU"
-
-Private Const CMD_TERM_ALL As String = "TERM ALL"
-Private Const CMD_TERM_ALL_ROW As Long = 21
-Private Const CMD_TERM_ALL_COL As Long = 13
-
-Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry (Simplified)"
-
-
-' --- Main Sub ---
-Sub PerformTermAllEntry_Simplified()
-    On Error GoTo ErrorHandler
-    Dim success As Boolean
-    Dim currentScreenText As String
-
-    success = ConnectAndActivateReflectionSession_Simplified(TARGET_SESSION_ID_PART)
-    If Not success Then
-        MsgBox "Failed to connect/activate Reflection session: '" & TARGET_SESSION_ID_PART & "'." & vbCrLf & _
-               "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
+Sub AdjustGSIProduction()
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim lastRow As Long
+    Dim sortCode As String
+    Dim accountNumber As String
     
-    If objScreen Is Nothing Then
-        MsgBox "Critical error: Screen object (objScreen) was not set. Cannot proceed.", vbCritical, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
-    Debug.Print SCRIPT_TITLE & ": Successfully connected. View Title: '" & objView.TitleText & "'"
-
-    ' --- Verify we are on the correct starting screen ---
-    Call WaitHostSettle_Simplified(1500) ' Ensure screen is ready
-    currentScreenText = Trim(objScreen.GetText(SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH))
     
-    If UCase(currentScreenText) <> UCase(SCREEN_APP_MENU) Then
-        MsgBox "The current screen is NOT '" & SCREEN_APP_MENU & "'." & vbCrLf & _
-               "Current text found: '" & currentScreenText & "'" & vbCrLf & _
-               "Please manually navigate to the '" & SCREEN_APP_MENU & "' screen and restart the macro.", vbExclamation, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
-    Debug.Print SCRIPT_TITLE & ": Confirmed on screen: " & SCREEN_APP_MENU
-
-    ' --- Enter the command ---
-    Call WaitHostSettle_Simplified(500) ' Brief pause before input
-    objScreen.PutText2 CMD_TERM_ALL, CMD_TERM_ALL_ROW, CMD_TERM_ALL_COL
-    Debug.Print SCRIPT_TITLE & ": Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
     
-    objScreen.SendControlKey ControlKeyCode_Transmit
-    Debug.Print SCRIPT_TITLE & ": Sent Transmit key."
+    ' Define the worksheet containing the data
+    Set ws = ActiveSheet ' Adjust "Sheet1" to your sheet name
     
-    Call WaitHostSettle_Simplified(5000) ' Wait for screen to update after TERM ALL
-    MsgBox "'" & CMD_TERM_ALL & "' entered successfully on '" & SCREEN_APP_MENU & "'.", vbInformation, SCRIPT_TITLE
-
-CleanupAndExit:
-    Set objScreen = Nothing
-    Set objTerminal = Nothing
-    Set objView = Nothing
-    Set objFrame = Nothing
-    Set objReflectionApp = Nothing
-    Exit Sub
-ErrorHandler:
-    MsgBox "Error in '" & SCRIPT_TITLE & "':" & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, SCRIPT_TITLE
-    Resume CleanupAndExit
-End Sub
-
-
-' --- Helper Function: Connects and activates session (Simplified version based on V9/V10 logic) ---
-Private Function ConnectAndActivateReflectionSession_Simplified(ByVal targetSessionTitleOrUniquePart As String) As Boolean
-    On Error GoTo ConnectErrorHandler
-    ConnectAndActivateReflectionSession_Simplified = False
-
-    Debug.Print "Connect_Simplified: Attempting Method 1: GetObject(""Reflection Workspace"")"
-    On Error Resume Next
-    Set objReflectionApp = GetObject("Reflection Workspace")
-    If Err.Number <> 0 Or objReflectionApp Is Nothing Then
-        Err.Clear
-        Debug.Print "Connect_Simplified: Method 1 (GetObject(""Reflection Workspace"")) FAILED."
-        GoTo FinalConnectErrorHandling
-    End If
-    Debug.Print "Connect_Simplified: Method 1 SUCCEEDED. TypeName(objReflectionApp): " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler 
-
-    Set objFrame = objReflectionApp.GetObject("Frame")
-    If objFrame Is Nothing Then Debug.Print "Connect_Simplified: Frame object is Nothing.": Exit Function
-    Debug.Print "Connect_Simplified: objFrame set. TypeName(objFrame): " & TypeName(objFrame)
-
-    If Not objFrame.Visible Then objFrame.Visible = True
-    objFrame.Activate
-    Debug.Print "Connect_Simplified: Frame Visible/Activated."
-
-    Debug.Print "Connect_Simplified: Attempting objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """)..."
-    On Error Resume Next
-    Set objView = objFrame.GetViewByTitleText(targetSessionTitleOrUniquePart)
-    If Err.Number <> 0 Or objView Is Nothing Then
-        Err.Clear
-        Debug.Print "Connect_Simplified: objFrame.GetViewByTitleText FAILED. Error: " & Err.Description
-        GoTo FinalConnectErrorHandling 
-    End If
-    Debug.Print "Connect_Simplified: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
-    On Error GoTo ConnectErrorHandler 
+    ' Find the last row with data in the sheet
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    
+    ' Loop through each row from 2 to the last row
+    For i = 2 To lastRow
+        ' Get the sort code and account number
+        sortCode = ws.Cells(i, 1).Value ' Assuming sort codes are in column A
+        accountNumber = ws.Cells(i, 2).Value ' Assuming account numbers are in column B
         
-    Set objTerminal = objView.Control
-    If objTerminal Is Nothing Then Debug.Print "Connect_Simplified: objTerminal is Nothing.": GoTo FinalConnectErrorHandling
-    Debug.Print "Connect_Simplified: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
+        ' Enter sort code and account number into GSIProduction
+        ' This part depends on how you interact with GSIProduction, for example:
+        ' Activate GSIProduction window
+        
+        AppActivate "GSIProduction"
+        
+        Sleep 500
+        SendKeys "{ESC}"
+        Sleep 1000
+        SendKeys "Term all"
+        Sleep 1000
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "~"
+        SendKeys "~"
+        SendKeys "1"
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "19"
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "1"
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "20"
+        'Sleep 1000
+        ' Send keys to input the sort code and account number
+        SendKeys sortCode
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "20"
+        Sleep 1000
+        SendKeys accountNumber
+        Sleep 2000
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "04"
+        Sleep 1000
+        Sleep 1000
+        SendKeys "~"
+        SendKeys "+{TAB}+{TAB}+{TAB}+{TAB}", True
+        Sleep 1000
+        SendKeys "dec"
+        Sleep 1000
+        SendKeys "1.00"
+        Sleep 1000
+        SendKeys "{TAB}", True
+        Sleep 1000
+        SendKeys "01"
+        Sleep 1000
+        SendKeys "CHARGEBACK"
+        Sleep 1000
+        SendKeys "~"
+        Sleep 1000
+        SendKeys "~"
+        SendKeys "~"
+        Sleep 1000
+        ' Wait for the application to process (adjust the delay as needed)
+        Sleep 1000
+        
+        ' Perform the task adjustment in GSIProduction
+        ' SendKeys "{F10}" ' Example adjustment command
+        
+        ' Wait for the adjustment to complete (adjust the delay as needed)
+        Sleep 1000
+        
+        ' Add any additional steps here
+        
+    Next i
     
-    Set objScreen = objTerminal.Screen
-    If objScreen Is Nothing Then Debug.Print "Connect_Simplified: objScreen is Nothing.": GoTo FinalConnectErrorHandling
-    Debug.Print "Connect_Simplified: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
-    
-    On Error Resume Next 
-    objTerminal.DisableKeystrokeProductivity = True
-    If Err.Number <> 0 Then Debug.Print "Connect_Simplified: Info - Error on DisableKeystrokeProductivity. " & Err.Number & ": " & Err.Description: Err.Clear
-    objTerminal.DisableScreenHistory = True
-    If Err.Number <> 0 Then Debug.Print "Connect_Simplified: Info - Error on DisableScreenHistory. " & Err.Number & ": " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler
-
-    ConnectAndActivateReflectionSession_Simplified = True
-    Debug.Print "Connect_Simplified: Successfully fully initialized session '" & objView.TitleText & "'."
-    Exit Function
-
-FinalConnectErrorHandling:
-    Debug.Print "Connect_Simplified: Unrecoverable error point reached in function."
-    ConnectAndActivateReflectionSession_Simplified = False
-    If Err.Number = 0 Then Exit Function
-
-ConnectErrorHandler:
-    Debug.Print "Connect_Simplified: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
-    ConnectAndActivateReflectionSession_Simplified = False
-End Function
-
-' --- Helper Sub (Simplified) ---
-Private Sub WaitHostSettle_Simplified(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
-    If objScreen Is Nothing Then Debug.Print "WaitHostSettle_Simplified: objScreen is Nothing.": Exit Sub
-    Dim startTime As Date: startTime = Now
-    Do While objScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
-            Debug.Print "WaitHostSettle_Simplified: Timeout XStatus."
-            Exit Do
-        End If
-        objScreen.WaitForHostSettle 100, 50: DoEvents
-    Loop
-    objScreen.WaitForHostSettle 500, 200 ' Final settle based on previous successful patterns
-    Debug.Print "WaitHostSettle_Simplified: Screen ready (XStatus=" & objScreen.OIA.XStatus & ")."
+    MsgBox "Task adjustments completed for all entries.", vbInformation
 End Sub
