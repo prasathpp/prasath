@@ -20,26 +20,56 @@ Sub ProcessSingleAmendment_Focus()
     Dim ws As Worksheet
     Dim sortCode As String, accountNumber As String, brand As String
     Dim success As Boolean
+    Dim dataSheetName As String
+    Dim testRow As Long
+    Dim cellValueSortCode As Variant ' Use Variant to check for Empty more easily
 
-    ' 1. Connect to Reflection and get the target session
-    '    Using the logic that previously succeeded in getting all objects set.
+    ' !!!!! DEFINE YOUR DATA SHEET NAME AND TEST ROW HERE !!!!!
+    dataSheetName = "Sheet1"  ' <<<< CONFIRM "Sheet1" IS THE ACTUAL NAME OF YOUR DATA SHEET TAB
+    testRow = 2               ' <<<< This should be the first row with data (e.g., 524131)
+    ' !!!!! --------------------------------------------- !!!!!
+
+    ' 1. Connect to Reflection
     If Not ConnectAndSetScreen("NTS Back Office - Prod.rd3x") Then
-        MsgBox "Failed to connect to Reflection session and set screen object." & vbCrLf & _
-               "Ensure 'NTS Back Office - Prod.rd3x' is open.", vbCritical, SCRIPT_TITLE
+        MsgBox "Failed to connect to Reflection. Ensure 'NTS Back Office - Prod.rd3x' is open.", vbCritical, SCRIPT_TITLE
         Exit Sub
     End If
     Debug.Print "ProcessSingle: Successfully connected and RScreen is set."
 
-    ' 2. Set worksheet and get data for ONE test row
-    Set ws = ThisWorkbook.ActiveSheet ' Or ThisWorkbook.Worksheets("SheetName")
-    
-    ' --- FOR TESTING - Process only one specific row, e.g., row 2 ---
-    Dim testRow As Long
-    testRow = 2 ' <<<< Change this to your desired test row number
-    ' ---
+    ' 2. Set worksheet
+    On Error Resume Next ' To catch error if sheet name is wrong
+    Set ws = Nothing ' Initialize to Nothing
+    Set ws = ThisWorkbook.Worksheets(dataSheetName)
+    If Err.Number <> 0 Or ws Is Nothing Then
+        On Error GoTo 0 ' Reset error handling
+        MsgBox "Could not find or set worksheet named: '" & dataSheetName & "'." & vbCrLf & _
+               "Please check the sheet name in the VBA code (dataSheetName variable) and in your Excel file.", vbCritical, SCRIPT_TITLE
+        CleanUpReflectionObjects_Focus ' Clean up if connection was made
+        Exit Sub
+    End If
+    On Error GoTo 0 ' Reset error handling
+    Debug.Print "Using data from sheet: '" & ws.Name & "', attempting to read from Row: " & testRow
 
-    If ws.Cells(testRow, "A").Value = "" Then
-        MsgBox "No data in test row " & testRow & ", Column A.", vbExclamation, SCRIPT_TITLE
+    ' --- DEBUG: Check if the sheet and row are accessible and what's in A[testRow] ---
+    On Error Resume Next ' To see if even accessing the cell causes an error
+    cellValueSortCode = ws.Cells(testRow, "A").Value
+    If Err.Number <> 0 Then
+        On Error GoTo 0
+        MsgBox "Error accessing cell A" & testRow & " on sheet '" & dataSheetName & "'. Error: " & Err.Description, vbCritical, SCRIPT_TITLE
+        CleanUpReflectionObjects_Focus
+        Exit Sub
+    End If
+    On Error GoTo 0
+    Debug.Print "Value in cell A" & testRow & " on sheet '" & ws.Name & "': [" & cellValueSortCode & "]"
+    Debug.Print "Is cell A" & testRow & " empty? " & IsEmpty(cellValueSortCode)
+    Debug.Print "Is cell A" & testRow & " a number? " & IsNumeric(cellValueSortCode)
+    Debug.Print "Does cell A" & testRow & " contain just spaces? " & (Trim(CStr(cellValueSortCode)) = "")
+    ' --- END DEBUG ---
+
+    If IsEmpty(ws.Cells(testRow, "A").Value) Or Trim(CStr(ws.Cells(testRow, "A").Value)) = "" Then
+        MsgBox "No data found in test row " & testRow & ", Column A on sheet '" & dataSheetName & "'." & vbCrLf & _
+               "Value appears empty or contains only spaces. Please check your test data and the 'testRow' variable in the VBA code.", vbExclamation, SCRIPT_TITLE
+        CleanUpReflectionObjects_Focus
         Exit Sub
     End If
 
@@ -48,17 +78,17 @@ Sub ProcessSingleAmendment_Focus()
     brand = UCase(Trim(CStr(ws.Cells(testRow, "C").Value)))
 
     Debug.Print "-----------------------------------------------------"
-    Debug.Print "Processing Excel Row: " & testRow & " | S/C: " & sortCode & " | Acc: " & accountNumber & " | Brand: " & brand
+    Debug.Print "Processing Excel Row: " & testRow & " | S/C: [" & sortCode & "] | Acc: [" & accountNumber & "] | Brand: [" & brand & "]"
 
     If sortCode = "" Or accountNumber = "" Or brand = "" Then
-        Debug.Print "Skipped row " & testRow & " - Missing data."
-        ws.Cells(testRow, "H").Value = "Skipped - Missing Data"
+        Debug.Print "Skipped row " & testRow & " - Missing S/C, Account, or Brand after trimming."
+        ws.Cells(testRow, "H").Value = "Skipped - Missing Data" ' Status in Col H
+        CleanUpReflectionObjects_Focus
         Exit Sub
     End If
 
-    ' 3. Perform navigation for the current account
-    '    (We will build this function next, for now, just confirm connection)
-    success = NavigateToTargetScreen_Focus(sortCode, accountNumber, brand) ' Placeholder name
+    ' 3. Perform navigation
+    success = NavigateToTargetScreen_Focus(sortCode, accountNumber, brand) ' Assuming this is your navigation function
 
     If success Then
         Debug.Print "Successfully navigated to INTEREST AMENDMENTS screen for row " & testRow
