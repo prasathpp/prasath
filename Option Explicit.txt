@@ -1,4 +1,4 @@
-' Attribute VB_Name = "mod_NewBackOfficeAutomation_V2"
+' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup"
 Option Explicit
 
 ' --- Attachmate Reflection Object Declarations ---
@@ -8,50 +8,59 @@ Public objView As Object          ' Attachmate_Reflection_Objects.View
 Public objTerminal As Object      ' Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal
 Public objScreen As Object        ' Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen
 
-' --- Constants ---
-' *** IMPORTANT: This is the PARTIAL title or unique part of the session file name we're looking for. ***
-Private Const TARGET_SESSION_FILENAME_PART As String = "NTS Back Office - Prod.rd3x"
-' If the full window title is consistently "NTS Back Office - Prod.rd3x" then you can use that.
-' But using the filename part is often more reliable if Reflection Workspace adds prefixes/suffixes.
+' --- Constants for this specific automation ---
+' This should be a unique part of the session's window title or the .rd3x filename.
+Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
 
-Private Const TARGET_SCREEN_TEXT As String = "APPLICATION SELECTION MENU"
-Private Const TARGET_SCREEN_ROW As Long = 1
-Private Const TARGET_SCREEN_COL As Long = 28
-Private Const TARGET_SCREEN_LENGTH As Long = 30
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_APP_MENU_ROW As Long = 1
+Private Const SCREEN_APP_MENU_COL As Long = 28
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30 ' Length of "APPLICATION SELECTION MENU"
 
-Private Const INPUT_COMMAND As String = "TERM ALL"
-Private Const INPUT_ROW As Long = 21
-Private Const INPUT_COL As Long = 13
+Private Const CMD_TERM_ALL As String = "TERM ALL"
+Private Const CMD_TERM_ALL_ROW As Long = 21
+Private Const CMD_TERM_ALL_COL As Long = 13
 
-Private Const MAX_NAVIGATION_ATTEMPTS As Integer = 10
+Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10 ' Max PageDown attempts to find the menu
+Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry" ' For MsgBox titles
 
-' --- Main Subroutine to Perform the Action ---
-Sub ExecuteTermAllOnBackOffice_V2()
+' --- Main Entry Point for this Automation Task ---
+Sub PerformTermAllEntry()
     On Error GoTo ErrorHandler
 
-    ' 1. Connect to and activate the existing Reflection session
-    If Not ConnectAndActivateSession_V2(TARGET_SESSION_FILENAME_PART) Then ' Pass the filename part
-        MsgBox "Could not connect to or activate the session containing: " & TARGET_SESSION_FILENAME_PART & vbCrLf & _
-               "Please ensure the session is open and the title contains this text.", vbCritical, "Session Connection Error"
-        GoTo Cleanup
-    End If
+    Dim success As Boolean
 
-    ' 2. Navigate to the "APPLICATION SELECTION MENU"
-    If Not NavigateToApplicationSelectionMenu_V2() Then
-        MsgBox "Failed to navigate to the '" & TARGET_SCREEN_TEXT & "' screen after " & MAX_NAVIGATION_ATTEMPTS & " attempts.", vbExclamation, "Navigation Error"
-        GoTo Cleanup
+    ' 1. Attempt to connect to and activate the specific, already open Reflection session
+    success = ConnectAndActivateReflectionSession(TARGET_SESSION_ID_PART)
+    If Not success Then
+        MsgBox "Failed to connect to or activate the Reflection session containing: '" & TARGET_SESSION_ID_PART & "'." & vbCrLf & _
+               "Please ensure the 'NTS Back Office - Prod.rd3x' session is open in Reflection Workspace.", vbCritical, SCRIPT_TITLE
+        GoTo CleanupAndExit
     End If
+    Debug.Print "Successfully connected to and activated session: " & objView.TitleText
 
-    ' 3. Screen is ready, perform the input
-    Call WaitForScreenReady_V2(1000)
-    objScreen.PutText2 INPUT_COMMAND, INPUT_ROW, INPUT_COL
-    objScreen.SendControlKey ControlKeyCode_Transmit
+    ' 2. Navigate to the "APPLICATION SELECTION MENU" screen
+    success = NavigateToScreen(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
+    If Not success Then
+        MsgBox "Failed to navigate to the '" & SCREEN_APP_MENU & "' screen after " & MAX_PAGEDOWN_ATTEMPTS & " Page Down attempts.", vbExclamation, SCRIPT_TITLE
+        GoTo CleanupAndExit
+    End If
+    Debug.Print "Successfully navigated to: " & SCREEN_APP_MENU
+
+    ' 3. Screen is confirmed. Enter the command.
+    Call WaitHostSettle(1000) ' Brief pause before input
+    objScreen.PutText2 CMD_TERM_ALL, CMD_TERM_ALL_ROW, CMD_TERM_ALL_COL
+    Debug.Print "Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
     
-    Call WaitForScreenReady_V2(5000)
+    objScreen.SendControlKey ControlKeyCode_Transmit ' Send Enter/Transmit
+    Debug.Print "Sent Transmit key."
+    
+    Call WaitHostSettle(5000) ' Wait for the screen to update after command
 
-    MsgBox "'" & INPUT_COMMAND & "' entered successfully on '" & TARGET_SCREEN_TEXT & "'.", vbInformation, "Action Completed"
+    MsgBox "'" & CMD_TERM_ALL & "' command has been entered successfully on the '" & SCREEN_APP_MENU & "'.", vbInformation, SCRIPT_TITLE
 
-Cleanup:
+CleanupAndExit:
+    ' Release Reflection objects
     Set objScreen = Nothing
     Set objTerminal = Nothing
     Set objView = Nothing
@@ -60,125 +69,148 @@ Cleanup:
     Exit Sub
 
 ErrorHandler:
-    MsgBox "An unexpected error occurred: " & vbCrLf & _
+    MsgBox "An unexpected error occurred in '" & SCRIPT_TITLE & "':" & vbCrLf & _
            "Error Number: " & Err.Number & vbCrLf & _
-           "Description: " & Err.Description, vbCritical, "VBA Runtime Error"
-    Resume Cleanup
+           "Description: " & Err.Description, vbCritical, SCRIPT_TITLE
+    Resume CleanupAndExit
 End Sub
 
-' --- Helper Function: Connect to an existing and activate Reflection Session (Version 2) ---
-Private Function ConnectAndActivateSession_V2(ByVal uniquePartOfSessionTitle As String) As Boolean
+' --- Helper Function: Connects to an existing Reflection Workspace and activates a specific session view ---
+Private Function ConnectAndActivateReflectionSession(ByVal uniquePartOfSessionTitle As String) As Boolean
     On Error GoTo ConnectErrorHandler
-    ConnectAndActivateSession_V2 = False
+    ConnectAndActivateReflectionSession = False ' Default to failure
 
-    Dim viewFound As Boolean
-    Dim tempView As Object ' To iterate through views
+    Dim tempView As Object ' For iterating through views
+    Dim foundView As Boolean
 
-    ' Get the existing Reflection Workspace Application object
+    ' Get the running Reflection Workspace application object
     Set objReflectionApp = GetObject(, "ReflectionWorkspace.Application")
     If objReflectionApp Is Nothing Then
-        Debug.Print "Reflection Workspace application not found."
+        Debug.Print "ConnectAndActivateReflectionSession: Reflection Workspace application not found."
         Exit Function
     End If
     
+    ' Ensure Reflection Workspace is initialized
     Do While objReflectionApp.IsInitialized = False
-        objReflectionApp.Wait 200
+        objReflectionApp.Wait 200 ' Wait 200 milliseconds
     Loop
 
     Set objFrame = objReflectionApp.GetObject("Frame")
     If objFrame Is Nothing Then
-        Debug.Print "Reflection Frame object not found."
+        Debug.Print "ConnectAndActivateReflectionSession: Reflection Frame object not found."
         Exit Function
     End If
 
+    ' Ensure the Reflection Frame is visible and active, which can help with COM interactions
     If Not objFrame.Visible Then
         objFrame.Visible = True
     End If
-    objFrame.Activate ' Ensure the main Reflection window is active
+    objFrame.Activate
 
-    ' Iterate through all open views to find the one containing the unique part of the title
-    viewFound = False
+    ' Iterate through all open views to find the target session
+    foundView = False
     If objFrame.Views.Count > 0 Then
-        Debug.Print "Searching for session containing: '" & uniquePartOfSessionTitle & "'"
+        Debug.Print "ConnectAndActivateReflectionSession: Searching for session containing '" & uniquePartOfSessionTitle & "'..."
         For Each tempView In objFrame.Views
-            Debug.Print "Checking View: '" & tempView.TitleText & "'"
-            ' Use InStr with vbTextCompare for a case-insensitive substring match
+            Debug.Print "ConnectAndActivateReflectionSession: Checking view - '" & tempView.TitleText & "'"
+            ' Case-insensitive substring search for the target session identifier
             If InStr(1, tempView.TitleText, uniquePartOfSessionTitle, vbTextCompare) > 0 Then
                 Set objView = tempView
-                viewFound = True
-                Debug.Print "Found matching session: '" & objView.TitleText & "'"
+                foundView = True
                 Exit For
             End If
         Next tempView
     Else
-        Debug.Print "No views are currently open in Reflection Workspace."
+        Debug.Print "ConnectAndActivateReflectionSession: No views are currently open in Reflection Workspace."
     End If
 
-    If Not viewFound Or objView Is Nothing Then
-        Debug.Print "Session containing '" & uniquePartOfSessionTitle & "' not found after checking all views."
+    If Not foundView Or objView Is Nothing Then
+        Debug.Print "ConnectAndActivateReflectionSession: Session containing '" & uniquePartOfSessionTitle & "' not found."
         Exit Function
     End If
 
-    objView.Activate ' Activate the specific session view
+    ' Activate the found view
+    objView.Activate
 
+    ' Get the terminal and screen objects from the activated view
     Set objTerminal = objView.Control
     Set objScreen = objTerminal.Screen
 
     If objTerminal Is Nothing Or objScreen Is Nothing Then
-        Debug.Print "Failed to get Terminal or Screen object from the found view."
+        Debug.Print "ConnectAndActivateReflectionSession: Failed to get Terminal or Screen object from the view '" & objView.TitleText & "'."
         Exit Function
     End If
 
+    ' Optional: Configure terminal settings as per best practice
     objTerminal.DisableKeystrokeProductivity = True
     objTerminal.DisableScreenHistory = True
 
-    ConnectAndActivateSession_V2 = True
+    ConnectAndActivateReflectionSession = True ' Success
+    Debug.Print "ConnectAndActivateReflectionSession: Successfully connected to '" & objView.TitleText & "'."
     Exit Function
 
 ConnectErrorHandler:
-    Debug.Print "Error in ConnectAndActivateSession_V2: " & Err.Description
-    ConnectAndActivateSession_V2 = False
+    Debug.Print "ConnectAndActivateReflectionSession: Error - " & Err.Number & ": " & Err.Description
+    ConnectAndActivateReflectionSession = False
 End Function
 
-' --- Helper Sub: Wait for the screen to be ready (Version 2) ---
-Private Sub WaitForScreenReady_V2(Optional ByVal settleTimeoutMilliseconds As Long = 2000)
-    If objScreen Is Nothing Then Exit Sub
+' --- Helper Sub: Waits for the host screen to settle and become ready for interaction ---
+Private Sub WaitHostSettle(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
+    If objScreen Is Nothing Then
+        Debug.Print "WaitHostSettle: objScreen is not initialized."
+        Exit Sub
+    End If
+
     Dim startTime As Date
     startTime = Now
+
+    ' Wait for XStatus to indicate screen is ready (0)
     Do While objScreen.OIA.XStatus <> 0
         If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
-            Debug.Print "Timeout waiting for XStatus."
-            Exit Do
+            Debug.Print "WaitHostSettle: Timeout waiting for XStatus to become 0."
+            Exit Do ' Prevent infinite loop
         End If
-        objScreen.WaitForHostSettle 100, 50
-        DoEvents
+        objScreen.WaitForHostSettle 100, 50 ' Short settle time, frequent checks
+        DoEvents ' Allow other Excel events to process
     Loop
-    objScreen.WaitForHostSettle 500, 200
+
+    ' Additional explicit settle after XStatus is 0, for good measure
+    objScreen.WaitForHostSettle 500, 200 ' (settleTime, timeout)
+    Debug.Print "WaitHostSettle: Screen is ready (XStatus=" & objScreen.OIA.XStatus & ")."
 End Sub
 
-' --- Helper Function: Navigate to the Application Selection Menu using Page Down (Version 2) ---
-Private Function NavigateToApplicationSelectionMenu_V2() As Boolean
-    Dim attempts As Integer
-    Dim currentScreenText As String
-    NavigateToApplicationSelectionMenu_V2 = False
+' --- Helper Function: Navigates to a target screen, using PageDown if necessary ---
+Private Function NavigateToScreen(ByVal targetScreenText As String, _
+                                  ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
+                                  ByVal maxAttempts As Integer) As Boolean
+    On Error Resume Next ' Basic error handling for screen interactions
+    NavigateToScreen = False ' Default to failure
+
     If objScreen Is Nothing Then
-        Debug.Print "Screen object not available for navigation."
+        Debug.Print "NavigateToScreen: objScreen is not initialized."
         Exit Function
     End If
 
-    For attempts = 1 To MAX_NAVIGATION_ATTEMPTS
-        Call WaitForScreenReady_V2(3000)
-        currentScreenText = Trim(objScreen.GetText(TARGET_SCREEN_ROW, TARGET_SCREEN_COL, TARGET_SCREEN_LENGTH))
-        If UCase(currentScreenText) = UCase(TARGET_SCREEN_TEXT) Then
-            NavigateToApplicationSelectionMenu_V2 = True
+    Dim attempts As Integer
+    Dim currentScreenContent As String
+
+    For attempts = 1 To maxAttempts
+        Call WaitHostSettle(2000) ' Ensure current screen is fully loaded
+
+        currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
+        Debug.Print "NavigateToScreen: Attempt " & attempts & " - Current screen text at R" & targetRow & "C" & targetCol & "L" & targetLength & ": '" & currentScreenContent & "'"
+
+        If UCase(currentScreenContent) = UCase(targetScreenText) Then
+            NavigateToScreen = True ' Target screen found
             Exit Function
         End If
-        If attempts < MAX_NAVIGATION_ATTEMPTS Then
-            Debug.Print "Attempt " & attempts & ": Not on target screen. Current text: '" & currentScreenText & "'. Sending Page Down."
+
+        ' If not on target screen and not the last attempt, send PageDown
+        If attempts < maxAttempts Then
             objScreen.SendControlKey ControlKeyCode_PageDown
-        Else
-            Debug.Print "Attempt " & attempts & ": Max attempts reached. Current text: '" & currentScreenText & "'."
+            Debug.Print "NavigateToScreen: Sent PageDown."
         End If
     Next attempts
-    Debug.Print "Failed to reach '" & TARGET_SCREEN_TEXT & "' after " & MAX_NAVIGATION_ATTEMPTS & " Page Down attempts."
+
+    Debug.Print "NavigateToScreen: Failed to reach '" & targetScreenText & "' after " & maxAttempts & " PageDown attempts."
 End Function
