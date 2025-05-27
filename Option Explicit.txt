@@ -46,12 +46,9 @@ Sub ExecuteTermAllOnBackOffice()
     End If
 
     ' 3. Screen is ready, perform the input
+    Call WaitForScreenReady(1000) ' Short wait before putting text, just in case
     objScreen.PutText2 INPUT_COMMAND, INPUT_ROW, INPUT_COL
-    objScreen.SendControlKey rcVtEnterKey ' For IBM 3270, Enter is often rcEnterKey or rcTransmitKey.
-                                        ' rcVtEnterKey is more common for VT, let's use rcTransmitKey for 3270.
-                                        ' Or more generally: ControlKeyCode_Transmit
-    ' Use ControlKeyCode_Transmit as it's from the previous code and more robust for "sending data"
-    objScreen.SendControlKey ControlKeyCode_Transmit
+    objScreen.SendControlKey ControlKeyCode_Transmit ' Corrected: Use the IBM 3270 specific constant
     
     Call WaitForScreenReady(5000) ' Wait for the next screen after sending Enter
 
