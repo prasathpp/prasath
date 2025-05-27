@@ -1,28 +1,74 @@
-Connect_V10: Attempting Method 1: GetObject("Reflection Workspace")
-Connect_V10: Method 1 SUCCEEDED. TypeName(objReflectionApp): ApplicationObject
-Connect_V10: objFrame set. TypeName(objFrame): Frame
-Connect_V10: Frame Visible/Activated.
-Connect_V10: Attempting objFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")...
-Connect_V10: objFrame.GetViewByTitleText SUCCEEDED. View Title: 'NTS Back Office - Prod.rd3x'. TypeName(objView): View
-Connect_V10: objTerminal set. TypeName(objTerminal): IbmTerminal
-Connect_V10: objScreen set. TypeName(objScreen): IbmScreen
-Connect_V10: Successfully fully initialized session 'NTS Back Office - Prod.rd3x'.
-Back Office - TERM ALL Entry V10: Successfully connected. View Title: 'NTS Back Office - Prod.rd3x'
-Navigate_V10: Will attempt navigation using key code: 123
-WaitHostSettle_V10: Screen ready (XStatus=0).
-Navigate_V10: Attempt 1 - Current screen: 'INTENANCE INPUT INDEX'
-Navigate_V10: Sent key code: 123
-WaitHostSettle_V10: Screen ready (XStatus=0).
-Navigate_V10: Attempt 2 - Current screen: 'INTENANCE INPUT INDEX'
-Navigate_V10: Sent key code: 123
-WaitHostSettle_V10: Screen ready (XStatus=0).
-Navigate_V10: Attempt 3 - Current screen: 'INTENANCE INPUT INDEX'
-Navigate_V10: Sent key code: 123
-WaitHostSettle_V10: Screen ready (XStatus=0).
-Navigate_V10: Attempt 4 - Current screen: 'INTENANCE INPUT INDEX'
-Navigate_V10: Sent key code: 123
-WaitHostSettle_V10: Screen ready (XStatus=0).
-Navigate_V10: Attempt 5 - Current screen: 'INTENANCE INPUT INDEX'
-Navigate_V10: Max attempts reached. Current text: 'INTENANCE INPUT INDEX'.
-Navigate_V10: Failed to reach 'APPLICATION SELECTION MENU' after 5 attempts.
+' --- Helper Function: Navigates to screen (Version 10 - YOU NEED TO SET THE CORRECT NAVIGATION KEY) ---
+Private Function NavigateToScreen_V10(ByVal targetScreenText As String, _
+                                  ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
+                                  ByVal maxAttempts As Integer) As Boolean
+    On Error Resume Next
+    NavigateToScreen_V10 = False
+    If objScreen Is Nothing Then Debug.Print "Navigate_V10: objScreen is Nothing.": Exit Function
 
+    Dim attempts As Integer, currentScreenContent As String
+    Dim navigationKey As Long
+    Dim commandToSend As String
+    commandToSend = "" ' For typed commands
+
+    '----------------------------------------------------------------------------------------------------
+    ' **** IMPORTANT: MODIFY THIS SECTION BASED ON YOUR MANUAL TESTING ****
+    '
+    ' Example: If F3 (PF3) is the key that works manually from "INTENANCE INPUT INDEX"
+    navigationKey = ControlKeyCode_PF3  ' <====== YOU MUST SET THIS TO THE CORRECT KEY
+                                        '         Other common options:
+                                        '         ControlKeyCode_Pa1
+                                        '         ControlKeyCode_PF12
+                                        '         ControlKeyCode_Clear
+                                        '         ControlKeyCode_PageDown (if it actually works from this screen)
+    '
+    ' If you need to type a command:
+    ' commandToSend = "EXIT" ' or "MENU" etc.
+    ' navigationKey = 0 ' Or comment out the line above if using commandToSend
+    '----------------------------------------------------------------------------------------------------
+
+    If commandToSend = "" And navigationKey = 0 Then
+        Debug.Print "Navigate_V10: ERROR - No navigation key or command specified in the code."
+        Exit Function 
+    End If
+
+    If commandToSend <> "" Then
+        Debug.Print "Navigate_V10: Will attempt navigation by typing command: """ & commandToSend & """ then Transmit."
+    Else
+        Debug.Print "Navigate_V10: Will attempt navigation using key code: " & navigationKey
+    End If
+
+    For attempts = 1 To maxAttempts
+        Call WaitHostSettle_V10(1500)
+        currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
+        Debug.Print "Navigate_V10: Attempt " & attempts & " - Current screen: '" & currentScreenContent & "'"
+        
+        If UCase(currentScreenContent) = UCase(targetScreenText) Then
+            NavigateToScreen_V10 = True
+            Exit Function
+        End If
+        
+        If attempts < maxAttempts Then
+            If commandToSend <> "" Then
+                ' --- Define Command Line Coordinates ---
+                Dim cmdRow As Long: cmdRow = 23 ' Default command line row
+                Dim cmdCol As Long: cmdCol = 8  ' Default command line col
+                ' You may need to find the actual command line coordinates on your specific screen
+                ' For example, it could be objScreen.CursorRow, objScreen.CursorCol if cursor is already there
+                ' Or a fixed position like row 23 or 24.
+                Debug.Print "Navigate_V10: Moving cursor to R" & cmdRow & "C" & cmdCol & " to type command."
+                objScreen.MoveCursor cmdRow, cmdCol
+                objScreen.PutText2 commandToSend, cmdRow, cmdCol
+                Call WaitHostSettle_V10(200)
+                objScreen.SendControlKey ControlKeyCode_Transmit
+                Debug.Print "Navigate_V10: Typed '" & commandToSend & "' and sent Transmit."
+            ElseIf navigationKey <> 0 Then
+                objScreen.SendControlKey navigationKey
+                Debug.Print "Navigate_V10: Sent key code: " & navigationKey
+            End If
+        Else
+            Debug.Print "Navigate_V10: Max attempts reached. Current text: '" & currentScreenContent & "'."
+        End If
+    Next attempts
+    Debug.Print "Navigate_V10: Failed to reach '" & targetScreenText & "' after " & maxAttempts & " attempts."
+End Function
