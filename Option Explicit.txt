@@ -160,48 +160,126 @@ End Sub
 
 ' --- Placeholder for Navigation Logic ---
 Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean
-    Debug.Print "NavigateToTargetScreen_Focus: Called for S/C=" & sc & ", Acct=" & acct & ", Brand=" & brnd
+    Dim confirmCode As String
+    Dim l_loop As Long ' For STAR loop if needed, though might not be for this direct nav
+
+    NavigateToTargetScreen_Focus = False ' Default to failure
+
     If RScreen Is Nothing Then
-        Debug.Print "NavigateToTargetScreen_Focus: RScreen object is not available. Cannot navigate."
-        NavigateToTargetScreen_Focus = False
+        Debug.Print "NavigateFocus: RScreen object is not available. Cannot navigate."
         Exit Function
     End If
 
-    ' For now, just verify we are on App Menu as per manual setup instruction
-    Call WaitReady_Focus(100)
+    ' --- Determine Confirmation Code based on Brand ---
+    Select Case brnd
+        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
+        Case "UBN": confirmCode = "PRCIJ#T#"
+        Case "UBR": confirmCode = "PRCIK#T#"
+        Case Else
+            Debug.Print "NavigateFocus: Invalid Brand '" & brnd & "'"
+            Exit Function
+    End Select
+    Debug.Print "NavigateFocus: Using confirm code: " & confirmCode
+
+    ' --- Step 1: Ensure on APPLICATION SELECTION MENU ---
+    ' Coordinates for SCREEN_APP_MENU: R1, C28
     If Not VerifyScreen_Focus(SCREEN_APP_MENU, 1, 28) Then
-         Debug.Print "NavigateToTargetScreen_Focus: Not on " & SCREEN_APP_MENU & ". Please ensure you start on this screen."
-         MsgBox "Macro expected to start on '" & SCREEN_APP_MENU & "'. Current screen is different.", vbExclamation, SCRIPT_TITLE
-         NavigateToTargetScreen_Focus = False
+         Debug.Print "NavigateFocus: Not starting on " & SCREEN_APP_MENU & "."
+         MsgBox "Macro must start on '" & SCREEN_APP_MENU & "'. Please manually navigate and restart.", vbExclamation, SCRIPT_TITLE
          Exit Function
     End If
-    Debug.Print "NavigateToTargetScreen_Focus: Confirmed on " & SCREEN_APP_MENU
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_APP_MENU
 
-    ' >>>>>>> INSERT THE PROVEN NAVIGATION STEPS FROM YOUR InterestCheck HERE <<<<<<<
-    ' (TERM ALL, confirmCode, Option 19, Option 01, Master Index entries, etc.)
-    ' Use SendData_Focus and VerifyScreen_Focus helpers.
-    ' Example for one step:
-    ' Call SendData_Focus("TERM ALL", 21, 13)
-    ' If Not VerifyScreen_Focus("EXPECTED_TEXT_AFTER_TERM_ALL", R, C) Then Exit Function
-    ' ... and so on for all navigation steps to SCREEN_INTEREST_AMENDMENTS
-    ' This part needs to be carefully rebuilt based on the sequence you know works.
+    ' --- Step 2: TERM ALL ---
+    ' Coordinates for command line: R21, C13
+    Call SendData_Focus("TERM ALL", 21, 13, True) ' True to send Transmit
+    Debug.Print "NavigateFocus: Sent TERM ALL"
+    ' After TERM ALL, screen might clear or stay. Expect it to be ready for next command.
+    ' A short explicit wait might be good here if host is slow after TERM ALL.
+    Call WaitReady_Focus(1000) ' Wait 1 second
 
-    ' For now, assume navigation to the final screen would succeed IF steps were here
-    ' And we are just testing the connection.
-    ' Replace with actual navigation and verification:
-    Debug.Print "NavigateToTargetScreen_Focus: Placeholder - Assuming navigation to INTEREST AMENDMENTS would occur here."
-    MsgBox "ConnectAndSetScreen worked! RScreen is available." & vbCrLf & _
-           "Navigation steps would follow here. For now, this is the end of the test for one row.", vbInformation
-           
-    NavigateToTargetScreen_Focus = True ' TEMPORARY - CHANGE THIS AFTER ADDING REAL NAVIGATION
+    ' --- Step 3: Brand Code ---
+    Call SendData_Focus(confirmCode, 21, 13, True)
+    Debug.Print "NavigateFocus: Sent " & confirmCode
+    ' Check for "Command not recognized" (R20, C36, L22)
+    If VerifyScreen_Focus("Command not recognized", 20, 36, 22) Then
+        Debug.Print "NavigateFocus: Brand code '" & confirmCode & "' not recognized."
+        Exit Function
+    End If
+    ' Expected: OPT_HANDLER (R2,C28 for "OPTION HANDLER...", also check for "SP2001" on R2)
+    If Not VerifyScreen_Focus(SCREEN_OPT_HANDLER, 2, 28) Then
+        If Not (InStr(1, UCase(Trim(RScreen.GetText(2, 1, 80))), "SP2001") > 0 And VerifyScreen_Focus(SCREEN_OPT_HANDLER, 2, 28)) Then
+             Debug.Print "NavigateFocus: Did not reach " & SCREEN_OPT_HANDLER
+             Exit Function
+        End If
+    End If
+    Debug.Print "NavigateFocus: On " & SCREEN_OPT_HANDLER
+
+    ' --- Step 4: Option 19 ---
+    ' Coordinates for option input: R21, C16
+    Call SendData_Focus("19", 21, 16, True)
+    Debug.Print "NavigateFocus: Sent 19"
+    ' Expected: BO_SYSTEM (R1,C7)
+    If Not VerifyScreen_Focus(SCREEN_BO_SYSTEM, 1, 7) Then Exit Function
+    Debug.Print "NavigateFocus: On " & SCREEN_BO_SYSTEM
+
+    ' --- Step 5: Option 01 ---
+    ' Coordinates for option input: R22, C16
+    Call SendData_Focus("01", 22, 16, True)
+    Debug.Print "NavigateFocus: Sent 01"
+    ' Expected: MASTER_INDEX (R1,C28)
+    If Not VerifyScreen_Focus(SCREEN_MASTER_INDEX, 1, 28) Then Exit Function
+    Debug.Print "NavigateFocus: On " & SCREEN_MASTER_INDEX
+
+    ' --- Step 6: Master Index - Action 20, Sort Code ---
+    ' Coords: Action R22,C8; SortCode R22,C74
+    Call WaitReady_Focus(100) ' Settle before multi-part input
+    RScreen.PutText2 "20", 22, 8
+    RScreen.PutText2 Format(sc, "000000"), 22, 74
+    Call SendKey_Focus(ControlKeyCode_Transmit, 1000) ' Send Transmit, wait 1s
+    Debug.Print "NavigateFocus: Sent 20 + S/C " & sc
+    ' Expected: FILE_MAINT_IDX (R1,C21)
+    If Not VerifyScreen_Focus(SCREEN_FILE_MAINT_IDX, 1, 21) Then Exit Function
+    Debug.Print "NavigateFocus: On " & SCREEN_FILE_MAINT_IDX
+
+    ' --- Step 7: File Maint Idx - Action 20, Account Number ---
+    ' Coords: Action R22,C8; Account R22,C21
+    Call WaitReady_Focus(100)
+    RScreen.PutText2 "20", 22, 8
+    RScreen.PutText2 Format(acct, "00000000"), 22, 21
+    Call SendKey_Focus(ControlKeyCode_Transmit, 1000)
+    Debug.Print "NavigateFocus: Sent 20 + A/N " & acct
+    ' Expected: INTERNAL_TXNS (R1,C19)
+    If Not VerifyScreen_Focus(SCREEN_INTERNAL_TXNS, 1, 19) Then Exit Function
+    Debug.Print "NavigateFocus: On " & SCREEN_INTERNAL_TXNS
+
+    ' --- Step 8: Internal Txns - Action 04 ---
+    ' Coords: Action R22,C8
+    Call SendData_Focus("04", 22, 8, True)
+    Debug.Print "NavigateFocus: Sent 04"
+    ' Target screen: INTEREST_AMENDMENTS (R1, C30 estimate - VERIFY THIS)
+    If Not VerifyScreen_Focus(SCREEN_INTEREST_AMENDMENTS, 1, 30) Then
+        ' Fallback: Check for "INTEREST DETAILS" on Line 2 (R2, C30 estimate)
+        If Not VerifyScreen_Focus("INTEREST DETAILS", 2, 30) Then
+            Debug.Print "NavigateFocus: Did not reach " & SCREEN_INTEREST_AMENDMENTS
+            Exit Function
+        End If
+    End If
+    Debug.Print "NavigateFocus: Successfully reached " & SCREEN_INTEREST_AMENDMENTS
+
+    NavigateToTargetScreen_Focus = True ' Navigation Success!
 End Function
 
-' --- Minimalist Screen Interaction Helpers ---
+' --- Minimalist Screen Interaction Helpers (renamed with _Focus suffix) ---
 Private Sub WaitReady_Focus(Optional settleTimeMs As Long = 200, Optional timeoutMs As Long = 10000)
     If RScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
     Do While RScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then Exit Do
+        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
+            Debug.Print "WaitReady_Focus: Timeout XStatus=0."
+            Exit Do
+        End If
         RScreen.WaitForHostSettle 100, 50: DoEvents
     Loop
     RScreen.WaitForHostSettle settleTimeMs, timeoutMs
@@ -212,13 +290,27 @@ Private Function VerifyScreen_Focus(expectedText As String, rowNum As Long, colN
     Call WaitReady_Focus(100)
     If length = 0 Then length = Len(expectedText)
     Dim actualText As String: actualText = Trim(RScreen.GetText(rowNum, colNum, length))
-    If UCase(actualText) = UCase(expectedText) Then VerifyScreen_Focus = True Else VerifyScreen_Focus = False
-    If Not VerifyScreen_Focus Then Debug.Print "VerifyScreen_Focus FAILED: Expected '" & expectedText & "', Found '" & actualText & "' at R" & rowNum & "C" & colNum
+    If UCase(actualText) = UCase(expectedText) Then
+        VerifyScreen_Focus = True
+    Else
+        VerifyScreen_Focus = False
+        Debug.Print "VerifyScreen_Focus FAILED: Expected '" & expectedText & "', Found '" & actualText & "' at R" & rowNum & "C" & colNum & "L" & length
+    End If
 End Function
 
 Private Sub SendData_Focus(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True)
     If RScreen Is Nothing Then Exit Sub
     Call WaitReady_Focus(100)
     RScreen.PutText2 data, rowNum, colNum
-    If sendTransmit Then RScreen.SendControlKey ControlKeyCode_Transmit: Call WaitReady_Focus(500)
+    If sendTransmit Then
+        RScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitReady_Focus(500) ' Increased default wait after transmit
+    End If
+End Sub
+
+Private Sub SendKey_Focus(keyCode As Long, Optional waitAfterMs As Long = 500) ' Renamed to avoid conflict
+    If RScreen Is Nothing Then Exit Sub
+    Call WaitReady_Focus(100)
+    RScreen.SendControlKey keyCode
+    Call WaitReady_Focus(waitAfterMs)
 End Sub
