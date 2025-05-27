@@ -1,217 +1,46 @@
-' Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V8"
-Option Explicit
-
-' --- Attachmate Reflection Object Declarations ---
-Public objReflectionApp As Object
-Public objFrame As Object
-Public objView As Object
-Public objTerminal As Object
-Public objScreen As Object
-
-' --- Constants for this specific automation ---
-Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
-
-' --- Screen Text and Coordinate Constants ---
-Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU" ' Ensure this exact name is used
-Private Const SCREEN_APP_MENU_ROW As Long = 1
-Private Const SCREEN_APP_MENU_COL As Long = 28
-Private Const SCREEN_APP_MENU_LENGTH As Long = 30
-
-' --- Command Constants ---
-Private Const CMD_TERM_ALL As String = "TERM ALL"
-Private Const CMD_TERM_ALL_ROW As Long = 21
-Private Const CMD_TERM_ALL_COL As Long = 13
-
-' --- Other Control Constants ---
-Private Const MAX_PAGEDOWN_ATTEMPTS As Integer = 10
-Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V8"
-
-
-' --- Main Sub ---
-Sub PerformTermAllEntry_V8()
-    On Error GoTo ErrorHandler
-    Dim success As Boolean
-
-    success = ConnectAndActivateReflectionSession_V8(TARGET_SESSION_ID_PART)
-    If Not success Then
-        MsgBox "Failed to connect/activate Reflection session: '" & TARGET_SESSION_ID_PART & "'." & vbCrLf & _
-               "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
-    
-    If objScreen Is Nothing Then ' Critical check after connection attempt
-        MsgBox "Critical error: Screen object (objScreen) was not set after connection attempt. Cannot proceed.", vbCritical, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
-    ' objView should also be set if success is True and objScreen is set from a proper view
-    If objView Is Nothing And success Then ' Check if objView is also set
-         MsgBox "Warning: objView was not set, but connection reported success. Debugging objView.TitleText will fail.", vbExclamation, SCRIPT_TITLE
-         Debug.Print SCRIPT_TITLE & ": Successfully connected, but objView is Nothing." ' Log this anomaly
-    ElseIf success Then
-         Debug.Print SCRIPT_TITLE & ": Successfully connected. View Title: '" & objView.TitleText & "'"
-    End If
-
-
-    ' --- USING THE CORRECTLY DEFINED CONSTANTS ---
-    success = NavigateToScreen_V8(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_PAGEDOWN_ATTEMPTS)
-    
-    If Not success Then
-        MsgBox "Failed to navigate to '" & SCREEN_APP_MENU & "'.", vbExclamation, SCRIPT_TITLE
-        GoTo CleanupAndExit
-    End If
-    Debug.Print SCRIPT_TITLE & ": Successfully navigated to: " & SCREEN_APP_MENU
-
-    Call WaitHostSettle_V8(1000)
-    objScreen.PutText2 CMD_TERM_ALL, CMD_TERM_ALL_ROW, CMD_TERM_ALL_COL
-    Debug.Print SCRIPT_TITLE & ": Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
-    
-    objScreen.SendControlKey ControlKeyCode_Transmit
-    Debug.Print SCRIPT_TITLE & ": Sent Transmit key."
-    
-    Call WaitHostSettle_V8(5000)
-    MsgBox "'" & CMD_TERM_ALL & "' entered successfully.", vbInformation, SCRIPT_TITLE
-
-CleanupAndExit:
-    Set objScreen = Nothing
-    Set objTerminal = Nothing
-    Set objView = Nothing
-    Set objFrame = Nothing
-    Set objReflectionApp = Nothing
-    Exit Sub
-ErrorHandler:
-    MsgBox "Error in '" & SCRIPT_TITLE & "':" & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, SCRIPT_TITLE
-    Resume CleanupAndExit
-End Sub
-
-' --- Helper Function: Connects and activates session (Version 8 - from previous correct response) ---
-Private Function ConnectAndActivateReflectionSession_V8(ByVal targetSessionTitleOrUniquePart As String) As Boolean
-    On Error GoTo ConnectErrorHandler
-    ConnectAndActivateReflectionSession_V8 = False
-
-    Debug.Print "Connect_V8: Attempting Method 1: GetObject(""Reflection Workspace"")"
-    On Error Resume Next
-    Set objReflectionApp = GetObject("Reflection Workspace")
-    If Err.Number <> 0 Or objReflectionApp Is Nothing Then
-        Err.Clear
-        Debug.Print "Connect_V8: Method 1 (GetObject(""Reflection Workspace"")) FAILED. Cannot proceed with this primary method."
-        GoTo FinalConnectErrorHandling
-    End If
-    Debug.Print "Connect_V8: Method 1 SUCCEEDED setting objReflectionApp. TypeName: " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler 
-
-    Set objFrame = objReflectionApp.GetObject("Frame")
-    If objFrame Is Nothing Then Debug.Print "Connect_V8: Frame object is Nothing.": Exit Function
-    Debug.Print "Connect_V8: objFrame is set. TypeName: " & TypeName(objFrame)
-
-    If Not objFrame.Visible Then objFrame.Visible = True
-    objFrame.Activate
-    Debug.Print "Connect_V8: Frame Visible/Activated."
-
-    Debug.Print "Connect_V8: Attempting objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """)..."
-    On Error Resume Next
-    Set objView = objFrame.GetViewByTitleText(targetSessionTitleOrUniquePart)
-    If Err.Number <> 0 Or objView Is Nothing Then
-        Err.Clear
-        Debug.Print "Connect_V8: objFrame.GetViewByTitleText FAILED. Error: " & Err.Description
-        GoTo FinalConnectErrorHandling 
-    End If
-    Debug.Print "Connect_V8: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
-    On Error GoTo ConnectErrorHandler 
-
-
-    Debug.Print "Connect_V8: Attempting objView.Activate..."
-    On Error Resume Next
-    objView.Activate
-    If Err.Number <> 0 Then
-        Debug.Print "Connect_V8: Error on objView.Activate. Error " & Err.Number & ": " & Err.Description
-        Err.Clear
-    Else
-        Debug.Print "Connect_V8: objView.Activate attempted."
-    End If
-    On Error GoTo ConnectErrorHandler
-    
-    Debug.Print "Connect_V8: Attempting Set objTerminal = objView.Control..."
-    On Error Resume Next
-    Set objTerminal = objView.Control
-    If Err.Number <> 0 Or objTerminal Is Nothing Then
-        Debug.Print "Connect_V8: Error on Set objTerminal = objView.Control. Error " & Err.Number & ": " & Err.Description
-        Err.Clear
-        GoTo FinalConnectErrorHandling 
-    Else
-        Debug.Print "Connect_V8: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
-    End If
-    On Error GoTo ConnectErrorHandler
-
-    Debug.Print "Connect_V8: Attempting Set objScreen = objTerminal.Screen..."
-    On Error Resume Next
-    Set objScreen = objTerminal.Screen
-    If Err.Number <> 0 Or objScreen Is Nothing Then
-        Debug.Print "Connect_V8: Error on Set objScreen = objTerminal.Screen. Error " & Err.Number & ": " & Err.Description
-        Err.Clear
-        GoTo FinalConnectErrorHandling
-    Else
-        Debug.Print "Connect_V8: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
-    End If
-    On Error GoTo ConnectErrorHandler
-    
-    Debug.Print "Connect_V8: Attempting objTerminal.DisableKeystrokeProductivity = True..."
-    On Error Resume Next
-    objTerminal.DisableKeystrokeProductivity = True
-    If Err.Number <> 0 Then Debug.Print "Connect_V8: Error on DisableKeystrokeProductivity. Error " & Err.Number & ": " & Err.Description: Err.Clear
-    
-    Debug.Print "Connect_V8: Attempting objTerminal.DisableScreenHistory = True..."
-    objTerminal.DisableScreenHistory = True
-    If Err.Number <> 0 Then Debug.Print "Connect_V8: Error on DisableScreenHistory. Error " & Err.Number & ": " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler
-
-    ConnectAndActivateReflectionSession_V8 = True
-    Debug.Print "Connect_V8: Successfully fully initialized session '" & objView.TitleText & "'."
-    Exit Function
-
-FinalConnectErrorHandling:
-    Debug.Print "Connect_V8: Unrecoverable error point reached in function."
-    ConnectAndActivateReflectionSession_V8 = False
-    If Err.Number = 0 Then Exit Function
-
-ConnectErrorHandler:
-    Debug.Print "Connect_V8: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
-    ConnectAndActivateReflectionSession_V8 = False
-End Function
-
-' --- Helper Subs (_V8) ---
-Private Sub WaitHostSettle_V8(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
-    If objScreen Is Nothing Then Debug.Print "WaitHostSettle_V8: objScreen is Nothing.": Exit Sub
-    Dim startTime As Date: startTime = Now
-    Do While objScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
-            Debug.Print "WaitHostSettle_V8: Timeout XStatus."
-            Exit Do
-        End If
-        objScreen.WaitForHostSettle 100, 50: DoEvents
-    Loop
-    objScreen.WaitForHostSettle 500, 200
-    Debug.Print "WaitHostSettle_V8: Screen ready (XStatus=" & objScreen.OIA.XStatus & ")."
-End Sub
-
-Private Function NavigateToScreen_V8(ByVal targetScreenText As String, _
-                                  ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
-                                  ByVal maxAttempts As Integer) As Boolean
-    On Error Resume Next
-    NavigateToScreen_V8 = False
-    If objScreen Is Nothing Then Debug.Print "Navigate_V8: objScreen is Nothing.": Exit Function
-
-    Dim attempts As Integer, currentScreenContent As String
-    For attempts = 1 To maxAttempts
-        Call WaitHostSettle_V8(2000)
-        currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
-        Debug.Print "Navigate_V8: Attempt " & attempts & " - Text at R" & targetRow & "C" & targetCol & "L" & targetLength & ": '" & currentScreenContent & "'"
-        If UCase(currentScreenContent) = UCase(targetScreenText) Then
-            NavigateToScreen_V8 = True: Exit Function
-        End If
-        If attempts < maxAttempts Then
-            objScreen.SendControlKey ControlKeyCode_PageDown
-            Debug.Print "Navigate_V8: Sent PageDown."
-        End If
-    Next attempts
-    Debug.Print "Navigate_V8: Failed to reach '" & targetScreenText & "'."
-End Function
+Connect_V8: Attempting Method 1: GetObject("Reflection Workspace")
+Connect_V8: Method 1 SUCCEEDED setting objReflectionApp. TypeName: ApplicationObject
+Connect_V8: objFrame is set. TypeName: Frame
+Connect_V8: Frame Visible/Activated.
+Connect_V8: Attempting objFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")...
+Connect_V8: objFrame.GetViewByTitleText SUCCEEDED. View Title: 'NTS Back Office - Prod.rd3x'. TypeName(objView): View
+Connect_V8: Attempting objView.Activate...
+Connect_V8: Error on objView.Activate. Error 438: Object doesn't support this property or method
+Connect_V8: Attempting Set objTerminal = objView.Control...
+Connect_V8: objTerminal set. TypeName(objTerminal): IbmTerminal
+Connect_V8: Attempting Set objScreen = objTerminal.Screen...
+Connect_V8: objScreen set. TypeName(objScreen): IbmScreen
+Connect_V8: Attempting objTerminal.DisableKeystrokeProductivity = True...
+Connect_V8: Attempting objTerminal.DisableScreenHistory = True...
+Connect_V8: Successfully fully initialized session 'NTS Back Office - Prod.rd3x'.
+Back Office - TERM ALL Entry V8: Successfully connected. View Title: 'NTS Back Office - Prod.rd3x'
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 1 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 2 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 3 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 4 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 5 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 6 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 7 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 8 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 9 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Sent PageDown.
+WaitHostSettle_V8: Screen ready (XStatus=0).
+Navigate_V8: Attempt 10 - Text at R1C28L30: 'INTENANCE INPUT INDEX'
+Navigate_V8: Failed to reach 'APPLICATION SELECTION MENU'.
