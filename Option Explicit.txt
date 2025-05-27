@@ -83,13 +83,23 @@ Private Function ConnectAndActivateReflectionSession(ByVal uniquePartOfSessionTi
     Dim tempView As Object ' For iterating through views
     Dim foundView As Boolean
 
-    ' Get the running Reflection Workspace application object
+    ' Attempt to GetObject first, if fails, try CreateObject
+    On Error Resume Next ' Temporarily suspend error handling
     Set objReflectionApp = GetObject(, "ReflectionWorkspace.Application")
+    If Err.Number <> 0 Then
+        Err.Clear ' Clear the error
+        Debug.Print "ConnectAndActivateReflectionSession: GetObject failed. Trying CreateObject for ReflectionWorkspace.Application..."
+        Set objReflectionApp = CreateObject("ReflectionWorkspace.Application")
+    End If
+    On Error GoTo ConnectErrorHandler ' Restore original error handler
+
     If objReflectionApp Is Nothing Then
-        Debug.Print "ConnectAndActivateReflectionSession: Reflection Workspace application not found."
+        Debug.Print "ConnectAndActivateReflectionSession: Reflection Workspace application could not be obtained via GetObject or CreateObject."
         Exit Function
     End If
     
+    ' ... (rest of the function remains the same) ...
+
     ' Ensure Reflection Workspace is initialized
     Do While objReflectionApp.IsInitialized = False
         objReflectionApp.Wait 200 ' Wait 200 milliseconds
