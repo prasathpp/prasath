@@ -158,7 +158,7 @@ Private Function ConnectToReflection() As Boolean
     If objTerminal Is Nothing Then Debug.Print "ConnectToReflection: objTerminal is Nothing.": Exit Function
     Debug.Print "ConnectToReflection: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
     
-    Set objScreen = objTerminal.Screen
+    Set objScreen = objTerminal.screen
     If objScreen Is Nothing Then Debug.Print "ConnectToReflection: objScreen is Nothing.": Exit Function
     Debug.Print "ConnectToReflection: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
     
@@ -211,6 +211,8 @@ Private Function NavigateToInterestAmendmentScreen(ByVal sortCode As String, ByV
 
     ' --- Step 2: TERM ALL ---
     objScreen.PutText2 "TERM ALL", ROW_APP_SEL_CMD, COL_APP_SEL_CMD
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    objScreen.SendControlKey ControlKeyCode_Transmit
     objScreen.SendControlKey ControlKeyCode_Transmit
     Debug.Print "NavigateToIAS: Sent TERM ALL"
     Call WaitAndSettle(3000) ' Allow time for TERM ALL to process
@@ -299,4 +301,5 @@ Private Function WaitAndVerifyScreen(ByVal expectedText As String, ByVal rowNum 
         WaitAndVerifyScreen = False
     End If
 End Function
+
 
