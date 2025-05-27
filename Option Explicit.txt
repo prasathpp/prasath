@@ -1,0 +1,58 @@
+Option Explicit
+
+' === Required Object Declarations ===
+Dim app As Attachmate_Reflection_Objects_Framework.ApplicationObject
+Dim session As Attachmate_Reflection_Objects.IbmSession
+Dim ibmTerminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmTerminal
+Dim obScreen As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen
+Dim osView As Attachmate_Reflection_Objects.View
+
+Sub SendTermAllFromMenu()
+
+    If Not ConnectToSession("NTS Back Office - Prod.rd3x") Then
+        MsgBox "Reflection session not found or not connected.", vbCritical
+        Exit Sub
+    End If
+
+    ' Step 1: Press Page Down to return to Application Selection Menu
+    obScreen.SendControlKey ControlKey_PageDown
+    obScreen.WaitForHostSettle 500, 200
+
+    ' Step 2: Confirm we're on the menu
+    If InStr(obScreen.GetText(1, 2, 30), "APPLICATION SELECTION MENU") = 0 Then
+        MsgBox "Failed to reach Application Selection Menu.", vbCritical
+        Exit Sub
+    End If
+
+    ' Step 3: Send "TERM ALL" at 21,13
+    obScreen.PutText2 "TERM ALL", 21, 13
+    obScreen.SendControlKey ControlKey_Enter
+    obScreen.WaitForHostSettle 500, 200
+
+    MsgBox "TERM ALL sent from Application Selection Menu.", vbInformation
+
+End Sub
+
+Function ConnectToSession(sessionTitle As String) As Boolean
+    On Error GoTo ErrHandler
+
+    Set app = GetObject(, "ReflectionWorkspace.Application")
+
+    Dim i As Integer
+    For i = 1 To app.GetFrameCount
+        Dim thisFrame As Attachmate_Reflection_Objects.Frame
+        Set thisFrame = app.GetFrame(i)
+
+        If thisFrame.Caption = sessionTitle Then
+            Set osView = thisFrame.View
+            Set session = osView.Session
+            Set ibmTerminal = session
+            Set obScreen = ibmTerminal.Screen
+            ConnectToSession = True
+            Exit Function
+        End If
+    Next i
+
+ErrHandler:
+    ConnectToSession = False
+End Function
