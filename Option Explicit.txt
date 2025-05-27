@@ -1,43 +1,238 @@
-Connect_V9: Attempting Method 1: GetObject("Reflection Workspace")
-Connect_V9: Method 1 SUCCEEDED. TypeName(objReflectionApp): ApplicationObject
-Connect_V9: objFrame set. TypeName(objFrame): Frame
-Connect_V9: Frame Visible/Activated.
-Connect_V9: Attempting objFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")...
-Connect_V9: objFrame.GetViewByTitleText SUCCEEDED. View Title: 'NTS Back Office - Prod.rd3x'. TypeName(objView): View
-Connect_V9: objTerminal set. TypeName(objTerminal): IbmTerminal
-Connect_V9: objScreen set. TypeName(objScreen): IbmScreen
-Connect_V9: Successfully fully initialized session 'NTS Back Office - Prod.rd3x'.
-Back Office - TERM ALL Entry V9: Successfully connected. View Title: 'NTS Back Office - Prod.rd3x'
-Navigate_V9: Will attempt navigation using key code: 34 (PA1=34)
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 1 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 2 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 3 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 4 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 5 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 6 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 7 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 8 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 9 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Sent key code: 34
-WaitHostSettle_V9: Screen ready (XStatus=0).
-Navigate_V9: Attempt 10 - Current screen text at R1C28L30: 'INTENANCE INPUT INDEX'
-Navigate_V9: Max attempts reached. Current text: 'INTENANCE INPUT INDEX'.
-Navigate_V9: Failed to reach 'APPLICATION SELECTION MENU' after 10 attempts using key 34.
+Attribute VB_Name = "mod_BackOffice_InterestAmendments_Setup_V10"
+Option Explicit
 
+' --- Attachmate Reflection Object Declarations ---
+Public objReflectionApp As Object
+Public objFrame As Object
+Public objView As Object
+Public objTerminal As Object
+Public objScreen As Object
+
+' --- Constants for this specific automation ---
+Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
+
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_APP_MENU_ROW As Long = 1
+Private Const SCREEN_APP_MENU_COL As Long = 28
+Private Const SCREEN_APP_MENU_LENGTH As Long = 30
+
+Private Const CMD_TERM_ALL As String = "TERM ALL"
+Private Const CMD_TERM_ALL_ROW As Long = 21
+Private Const CMD_TERM_ALL_COL As Long = 13
+
+Private Const MAX_NAVIGATION_ATTEMPTS As Integer = 5 ' Reduced, as a single correct key should work quickly
+Private Const SCRIPT_TITLE As String = "Back Office - TERM ALL Entry V10"
+
+
+' --- Main Sub ---
+Sub PerformTermAllEntry_V10()
+    On Error GoTo ErrorHandler
+    Dim success As Boolean
+
+    success = ConnectAndActivateReflectionSession_V10(TARGET_SESSION_ID_PART)
+    If Not success Then
+        MsgBox "Failed to connect/activate Reflection session: '" & TARGET_SESSION_ID_PART & "'." & vbCrLf & _
+               "Ensure session is open. Check Immediate Window for debug details.", vbCritical, SCRIPT_TITLE
+        GoTo CleanupAndExit
+    End If
+    
+    If objScreen Is Nothing Then
+        MsgBox "Critical error: Screen object (objScreen) was not set. Cannot proceed.", vbCritical, SCRIPT_TITLE
+        GoTo CleanupAndExit
+    End If
+    If objView Is Nothing And success Then
+         MsgBox "Warning: objView was not set, but connection reported success.", vbExclamation, SCRIPT_TITLE
+         Debug.Print SCRIPT_TITLE & ": Successfully connected, but objView is Nothing."
+    ElseIf success Then
+         Debug.Print SCRIPT_TITLE & ": Successfully connected. View Title: '" & objView.TitleText & "'"
+    End If
+
+    success = NavigateToScreen_V10(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH, MAX_NAVIGATION_ATTEMPTS)
+    
+    If Not success Then
+        MsgBox "Failed to navigate to '" & SCREEN_APP_MENU & "'. Please verify the manual key press from the current screen ('" & Trim(objScreen.GetText(SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH)) & "') to reach the target menu and update the NavigateToScreen_V10 function accordingly.", vbExclamation, SCRIPT_TITLE
+        GoTo CleanupAndExit
+    End If
+    Debug.Print SCRIPT_TITLE & ": Successfully navigated to: " & SCREEN_APP_MENU
+
+    Call WaitHostSettle_V10(1000)
+    objScreen.PutText2 CMD_TERM_ALL, CMD_TERM_ALL_ROW, CMD_TERM_ALL_COL
+    Debug.Print SCRIPT_TITLE & ": Entered command: '" & CMD_TERM_ALL & "' at R" & CMD_TERM_ALL_ROW & "C" & CMD_TERM_ALL_COL
+    
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    Debug.Print SCRIPT_TITLE & ": Sent Transmit key."
+    
+    Call WaitHostSettle_V10(5000) 
+    MsgBox "'" & CMD_TERM_ALL & "' entered successfully on '" & SCREEN_APP_MENU & "'.", vbInformation, SCRIPT_TITLE
+
+CleanupAndExit:
+    Set objScreen = Nothing
+    Set objTerminal = Nothing
+    Set objView = Nothing
+    Set objFrame = Nothing
+    Set objReflectionApp = Nothing
+    Exit Sub
+ErrorHandler:
+    MsgBox "Error in '" & SCRIPT_TITLE & "':" & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, SCRIPT_TITLE
+    Resume CleanupAndExit
+End Sub
+
+
+' --- Helper Function: Connects and activates session (Version 10 - same as V9 logic) ---
+Private Function ConnectAndActivateReflectionSession_V10(ByVal targetSessionTitleOrUniquePart As String) As Boolean
+    On Error GoTo ConnectErrorHandler
+    ConnectAndActivateReflectionSession_V10 = False
+
+    Debug.Print "Connect_V10: Attempting Method 1: GetObject(""Reflection Workspace"")"
+    On Error Resume Next
+    Set objReflectionApp = GetObject("Reflection Workspace")
+    If Err.Number <> 0 Or objReflectionApp Is Nothing Then
+        Err.Clear
+        Debug.Print "Connect_V10: Method 1 (GetObject(""Reflection Workspace"")) FAILED."
+        GoTo FinalConnectErrorHandling
+    End If
+    Debug.Print "Connect_V10: Method 1 SUCCEEDED. TypeName(objReflectionApp): " & TypeName(objReflectionApp)
+    On Error GoTo ConnectErrorHandler 
+
+    Set objFrame = objReflectionApp.GetObject("Frame")
+    If objFrame Is Nothing Then Debug.Print "Connect_V10: Frame object is Nothing.": Exit Function
+    Debug.Print "Connect_V10: objFrame set. TypeName(objFrame): " & TypeName(objFrame)
+
+    If Not objFrame.Visible Then objFrame.Visible = True
+    objFrame.Activate
+    Debug.Print "Connect_V10: Frame Visible/Activated."
+
+    Debug.Print "Connect_V10: Attempting objFrame.GetViewByTitleText(""" & targetSessionTitleOrUniquePart & """)..."
+    On Error Resume Next
+    Set objView = objFrame.GetViewByTitleText(targetSessionTitleOrUniquePart)
+    If Err.Number <> 0 Or objView Is Nothing Then
+        Err.Clear
+        Debug.Print "Connect_V10: objFrame.GetViewByTitleText FAILED. Error: " & Err.Description
+        GoTo FinalConnectErrorHandling 
+    End If
+    Debug.Print "Connect_V10: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
+    On Error GoTo ConnectErrorHandler 
+        
+    Set objTerminal = objView.Control
+    If objTerminal Is Nothing Then Debug.Print "Connect_V10: objTerminal is Nothing.": GoTo FinalConnectErrorHandling
+    Debug.Print "Connect_V10: objTerminal set. TypeName(objTerminal): " & TypeName(objTerminal)
+    
+    Set objScreen = objTerminal.Screen
+    If objScreen Is Nothing Then Debug.Print "Connect_V10: objScreen is Nothing.": GoTo FinalConnectErrorHandling
+    Debug.Print "Connect_V10: objScreen set. TypeName(objScreen): " & TypeName(objScreen)
+    
+    On Error Resume Next 
+    objTerminal.DisableKeystrokeProductivity = True
+    If Err.Number <> 0 Then Debug.Print "Connect_V10: Info - Error on DisableKeystrokeProductivity. " & Err.Number & ": " & Err.Description: Err.Clear
+    objTerminal.DisableScreenHistory = True
+    If Err.Number <> 0 Then Debug.Print "Connect_V10: Info - Error on DisableScreenHistory. " & Err.Number & ": " & Err.Description: Err.Clear
+    On Error GoTo ConnectErrorHandler
+
+    ConnectAndActivateReflectionSession_V10 = True
+    Debug.Print "Connect_V10: Successfully fully initialized session '" & objView.TitleText & "'."
+    Exit Function
+
+FinalConnectErrorHandling:
+    Debug.Print "Connect_V10: Unrecoverable error point reached in function."
+    ConnectAndActivateReflectionSession_V10 = False
+    If Err.Number = 0 Then Exit Function
+
+ConnectErrorHandler:
+    Debug.Print "Connect_V10: Error (captured by ConnectErrorHandler) - " & Err.Number & ": " & Err.Description
+    ConnectAndActivateReflectionSession_V10 = False
+End Function
+
+' --- Helper Sub (_V10) ---
+Private Sub WaitHostSettle_V10(Optional ByVal settleTimeoutMilliseconds As Long = 3000)
+    If objScreen Is Nothing Then Debug.Print "WaitHostSettle_V10: objScreen is Nothing.": Exit Sub
+    Dim startTime As Date: startTime = Now
+    Do While objScreen.OIA.XStatus <> 0
+        If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
+            Debug.Print "WaitHostSettle_V10: Timeout XStatus."
+            Exit Do
+        End If
+        objScreen.WaitForHostSettle 100, 50: DoEvents
+    Loop
+    objScreen.WaitForHostSettle 500, 200
+    Debug.Print "WaitHostSettle_V10: Screen ready (XStatus=" & objScreen.OIA.XStatus & ")."
+End Sub
+
+' --- Helper Function: Navigates to screen (Version 10 - YOU NEED TO SET THE CORRECT NAVIGATION KEY) ---
+Private Function NavigateToScreen_V10(ByVal targetScreenText As String, _
+                                  ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
+                                  ByVal maxAttempts As Integer) As Boolean
+    On Error Resume Next 
+    NavigateToScreen_V10 = False
+    If objScreen Is Nothing Then Debug.Print "Navigate_V10: objScreen is Nothing.": Exit Function
+
+    Dim attempts As Integer, currentScreenContent As String
+    Dim navigationKey As Long
+    Dim commandToSend As String
+    commandToSend = "" ' For typed commands
+
+    '----------------------------------------------------------------------------------------------------
+    ' **** IMPORTANT: MODIFY THIS SECTION BASED ON YOUR MANUAL TESTING ****
+    '
+    ' Determine the key or command that manually takes you from the current screen
+    ' (e.g., "FILE MAINTENANCE INPUT INDEX") to "APPLICATION SELECTION MENU".
+    '
+    ' Option 1: A Program Function / Attention Key
+    '   navigationKey = ControlKeyCode_PF3  ' Example for PF3 (End/Exit)
+    '   navigationKey = ControlKeyCode_PF12 ' Example for PF12 (Cancel/Return)
+       navigationKey = ControlKeyCode_Pa1  ' This was indicated by PA1=Menu, but didn't work from sub-screen
+    '   navigationKey = ControlKeyCode_PageDown ' If Page Down should work from the current screen
+    '   navigationKey = ControlKeyCode_Clear    ' If Clear key resets and returns
+    
+    ' Option 2: Typing a command and then Transmitting
+    '   commandToSend = "MENU" ' Or "EXIT", "END", etc.
+    '   navigationKey = ControlKeyCode_Transmit ' To send the typed command
+    '   ' You might need to specify command line row/col if using commandToSend
+    '   ' Dim cmdRow As Long: cmdRow = 23 ' Example
+    '   ' Dim cmdCol As Long: cmdCol = 8  ' Example
+    '
+    ' For now, defaulting to PA1 as it was previously discussed.
+    ' YOU MUST CHANGE THIS IF PA1 IS NOT THE CORRECT KEY FROM "...INTENANCE INPUT INDEX"
+     navigationKey = ControlKeyCode_Pa1 ' <<<<====== CHANGE THIS LINE IF NEEDED
+    '
+    '----------------------------------------------------------------------------------------------------
+
+    If commandToSend = "" And navigationKey = 0 Then
+        Debug.Print "Navigate_V10: ERROR - No navigation key or command specified."
+        Exit Function ' Or handle error
+    End If
+
+    If commandToSend <> "" Then
+        Debug.Print "Navigate_V10: Will attempt navigation by typing command: """ & commandToSend & """ then Transmit."
+    Else
+        Debug.Print "Navigate_V10: Will attempt navigation using key code: " & navigationKey
+    End If
+
+
+    For attempts = 1 To maxAttempts
+        Call WaitHostSettle_V10(1500) 
+        currentScreenContent = Trim(objScreen.GetText(targetRow, targetCol, targetLength))
+        Debug.Print "Navigate_V10: Attempt " & attempts & " - Current screen: '" & currentScreenContent & "'"
+        
+        If UCase(currentScreenContent) = UCase(targetScreenText) Then
+            NavigateToScreen_V10 = True
+            Exit Function 
+        End If
+        
+        If attempts < maxAttempts Then
+            If commandToSend <> "" Then
+                ' Example: Assuming command line is row 23, column 8. ADJUST AS NEEDED.
+                objScreen.MoveCursor 23, 8 
+                objScreen.PutText2 commandToSend, 23, 8 
+                Call WaitHostSettle_V10(200) ' Brief settle after putting text
+                objScreen.SendControlKey ControlKeyCode_Transmit ' Send the command
+                Debug.Print "Navigate_V10: Typed '" & commandToSend & "' and sent Transmit."
+            ElseIf navigationKey <> 0 Then
+                objScreen.SendControlKey navigationKey 
+                Debug.Print "Navigate_V10: Sent key code: " & navigationKey
+            End If
+        Else
+            Debug.Print "Navigate_V10: Max attempts reached. Current text: '" & currentScreenContent & "'."
+        End If
+    Next attempts
+    Debug.Print "Navigate_V10: Failed to reach '" & targetScreenText & "' after " & maxAttempts & " attempts."
+End Function
