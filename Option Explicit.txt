@@ -14,12 +14,10 @@ Public objScreen As Object       ' Represents the interactive screen area of the
 ' Define the EXACT title of the session window we will look for using GetViewByTitleText.
 ' *** IMPORTANT: This must match the window title EXACTLY! ***
 ' You might need to adjust this if Reflection adds extra text like [Connected].
-' Check the window title bar carefully. If the title is like "C:\...\NTS Back Office - Prod.rd3x",
-' try using that full path here instead, or the method below won't work.
+' Check the window title bar carefully. If the title is like "C:\...\NTS Back Office - Prod.rd3x]",
+' try using that full path here instead.
 ' Based on the screenshot, the title is "Reflection Workspace - [NTS Back Office - Prod.rd3x]".
-' Let's try searching for the part inside the brackets, as GetViewByTitleText sometimes looks for just the session file part.
-' If the exact file name "NTS Back Office - Prod.rd3x" doesn't work, try the full title or just the file name.
-' Let's revert to the exact file name as in your working code snippet's GetViewByTitleText call.
+' Let's try using just the file name "NTS Back Office - Prod.rd3x" as it seemed to work before GetViewByTitleText.
 Private Const TARGET_SESSION_EXACT_TITLE As String = "NTS Back Office - Prod.rd3x"
 
 
@@ -160,7 +158,7 @@ Private Function ConnectToReflection_RevisedV9(ByVal targetSessionExactTitle As 
         Debug.Print "ConnectToReflection_RevisedV9: Screen object is Nothing."
         MsgBox "Could not get the Reflection Screen object from the terminal control.", vbCritical, SCRIPT_TITLE
         Exit Function
-    ZF: End If
+    End If
     Debug.Print "ConnectToReflection_RevisedV9: objScreen obtained. TypeName: " & TypeName(objScreen)
 
     ' Optional but recommended settings for automation (ignore errors if properties don't exist)
@@ -206,7 +204,7 @@ Private Sub WaitHostSettle_RevisedV9(Optional ByVal settleTimeoutMilliseconds As
     If objScreen Is Nothing Then
         Debug.Print "WaitHostSettle_RevisedV9: objScreen is Nothing. Cannot wait."
         Exit Sub
-    ZF: End If
+    End If
     Dim startTime As Date: startTime = Now
 
     Debug.Print "WaitHostSettle_RevisedV9: Waiting for host ready (XStatus=0 or timeout " & settleTimeoutMilliseconds & "ms)..."
@@ -217,7 +215,7 @@ Private Sub WaitHostSettle_RevisedV9(Optional ByVal settleTimeoutMilliseconds As
             Debug.Print "WaitHostSettle_RevisedV9: Timeout waiting for XStatus=0."
             ' Optional: Add a more visible error/warning here if timeouts are critical
             Exit Do ' Exit loop on timeout
-        ZF: End If
+        End If
 
         ' Wait for a short period for the host to settle the OIA status
         ' Using smaller increments as seen in your original code (50, 20)
@@ -231,7 +229,7 @@ Private Sub WaitHostSettle_RevisedV9(Optional ByVal settleTimeoutMilliseconds As
              ' the wait for the screen after the reminder.
              ' We can then continue the loop here to re-check the main OIA status.
              ' No need to break the loop here; the recursive call handles the pause.
-        ZF: End If
+        End If
 
     Loop
 
@@ -256,7 +254,7 @@ Private Function CheckForAndHandleSecurityReminder_RevisedV9() As Boolean
     If objScreen Is Nothing Then
         Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: objScreen is Nothing."
         Exit Function
-    ZF: End If
+    End If
 
     ' Use a short settle time before checking, as this is called within a wait loop
     objScreen.WaitForHostSettle 50, 1000
@@ -283,7 +281,7 @@ Private Function CheckForAndHandleSecurityReminder_RevisedV9() As Boolean
         WaitHostSettle_RevisedV9()
 
         ' Control will return here after the recursive wait completes.
-    ZF: End If
+    End If
 End Function
 
 ' Helper function to check for text at specific coordinates on the screen.
@@ -299,7 +297,7 @@ Private Function ScreenContainsText_RevisedV9(expectedText As String, rowNum As 
     If length = 0 Then length = Len(expectedText)
 
     Dim actualText As String: actualText = ""
-    On Error Resume Next ' GetText might error if coords are invalid, although unlikely with fixed values
+    On Error Resume Next ' GetText might error if coords are invalid
     actualText = Trim(objScreen.GetText(rowNum, colNum, length))
     On Error GoTo 0
 
@@ -317,7 +315,7 @@ Private Sub SendText_RevisedV9(data As String, rowNum As Long, colNum As Long)
     If objScreen Is Nothing Then
         Debug.Print "SendText_RevisedV9: objScreen is Nothing. Cannot send text."
         Exit Sub
-    ZF: End If
+    End If
 
     Call WaitHostSettle_RevisedV9() ' Wait for the screen to be ready before attempting input
 
@@ -342,7 +340,7 @@ Private Function NavigateToScreen_RevisedV9(ByVal targetScreenText As String, _
     If objScreen Is Nothing Then
         Debug.Print "NavigateToScreen_RevisedV9: objScreen is Nothing. Cannot navigate."
         Exit Function
-    ZF: End If
+    End If
 
     Debug.Print "NavigateToScreen_RevisedV9: Attempting to navigate to '" & targetScreenText & "' using key " & navigationKey & " (Max attempts: " & maxAttempts & ")..."
 
@@ -351,20 +349,20 @@ Private Function NavigateToScreen_RevisedV9(ByVal targetScreenText As String, _
         Call WaitHostSettle_RevisedV9(2000) ' Wait for the screen to settle before checking or sending key
 
         ' Check if we have reached the target screen
-        If ScreenContainsText_RevisedV9(targetScreenText, targetRow, targetCol, targetLength, 100) Then
+        If ScreenContainsText_RevisedV9(targetScreenText, targetRow, targetCol, targetLength, 100) then
             Debug.Print "NavigateToScreen_RevisedV9: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
             NavigateToScreen_RevisedV9 = True ' Indicate success
             Exit Function ' Exit the function
-        ZF: End If
+        End If
 
         ' If not on the target screen and not on the last attempt, send the navigation key
-        If attempts < maxAttempts Then
+        If attempts < maxAttempts then
             Debug.Print "NavigateToScreen_RevisedV9: Not on target screen. Sending key code: " & navigationKey & "."
             objScreen.SendControlKey navigationKey
             ' WaitHostSettle is called after sending the key within the loop itself
         Else
             Debug.Print "NavigateToScreen_RevisedV9: Max attempts (" & maxAttempts & ") reached without reaching '" & targetScreenText & "'."
-        ZF: End If
+        End If
     Next attempts
 
     ' If the loop finishes without success
@@ -394,7 +392,7 @@ Private Function VerifyScreen_RevisedV9(expectedText As String, rowNum As Long, 
     Else
         VerifyScreen_RevisedV9 = False
         Debug.Print "VerifyScreen_RevisedV9 FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'."
-    ZF: End If
+    End If
 End Function
 
 ' Helper Function: Navigates back to Master Index using PF2
@@ -423,5 +421,5 @@ End Function
 '         ' End ' Example: Force exit on critical navigation failure
 '     Else
 '         Debug.Print "BackToMasterIndex_RevisedV9: Successfully reached MASTER INDEX."
-'     ZF: End If
+'     End If
 ' End Function
