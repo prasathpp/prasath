@@ -422,11 +422,11 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Call SendKey(ControlKeyCode_Transmit, 750)
         If k = 1 Then
             obScreen.WaitForHostSettle 500, 2000
-            If VerifyScreen("REASON CODE NOT ENTERED", 23, 4, 25) Then 
+            If VerifyScreen("REASON CODE NOT ENTERED", 23, 4, 25) Then
                 Ws_Data.Range("H" & iRow).Value = "HostError: REASON CODE still not accepted"
                 Debug.Print "Host still reports REASON CODE NOT ENTERED"
                 GoTo PageDownAndExit_Adjustment
-            ElseIf VerifyScreen("AMENDMENT ACCEPTED", 23, 4, 18) Or VerifyScreen("TRANSACTION ACCEPTED", 23, 4, 20) Then 
+            ElseIf VerifyScreen("AMENDMENT ACCEPTED", 23, 4, 18) Or VerifyScreen("TRANSACTION ACCEPTED", 23, 4, 20) Then
                 Debug.Print "Amendment accepted after first Enter."
             End If
         End If ' This is the End If that matches "If k = 1 Then"
@@ -657,13 +657,6 @@ ConnectExtra_ErrorHandler_FinalMsg:
     End If
     Call CleanUpReflectionObjects
 End Sub
-```**Key changes in `ConnectExtra`:**
-1.  **Added `End If`:** The missing `End If` for the `If Err.Number <> 0 Or osView Is Nothing Then` block (related to `GetViewByTitleText` failure) has been added.
-2.  **Robust `CreateView` Error Handling:** The logic around `ThisFrame.CreateView` now uses a local `On Error Resume Next` to ensure that `Err.Number` and `osView Is Nothing` can be checked immediately after the call, capturing any errors from `CreateView` itself more reliably. The main error handler (`On Error GoTo ConnectExtra_ErrorHandler`) is reinstated afterwards.
-3.  **Final `osView` Check:** Added a check `If osView Is Nothing Then` after all acquisition attempts (GetByTitle, Iterate, CreateView) to ensure that `osView` is valid before proceeding. If it's not, the sub will go to the error handler.
-4.  **Error Handler Refinements:** Minor adjustments to error handler messages and conditions to avoid redundant pop-ups.
-
-Make sure to replace your existing `ConnectExtra` subroutine with this corrected version. The line numbers in your VBA editor might shift, but the logical structure is what's important. This should resolve the "End If without Block If" error and make the connection process more resilient.
 
 '===============================================================================
 ' HELPER FUNCTIONS
@@ -687,7 +680,7 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     Call WaitReady(100)
     If length = 0 Then
         If expectedText = "" Then length = 80 Else length = Len(expectedText)
-        End If
+        
     End If
     Dim actualText As String
     On Error Resume Next
