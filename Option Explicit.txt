@@ -403,31 +403,21 @@ Sub ConnectExtra()
     currentAction = "Initializing ConnectExtra"
 
     ' --- Attempt to get path from Sheet4.txtEDPPath ---
-    edpPathFromSheet = ""
-    sheetExists = False
-    controlExists = False
-
-    currentAction = "Checking Sheet4 and txtEDPPath"
-    On Error Resume Next ' Temporarily ignore error if Sheet4 doesn't exist
+    ' (This part for getting stEDPFile seems to be working correctly now, so I'll keep it concise)
+    On Error Resume Next
     Set ws = Sheet4
     If Err.Number = 0 Then
-        sheetExists = True
         Dim OleObj As OLEObject
-        Set OleObj = Nothing
         Set OleObj = ws.OLEObjects("txtEDPPath")
-        If Err.Number = 0 Then
-            If TypeOf OleObj.Object Is MSForms.TextBox Then
-                controlExists = True
-                edpPathFromSheet = OleObj.Object.Text
-            End If
+        If Err.Number = 0 And TypeOf OleObj.Object Is MSForms.TextBox Then
+            edpPathFromSheet = OleObj.Object.Text
         End If
     End If
-    On Error GoTo MyHandler ' Restore general error handling
+    On Error GoTo MyHandler
 
-    If sheetExists And controlExists And edpPathFromSheet <> "" Then
+    If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
     Else
-        ' ... (messaging for user to select file - this part seems to work as you got the dialog) ...
         stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
@@ -437,88 +427,117 @@ Sub ConnectExtra()
         Exit Sub
     End If
     
-    If strBoPath = "" Then
-       strBoPath = stEDPFile
-    End If
+    If strBoPath = "" Then strBoPath = stEDPFile
     
     Mysession = Split(strBoPath, "\")
-    sessionName = Mysession(UBound(Mysession))
+    sessionName = Mysession(UBound(Mysession)) ' This is the FILENAME like "NTS Back Office - Prod.rd3x"
     
+    ' --- Try to connect to Reflection ---
     currentAction = "Getting/Creating Reflection Application Object"
-    On Error Resume Next ' Temporarily allow GetObject to fail
-    Set app = GetObject("Reflection Workspace")
+    On Error Resume Next ' Allow GetObject to fail if not running
+    Set app = GetObject(, "Reflection.Application") ' Try a common ProgID for Reflection itself
     If Err.Number <> 0 Then
         Err.Clear
-        Set app = CreateObject("Reflection Workspace")
-        If app Is Nothing Then ' This check is if CreateObject itself fails
-            MsgBox "Could not GetObject or CreateObject 'Reflection Workspace'. Ensure Reflection is installed and libraries are referenced.", vbCritical, sPrj_Name
-            GoTo MyHandler ' Jump to handler to set obScreen = Nothing
+        Set app = CreateObject("Reflection.Application") ' Try creating it
+        If app Is Nothing Then
+            Err.Clear
+            Set app = GetObject(, "EXTRA.System") ' Try ProgID for Attachmate EXTRA!
+             If Err.Number <> 0 Then
+                Err.Clear
+                Set app = CreateObject("EXTRA.System")
+                If app Is Nothing Then
+                    MsgBox "Could not GetObject or CreateObject for Reflection/EXTRA. Ensure it's installed and libraries are referenced.", vbCritical, sPrj_Name
+                    GoTo MyHandler
+                End If
+            End If
         End If
     End If
-    On Error GoTo MyHandler ' Restore general error handling for subsequent operations
-
-    If app Is Nothing Then ' Should have been caught above, but as a safeguard
-        MsgBox "Reflection Application object ('app') is Nothing after Get/Create.", vbCritical, sPrj_Name
-        GoTo MyHandler
-    End If
-
-    Debug.Print "TypeName of app object: " & TypeName(app) ' Check what object type we got
-
-    currentAction = "Waiting for app initialization"
-    ' --- Modification: Some versions might not support IsInitialized or Wait well ---
-    ' --- Let's try to proceed carefully or with a simple delay ---
-    ' Do While app.IsInitialized = False  ' <<< Potential failure point
-    '   app.Wait 200                     ' <<< Potential failure point
-    ' Loop
-    Application.Wait (Now + TimeValue("0:00:02")) ' Simple 2-second pause instead
-
-    currentAction = "Getting/Creating Frame"
-    Set ThisFrame = app.Frame ' Simpler way to get the frame if available
-    If ThisFrame Is Nothing Then
-        Set ThisFrame = app.GetObject("Frame") ' Try original way
-        If ThisFrame Is Nothing Then
-            Set ThisFrame = app.CreateFrame ' Try creating if still nothing
-             If ThisFrame Is Nothing Then
-                MsgBox "Could not Get or Create Reflection Frame object.", vbCritical, sPrj_Name
-                GoTo MyHandler
-             End If
-        End If
-    End If
-    ThisFrame.Visible = True
-
-    currentAction = "Finding or Creating View for session: " & sessionName
-    Dim sessionIsOpen As Boolean
-    sessionIsOpen = False
-    Dim tempView As Object
+    On Error GoTo MyHandler
     
-    If ThisFrame.Views.Count > 0 Then ' Check if Views collection exists and has items
+    If app Is Nothing Then GoTo MyHandler
+
+    Debug.Print "TypeName of app object: " & TypeName(app)
+    app.Visible = True ' Make the application visible if it wasn't
+
+    currentAction = "Finding or Opening Session: " & sessionName
+    Dim foundSession As Boolean
+    foundSession = False
+    
+    ' Check if the Sessions collection exists and try to find the session by its path or title
+    Dim sess As Object ' Could be Reflection.Session or EXTRA.Session
+    If TypeName(app) = "Application" Or TypeName(app) = "System" Then ' Reflection.Application or EXTRA.System
+        If app.Sessions.Count > 0 Then
+            For Each sess In app.Sessions
+                ' Compare strBoPath (full path) or sessionName (file name)
+                If InStr(1, sess.FullName, strBoPath, vbTextCompare) > 0 Or _
+                   InStr(1, sess.Name, sessionName, vbTextCompare) > 0 Or _
+                   InStr(1, sess.Window.Caption, sessionName, vbTextCompare) > 0 Then
+                    
+                    Set ibmTerminal = sess ' Assuming the session IS the terminal object or can provide it
+                    If TypeName(ibmTerminal) = "Session" Then ' For EXTRA, might need to get Screen from Session
+                        Set obScreen = ibmTerminal.Screen
+                    ElseIf Not ibmTerminal Is Nothing Then ' For Reflection, sess might be IbmTerminal
+                         Set obScreen = ibmTerminal.Screen
+                    End If
+                    
+                    If Not obScreen Is Nothing Then
+                        foundSession = True
+                        Exit For
+                    End If
+                End If
+            Next sess
+        End If
+        
+        If Not foundSession Then
+            ' Try to open the session
+            Set sess = app.Sessions.Open(strBoPath) ' Common method
+            If Not sess Is Nothing Then
+                Set ibmTerminal = sess
+                If TypeName(ibmTerminal) = "Session" Then
+                    Set obScreen = ibmTerminal.Screen
+                ElseIf Not ibmTerminal Is Nothing Then
+                     Set obScreen = ibmTerminal.Screen
+                End If
+                If Not obScreen Is Nothing Then foundSession = True
+            End If
+        End If
+    Else ' If app is "Reflection Workspace" type, try the Frame/View model again but more carefully
+        currentAction = "Using Reflection Workspace - Getting/Creating Frame"
+        Set ThisFrame = app.Frame
+        If ThisFrame Is Nothing Then Set ThisFrame = app.GetObject("Frame")
+        If ThisFrame Is Nothing Then Set ThisFrame = app.CreateFrame
+        If ThisFrame Is Nothing Then GoTo MyHandler ' Failed to get/create frame
+        ThisFrame.Visible = True
+
+        currentAction = "Using Reflection Workspace - Finding/Creating View"
+        Dim tempView As Object
         For Each tempView In ThisFrame.Views
             If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
-                Set osView = tempView
-                sessionIsOpen = True
-                Exit For
+                Set osView = tempView: foundSession = True: Exit For
             End If
         Next tempView
+        If Not foundSession Then Set osView = ThisFrame.CreateView(strBoPath)
+        If osView Is Nothing Then GoTo MyHandler ' Failed to get/create view
+        
+        Set ibmTerminal = osView.Control
+        Set obScreen = ibmTerminal.Screen
+        foundSession = Not obScreen Is Nothing
     End If
 
-    If Not sessionIsOpen Then
-        Set osView = ThisFrame.CreateView(strBoPath)
-        If osView Is Nothing Then
-            MsgBox "Could not open or create view for session: " & strBoPath, vbCritical, sPrj_Name
-            GoTo MyHandler
-        End If
+
+    If Not foundSession Or obScreen Is Nothing Then
+        MsgBox "Could not find or open the session: " & sessionName, vbCritical, sPrj_Name
+        GoTo MyHandler
     End If
     
-    currentAction = "Getting Terminal Control and Screen"
-    Set ibmTerminal = osView.Control
-    Set obScreen = ibmTerminal.Screen
-    
     currentAction = "Setting Terminal Properties"
+    On Error Resume Next ' Some properties might not exist on all terminal types
     ibmTerminal.DisableKeystrokeProductivity = True
     ibmTerminal.DisableScreenHistory = True
-    
+    On Error GoTo MyHandler
+
     currentAction = "ConnectExtra Successful"
-    Exit Sub ' Successful exit
+    Exit Sub
                          
 MyHandler:
     MsgBox "Session connection error during: '" & currentAction & "'" & vbNewLine & _
@@ -526,6 +545,7 @@ MyHandler:
            "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
     Set obScreen = Nothing
 End Sub
+
 Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
     If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
     Do While obScreen.OIA.XStatus <> 0
