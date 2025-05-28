@@ -287,19 +287,18 @@ Sub ConnectExtra()
     Dim edpPathFromSheet As String
     Dim ws As Worksheet
     Dim currentAction As String
-    Dim targetSessionViewTitle As String ' This will be the VIEW title searched for
-    Dim OleObj As Object ' For ActiveX control
-    Dim tempView As Object ' For iterating views
-    Dim sessionIsOpen As Boolean ' Flag
+    Dim targetSessionViewTitle As String 
+    Dim OleObj As Object 
+    Dim tempView As Object 
+    Dim sessionIsOpen As Boolean
 
     On Error GoTo ConnectExtra_ErrorHandler
 
     currentAction = "Initializing and getting session path"
-    ' --- Get path from Sheet4.txtEDPPath ---
-    On Error Resume Next ' To handle if Sheet4 or control doesn't exist
-    Set ws = Sheet4 ' Assumes CodeName of the sheet is Sheet4
+    On Error Resume Next 
+    Set ws = Sheet4 
     If Err.Number = 0 Then
-        Set OleObj = ws.OLEObjects("txtEDPPath") ' Assumes ActiveX TextBox named txtEDPPath
+        Set OleObj = ws.OLEObjects("txtEDPPath") 
         If Err.Number = 0 Then
             If TypeOf OleObj.Object Is MSForms.TextBox Then
                 edpPathFromSheet = OleObj.Object.Text
@@ -312,8 +311,8 @@ Sub ConnectExtra()
     Else
         Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
     End If
-    Err.Clear ' Clear any error from checking Sheet4/control
-    On Error GoTo ConnectExtra_ErrorHandler ' Restore error handling
+    Err.Clear 
+    On Error GoTo ConnectExtra_ErrorHandler 
 
     If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
@@ -327,24 +326,23 @@ Sub ConnectExtra()
         Set obScreen = Nothing: Exit Sub
     End If
     
-    strBoPath = stEDPFile ' Full path
-    sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1) ' Extract filename, e.g., "NTS Back Office - Prod.rd3x"
-    targetSessionViewTitle = sessionName ' Start with filename, will refine if needed by iterating views
+    strBoPath = stEDPFile 
+    sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
+    targetSessionViewTitle = sessionName
 
     currentAction = "Attempting GetObject(, ""Reflection Workspace"")"
     Debug.Print currentAction
     On Error Resume Next
-    Set app = GetObject(, "Reflection Workspace") ' Using comma before ProgID to get running instance
+    Set app = GetObject(, "Reflection Workspace")
     If Err.Number <> 0 Or app Is Nothing Then
         Err.Clear
         Debug.Print "GetObject(""Reflection Workspace"") FAILED or app is Nothing. Attempting CreateObject..."
-        currentAction = "Attempting CreateObject(""Reflection Workspace"")" ' Update current action
+        currentAction = "Attempting CreateObject(""Reflection Workspace"")"
         Set app = CreateObject("Reflection Workspace")
         If Err.Number <> 0 Or app Is Nothing Then
             Err.Clear
             Debug.Print "CreateObject(""Reflection Workspace"") also FAILED."
-            MsgBox "Could not connect to or create 'Reflection Workspace'." & vbCrLf & _
-                   "Please ensure Reflection is installed and running if GetObject is preferred.", vbCritical, sPrj_Name
+            MsgBox "Could not connect to or create 'Reflection Workspace'.", vbCritical, sPrj_Name
             GoTo ConnectExtra_ErrorHandler_Exit
         End If
     End If
@@ -358,33 +356,74 @@ Sub ConnectExtra()
     Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
 
     If Not ThisFrame.Visible Then ThisFrame.Visible = True
-    ThisFrame.Activate ' Bring to front
+    ThisFrame.Activate
     Debug.Print "Frame Visible/Activated."
 
-    currentAction = "Searching for or Creating View for: " & sessionName
+    currentAction = "Checking ThisFrame.Views object"
     Debug.Print currentAction
-    
-    sessionIsOpen = False
-    If ThisFrame.Views.Count > 0 Then
-        For Each tempView In ThisFrame.Views
-            Debug.Print "Checking existing View: " & tempView.TitleText
-            If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
-                Set osView = tempView
-                sessionIsOpen = True
-                Debug.Print "Found matching running View: " & osView.TitleText
-                Exit For
-            End If
-        Next tempView
+    Dim viewsCollection As Object
+    On Error Resume Next ' Check if .Views itself is accessible
+    Set viewsCollection = ThisFrame.Views
+    If Err.Number <> 0 Then
+        Debug.Print "Error accessing ThisFrame.Views. Error: " & Err.Description
+        MsgBox "The Frame object does not support a .Views collection property as expected.", vbCritical, sPrj_Name
+        GoTo ConnectExtra_ErrorHandler_Exit
     End If
+    If viewsCollection Is Nothing Then
+        Debug.Print "ThisFrame.Views is Nothing."
+        ' If Views is Nothing, maybe we should try CreateView directly, assuming no views exist.
+    End If
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    sessionIsOpen = False
+    If Not viewsCollection Is Nothing Then
+        currentAction = "Checking viewsCollection.Count"
+        Debug.Print currentAction
+        Dim viewsCount As Long
+        On Error Resume Next ' Count might fail on some empty/uninitialized collections
+        viewsCount = viewsCollection.Count
+        If Err.Number <> 0 Then
+            Debug.Print "Error getting viewsCollection.Count. Error: " & Err.Description
+            ' Proceed as if count is 0 or try CreateView directly
+            viewsCount = 0 ' Assume 0 if count fails
+            Err.Clear
+        End If
+        On Error GoTo ConnectExtra_ErrorHandler
+        Debug.Print "viewsCollection.Count = " & viewsCount
+
+        If viewsCount > 0 Then
+            currentAction = "Iterating through existing Views"
+            Debug.Print currentAction
+            For Each tempView In viewsCollection
+                Dim viewTitle As String
+                On Error Resume Next ' View object might not have TitleText
+                viewTitle = tempView.TitleText
+                If Err.Number <> 0 Then
+                    Debug.Print "Error getting tempView.TitleText for a view. TypeName(tempView): " & TypeName(tempView)
+                    viewTitle = "" ' Cannot get title
+                    Err.Clear
+                End If
+                On Error GoTo ConnectExtra_ErrorHandler
+                
+                Debug.Print "Checking existing View: " & viewTitle
+                If InStr(1, viewTitle, sessionName, vbTextCompare) > 0 Then
+                    Set osView = tempView
+                    sessionIsOpen = True
+                    Debug.Print "Found matching running View: " & osView.TitleText
+                    Exit For
+                End If
+            Next tempView
+        End If
+    End If ' End If Not viewsCollection Is Nothing
 
     If Not sessionIsOpen Then
-        Debug.Print "View not found by title containing '" & sessionName & "'. Attempting to create/open view with path: " & strBoPath
+        Debug.Print "View not found or no views existed. Attempting to create/open view with path: " & strBoPath
         currentAction = "Attempting ThisFrame.CreateView(""" & strBoPath & """)"
         On Error Resume Next 
-        Set osView = ThisFrame.CreateView(strBoPath) ' CreateView opens the .rd3x file
+        Set osView = ThisFrame.CreateView(strBoPath)
         If Err.Number <> 0 Or osView Is Nothing Then
             Err.Clear
-            Debug.Print "ThisFrame.CreateView FAILED or returned Nothing."
+            Debug.Print "ThisFrame.CreateView FAILED or returned Nothing. Error: " & Err.Description
             MsgBox "Could not find or create a Reflection session view for: '" & sessionName & "'. Ensure path is correct and Reflection can open it.", vbCritical, sPrj_Name
             GoTo ConnectExtra_ErrorHandler_Exit
         End If
@@ -392,12 +431,11 @@ Sub ConnectExtra()
         On Error GoTo ConnectExtra_ErrorHandler
     End If
     
-    If osView Is Nothing Then ' Should not happen if logic above is correct
+    If osView Is Nothing Then 
         MsgBox "osView object is Nothing after search/create. Cannot proceed.", vbCritical, sPrj_Name
         GoTo ConnectExtra_ErrorHandler_Exit
     End If
 
-    ' osView.Activate ' Might not be necessary or could cause issues
     Debug.Print "View obtained. View Title: '" & osView.TitleText & "'. TypeName(osView): " & TypeName(osView)
 
     currentAction = "Attempting osView.Control"
@@ -412,7 +450,7 @@ Sub ConnectExtra()
     If obScreen Is Nothing Then Debug.Print "Screen object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
     Debug.Print "Screen Object obtained. TypeName: " & TypeName(obScreen)
 
-    On Error Resume Next ' These properties might not be writable or exist on all versions
+    On Error Resume Next 
     ibmTerminal.DisableKeystrokeProductivity = True
     If Err.Number <> 0 Then Debug.Print "ConnectExtra Info: Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
     ibmTerminal.DisableScreenHistory = True
