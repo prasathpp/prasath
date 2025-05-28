@@ -326,22 +326,40 @@ Sub ConnectExtra()
     currentAction = "Initializing ConnectExtra"
     Debug.Print currentAction
 
-    On Error Resume Next
-    Set ws = Sheet4
+    ' --- Get path from Sheet4.txtEDPPath ---
+    edpPathFromSheet = "" ' Initialize
+    On Error Resume Next ' To handle if Sheet4 or control doesn't exist
+    Set ws = Sheet4 ' Assumes CodeName of the sheet is Sheet4
     If Err.Number = 0 Then
-        Set OleObj = ws.OLEObjects("txtEDPPath")
-        If Err.Number = 0 And TypeOf OleObj.Object Is MSForms.TextBox Then edpPathFromSheet = OleObj.Object.Text
-        Else Debug.Print "ConnectExtra: txtEDPPath not TextBox or not found. Err: " & Err.Description
+        ' Sheet4 CodeName exists, now check for OLEObject
+        Set OleObj = ws.OLEObjects("txtEDPPath") ' Assumes ActiveX TextBox named txtEDPPath
+        If Err.Number = 0 Then
+            ' OLEObject "txtEDPPath" exists, now check its type
+            If TypeOf OleObj.Object Is MSForms.TextBox Then
+                edpPathFromSheet = OleObj.Object.Text
+            Else
+                Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
+            End If
+        Else
+             Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4 (CodeName). Error: " & Err.Description
         End If
-    Else Debug.Print "ConnectExtra: Sheet4 CodeName not found. Err: " & Err.Description
+    Else
+        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
     End If
-    Err.Clear: On Error GoTo ConnectExtra_ErrorHandler
+    Err.Clear ' Clear any error from the above block
+    On Error GoTo ConnectExtra_ErrorHandler ' Restore proper error handling
 
-    If edpPathFromSheet <> "" Then stEDPFile = edpPathFromSheet
-    Else Debug.Print "ConnectExtra: Path from Sheet4 empty. Prompting."; stEDPFile = Application.GetOpenFilename(title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+    If edpPathFromSheet <> "" Then
+        stEDPFile = edpPathFromSheet
+    Else
+        Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not correctly found. Prompting user."
+        stEDPFile = Application.GetOpenFilename(title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
-    If stEDPFile = "False" Or stEDPFile = "" Then MsgBox "No session file. Exiting.", vbCritical, SCRIPT_TITLE: Set obScreen = Nothing: Exit Sub
+    If stEDPFile = "False" Or stEDPFile = "" Then
+        MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
+        Set obScreen = Nothing: Exit Sub
+    End If
     
     strBoPath = stEDPFile
     sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
@@ -355,7 +373,10 @@ Sub ConnectExtra()
         Err.Clear: Debug.Print "GetObject FAILED. Attempting CreateObject..."
         currentAction = "CreateObject(""Reflection Workspace"")"
         Set app = CreateObject("Reflection Workspace")
-        If Err.Number <> 0 Or app Is Nothing Then Err.Clear: Debug.Print "CreateObject FAILED.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+        If Err.Number <> 0 Or app Is Nothing Then
+            Err.Clear: Debug.Print "CreateObject FAILED."
+            GoTo ConnectExtra_ErrorHandler_FinalMsg ' Jumps to the message box and cleanup
+        End If
     End If
     Debug.Print "App Object obtained. TypeName: " & TypeName(app)
     On Error GoTo ConnectExtra_ErrorHandler
@@ -363,7 +384,10 @@ Sub ConnectExtra()
     currentAction = "app.GetObject(""Frame"")"
     Debug.Print currentAction
     Set ThisFrame = app.GetObject("Frame")
-    If ThisFrame Is Nothing Then Debug.Print "Frame obj is Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    If ThisFrame Is Nothing Then
+        Debug.Print "Frame obj is Nothing."
+        GoTo ConnectExtra_ErrorHandler_FinalMsg
+    End If
     Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
 
     If Not ThisFrame.Visible Then ThisFrame.Visible = True
@@ -377,19 +401,37 @@ Sub ConnectExtra()
         Err.Clear: Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
         Debug.Print "Iterating views for: " & sessionName
         sessionIsOpen = False
-        If ThisFrame.Views.Count > 0 Then ' This line was problematic, assuming it now works or GetViewByTitleText works
-             For Each tempView In ThisFrame.Views
-                If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
-                    Set osView = tempView: sessionIsOpen = True: Debug.Print "Found view by iteration: " & osView.TitleText: Exit For
-                End If
-            Next tempView
-        Else Debug.Print "ThisFrame.Views.Count is 0 or error accessing Views collection."
+        
+        ' --- Cautious iteration of Views ---
+        Dim viewsCollection As Object
+        Set viewsCollection = Nothing ' Initialize
+        currentAction = "Accessing ThisFrame.Views collection for iteration"
+        On Error Resume Next
+        Set viewsCollection = ThisFrame.Views
+        If Err.Number = 0 And Not viewsCollection Is Nothing Then
+            If viewsCollection.Count > 0 Then
+                 For Each tempView In viewsCollection ' tempView is Dim'd as Object at sub start
+                    If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
+                        Set osView = tempView: sessionIsOpen = True: Debug.Print "Found view by iteration: " & osView.TitleText: Exit For
+                    End If
+                Next tempView
+            Else
+                Debug.Print "ThisFrame.Views.Count is 0."
+            End If
+        Else
+            Debug.Print "Could not access ThisFrame.Views or it is Nothing. Err: " & Err.Description
         End If
+        Err.Clear
+        On Error GoTo ConnectExtra_ErrorHandler
+        ' --- End Cautious Iteration ---
+
         If Not sessionIsOpen Then
-            Debug.Print "View not found. Attempting CreateView: " & strBoPath
+            Debug.Print "View not found by GetViewByTitleText or iteration. Attempting CreateView: " & strBoPath
             currentAction = "ThisFrame.CreateView(""" & strBoPath & """)"
-            Set osView = ThisFrame.CreateView(strBoPath)
-            If Err.Number <> 0 Or osView Is Nothing Then Err.Clear: Debug.Print "CreateView FAILED. Err: " & Err.Description: GoTo ConnectExtra_ErrorHandler_FinalMsg
+            Set osView = ThisFrame.CreateView(strBoPath) ' Try to open/create
+            If Err.Number <> 0 Or osView Is Nothing Then
+                Err.Clear: Debug.Print "CreateView FAILED. Err: " & Err.Description
+                GoTo ConnectExtra_ErrorHandler_FinalMsg
             End If
         End If
     End If
@@ -413,9 +455,13 @@ Sub ConnectExtra()
 
     Debug.Print "ConnectExtra: Success."
     Exit Sub
+
 ConnectExtra_ErrorHandler:
     MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
-ConnectExtra_ErrorHandler_FinalMsg:
+ConnectExtra_ErrorHandler_FinalMsg: ' Central point for final message if critical failure
+    If obScreen Is Nothing And app Is Nothing Then ' Only show this if not already handled by more specific messages
+         MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
+    End If
     Call CleanUpReflectionObjects
 End Sub
 
