@@ -526,3 +526,32 @@ MyHandler:
            "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
     Set obScreen = Nothing
 End Sub
+Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
+    If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+    Loop
+    
+    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
+        Validate_Screen = True
+    Else
+        Validate_Screen = False
+    End If
+End Function
+
+Function WaitForScreen()
+    If obScreen Is Nothing Then Exit Function ' Safety check
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+    Loop
+    Call Check_SecurityScreen
+End Function
+
+Function Check_SecurityScreen()
+    If obScreen Is Nothing Then Exit Function ' Safety check
+    If Validate_Screen("SECURITY REMINDER", 1, 29, 20) = True Then
+        obScreen.PutText2 "Y", 22, 11
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitForScreen
+    End If
+End Function
