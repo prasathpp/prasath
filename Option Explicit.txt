@@ -13,11 +13,11 @@ Public objScreen As Object       ' Represents the interactive screen area of the
 ' --- Constants for this specific automation ---
 ' Define the EXACT title of the session window we will look for using GetViewByTitleText.
 ' *** IMPORTANT: This must match the window title EXACTLY! ***
-' You might need to adjust this if Reflection adds extra text like [Connected].
-' Check the window title bar carefully. If the title is like "C:\...\NTS Back Office - Prod.rd3x]",
-' try using that full path here instead.
-' Based on the screenshot, the title is "Reflection Workspace - [NTS Back Office - Prod.rd3x]".
-' Let's try using just the file name "NTS Back Office - Prod.rd3x" as it seemed to work before GetViewByTitleText.
+' You might need to adjust this if Reflection adds extra text like [Connected] or the full path.
+' Check the window title bar carefully. Based on your screenshot, the title is
+' "Reflection Workspace - [NTS Back Office - Prod.rd3x]".
+' Let's try using just the session file name "NTS Back Office - Prod.rd3x" as TARGET_SESSION_EXACT_TITLE,
+' as this is what your previous debug log showed being searched for successfully by GetViewByTitleText.
 Private Const TARGET_SESSION_EXACT_TITLE As String = "NTS Back Office - Prod.rd3x"
 
 
@@ -237,7 +237,7 @@ Private Sub WaitHostSettle_RevisedV9(Optional ByVal settleTimeoutMilliseconds As
     ' This handles the case where the reminder pops up exactly when the previous command finishes.
     ' We don't need to check the return value here, as CheckForAndHandleSecurityReminder_RevisedV9
     ' handles the subsequent wait internally if triggered.
-    CheckForAndHandleSecurityReminder_RevisedV9()
+    CheckForAndHandleSecurityReminder_RevisedV9 ' CORRECTED: Removed parentheses
 
     ' Add a small final settle time after OIA is ready and Security handled, as in original code
     ' This allows screen contents to finish drawing / stabilizing.
@@ -349,14 +349,14 @@ Private Function NavigateToScreen_RevisedV9(ByVal targetScreenText As String, _
         Call WaitHostSettle_RevisedV9(2000) ' Wait for the screen to settle before checking or sending key
 
         ' Check if we have reached the target screen
-        If ScreenContainsText_RevisedV9(targetScreenText, targetRow, targetCol, targetLength, 100) then
+        If ScreenContainsText_RevisedV9(targetScreenText, targetRow, targetCol, targetLength, 100) Then
             Debug.Print "NavigateToScreen_RevisedV9: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
             NavigateToScreen_RevisedV9 = True ' Indicate success
             Exit Function ' Exit the function
         End If
 
         ' If not on the target screen and not on the last attempt, send the navigation key
-        If attempts < maxAttempts then
+        If attempts < maxAttempts Then
             Debug.Print "NavigateToScreen_RevisedV9: Not on target screen. Sending key code: " & navigationKey & "."
             objScreen.SendControlKey navigationKey
             ' WaitHostSettle is called after sending the key within the loop itself
@@ -386,6 +386,7 @@ Private Function VerifyScreen_RevisedV9(expectedText As String, rowNum As Long, 
     actualText = Trim(objScreen.GetText(rowNum, colNum, length))
     On Error GoTo 0
 
+    ' Compare expected text (case-insensitive)
     If UCase(actualText) = UCase(expectedText) Then
         VerifyScreen_RevisedV9 = True
         Debug.Print "VerifyScreen_RevisedV9: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "."
