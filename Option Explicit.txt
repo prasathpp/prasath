@@ -89,14 +89,17 @@ End Sub
 ' FUNCTION TO PROCESS A SINGLE ROW ADJUSTMENT
 ' (Adapted to use established global vars and constants from this module)
 '===============================================================================
+'===============================================================================
+' FUNCTION TO PROCESS A SINGLE ROW ADJUSTMENT
+'===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
 
-    Dim sortCode As String, accountNo As String, iBrand As String, confirmCode As String ' Renamed confirm to confirmCode
+    Dim sortCode As String, accountNo As String, iBrand As String, confirmCode As String
     Dim excel_D_Accrued As Double, excel_E_Cutoff As Double
     Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
     Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
-    Dim screenType As String, tempStr As String, loopCounter As Long ' Changed from Integer
+    Dim screenType As String, tempStr As String, loopCounter As Long
     Dim k As Integer
 
     ProcessSingleAdjustment = False
@@ -114,86 +117,92 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Ws_Data.Range("H" & iRow).Value = "Missing Sort Code, Account, or Brand"
         GoTo NextCase_Adjustment
     End If
-
-    ' --- Navigation starts here, using helper functions ---
-    ' Helper functions will use global obScreen (which is RScreen from your code)
     
-    ' --- Determine Confirmation Code based on Brand ---
     Select Case iBrand
-        Case "RBS", "RBG", "RBI", "VIR"
-            confirmCode = "PRCIR#T#"
-        Case "NWB", "CTS", "NWO", "IOM"
-            confirmCode = "PRCIN#T#"
-        Case "UBN"
-            confirmCode = "PRCIJ#T#"
-        Case "UBR"
-            confirmCode = "PRCIK#T#"
-        Case Else ' <<< CORRECTED HERE
+        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
+        Case "UBN": confirmCode = "PRCIJ#T#"
+        Case "UBR": confirmCode = "PRCIK#T#"
+        Case Else
             Debug.Print "ProcessSingle: Invalid Brand '" & iBrand & "' for row " & iRow
             Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand
             GoTo NextCase_Adjustment
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", Using confirm code: " & confirmCode
 
-    ' --- Step 1: Ensure on APPLICATION SELECTION MENU ---
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
          Debug.Print "ProcessSingle: Not starting on " & SCREEN_APP_MENU & " for row " & iRow
          Ws_Data.Range("H" & iRow).Value = "Not on Application Menu. Text: " & obScreen.GetText(1, 28, Len(SCREEN_APP_MENU))
-         GoTo NextCase_Adjustment ' Cannot proceed if not on starting screen
+         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: Confirmed on " & SCREEN_APP_MENU
 
-    ' --- Step 2: TERM ALL ---
     Call SendData("TERM ALL", 21, 13, True)
     Debug.Print "ProcessSingle: Sent TERM ALL"
-    Call WaitReady(1000) ' Explicit wait
+    Call WaitReady(1000)
 
-    ' --- Step 3: Brand Code ---
     Call SendData(confirmCode, 21, 13, True)
     Debug.Print "ProcessSingle: Sent " & confirmCode
-    If VerifyScreen("Command not recognized", 20, 36, 22) Then ' Length 22 for "Command not recognized"
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then
         Debug.Print "ProcessSingle: Brand code '" & confirmCode & "' not recognized."
         Ws_Data.Range("H" & iRow).Value = "Brand command not recognized."
         GoTo NextCase_Adjustment
     End If
     
-    ' Handle potential "ROYAL BANK OF SCOTLAND" screen (from original InterestCheck)
+    ' --- CORRECTED "ROYAL BANK OF SCOTLAND" screen handling ---
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then
-        Call SendKey(ControlKeyCode_Transmit, 500)
-        If VerifyScreen("", 1, 1, 80) = True Then ' Check for potentially blank screen after
+        Debug.Print "ProcessSingle: Handling ROYAL BANK OF SCOTLAND screen."
+        Call SendKey(ControlKeyCode_Transmit, 500) ' Send Enter to pass this screen
+
+        ' Check if the next screen is blank (often happens after the RBS screen)
+        If VerifyScreen("", 1, 1, 80) = True Then
+            Debug.Print "ProcessSingle: Blank screen after RBS. Entering STAR loop."
             loopCounter = 1
             Do
-                If VerifyScreen("", 1, 1, 80) = True Then Call SendData("STAR", 1, 1, True, 500)
-                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then Call SendKey(ControlKeyCode_Transmit, 500)
+                ' Always try sending STAR if on a blank screen, otherwise try sending Enter if back on RBS screen
+                If VerifyScreen("", 1, 1, 80) = True Then
+                    Debug.Print "ProcessSingle: STAR Loop - Blank screen detected, sending STAR."
+                    Call SendData("STAR", 1, 1, True, 500)
+                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then
+                    Debug.Print "ProcessSingle: STAR Loop - RBS screen re-appeared, sending Enter."
+                    Call SendKey(ControlKeyCode_Transmit, 500)
+                Else
+                    ' Neither blank nor RBS screen, might be Option Handler or unexpected. Loop should check.
+                    Debug.Print "ProcessSingle: STAR Loop - Neither blank nor RBS. Current text(1,1,24): " & obScreen.GetText(1,1,24)
                 End If
                 loopCounter = loopCounter + 1
-            Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26, Len(SCREEN_OPT_HANDLER)) And loopCounter <= 10 ' Adjusted coordinates for SCREEN_OPT_HANDLER
+                ' Exit loop if on Option Handler or if too many attempts
+            Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26, Len(SCREEN_OPT_HANDLER)) And loopCounter <= 10
+            
             If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26, Len(SCREEN_OPT_HANDLER)) Then
-                 Ws_Data.Range("H" & iRow).Value = "Failed to navigate past STAR screen.": GoTo NextCase_Adjustment
+                 Debug.Print "ProcessSingle: Failed to navigate past STAR screen to Option Handler."
+                 Ws_Data.Range("H" & iRow).Value = "Failed to navigate past STAR screen."
+                 GoTo NextCase_Adjustment
             End If
+        ' Else (not a blank screen after RBS screen), proceed to check for Option Handler directly.
+        Else
+             Debug.Print "ProcessSingle: Not a blank screen after RBS. Checking for Option Handler."
         End If
     End If
+    ' --- END OF CORRECTED BLOCK ---
     
-    If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26, Len(SCREEN_OPT_HANDLER)) Then ' Adjusted from R2,C28 to R1,C26
+    If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26, Len(SCREEN_OPT_HANDLER)) Then
         Debug.Print "ProcessSingle: Did not reach " & SCREEN_OPT_HANDLER
         Ws_Data.Range("H" & iRow).Value = "Not on Option Handler. Text: " & obScreen.GetText(1, 26, Len(SCREEN_OPT_HANDLER))
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
 
-    ' --- Step 4: Option 19 ---
     Call SendData("19", 21, 16, True)
     Debug.Print "ProcessSingle: Sent 19"
     If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then Ws_Data.Range("H" & iRow).Value = "Not on BO System": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_BO_SYSTEM
 
-    ' --- Step 5: Option 01 ---
     Call SendData("01", 22, 16, True)
     Debug.Print "ProcessSingle: Sent 01"
     If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then Ws_Data.Range("H" & iRow).Value = "Not on Master Index": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_MASTER_INDEX
 
-    ' --- Step 6: Master Index - Action 20, Sort Code ---
     Call WaitReady(100)
     obScreen.PutText2 "20", 22, 8
     obScreen.PutText2 Format(sortCode, "000000"), 22, 74
@@ -202,7 +211,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then Ws_Data.Range("H" & iRow).Value = "Not on File Maint Idx": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_FILE_MAINT_IDX
 
-    ' --- Step 7: File Maint Idx - Action 20, Account Number ---
     Call WaitReady(100)
     obScreen.PutText2 "20", 22, 8
     obScreen.PutText2 Format(accountNo, "00000000"), 22, 21
@@ -211,12 +219,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then Ws_Data.Range("H" & iRow).Value = "Not on Int Transactions": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_INTERNAL_TXNS
 
-    ' --- Step 8: Internal Txns - Action 04 ---
     Call SendData("04", 22, 8, True)
     Debug.Print "ProcessSingle: Sent 04"
-    ' Target screen: INTEREST_AMENDMENTS (R1,C27 as per our earlier discussion)
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then ' Fallback check based on your Nav code
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
             Debug.Print "ProcessSingle: Did not reach " & SCREEN_INTEREST_AMENDMENTS
             Ws_Data.Range("H" & iRow).Value = "Not on Interest Amendments screen"
             GoTo NextCase_Adjustment
@@ -224,7 +230,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Successfully reached " & SCREEN_INTEREST_AMENDMENTS
 
-    ' --- DATA ENTRY ON INTEREST AMENDMENTS SCREEN ---
     screenType = "Unknown"
     tempStr = Trim(obScreen.GetText(3, 42, 16))
     If tempStr = "BUSINESS CURRENT" Then screenType = "BC"
@@ -236,9 +241,8 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Screen Type is " & screenType
 
-    ' (Accrued, Cutoff, Applied data entry logic - this was already correct)
-    ' ... PASTE THE ACCRUED, CUTOFF, APPLIED DATA ENTRY LOGIC HERE ...
-    ' --- Start of Pasted Data Entry Logic ---
+    ' --- Data Entry Logic (Accrued, Cutoff, Applied) ---
+    ' (This part was okay, assuming it's pasted here)
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
@@ -291,16 +295,16 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         If excel_G_Applied_Credit > 0 Then obScreen.PutText2 "inc", 15, 31: obScreen.PutText2 CStr(excel_G_Applied_Credit), 15, 35: obScreen.PutText2 "01", 15, 47
         If Total_Applied_Debtor_Amount > 0 Then obScreen.PutText2 "dec", 16, 31: obScreen.PutText2 CStr(Total_Applied_Debtor_Amount), 16, 35: obScreen.PutText2 "01", 16, 47
     End If
-    ' --- End of Pasted Data Entry Logic ---
+    ' --- End of Data Entry Logic ---
     Debug.Print "ProcessSingle: Data entry complete for row " & iRow
 
     For k = 1 To 3
-        Call SendKey(ControlKeyCode_Transmit, 300) ' Using SendKey helper
+        Call SendKey(ControlKeyCode_Transmit, 300)
     Next k
     Debug.Print "ProcessSingle: Sent Enter x3 for row " & iRow
 
-    obScreen.SendKeys "<S_ESC>" ' Shift+Esc - !!! VERIFY THIS KEYSTROKE !!!
-    Call WaitReady(1000) ' Wait after Shift+Esc
+    obScreen.SendKeys "<S_ESC>"
+    Call WaitReady(1000)
     Debug.Print "ProcessSingle: Sent Shift+Esc for row " & iRow
 
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
@@ -323,7 +327,7 @@ ErrorHandler_Adjustment:
     Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
     Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
     On Error GoTo 0
-    If Err.Number = 91 Or Err.Number = 424 Then Call CleanUpReflectionObjects ' If obScreen is lost, release all
+    If Err.Number = 91 Or Err.Number = 424 Then Call CleanUpReflectionObjects
     ProcessSingleAdjustment = False
 End Function
 
