@@ -287,37 +287,25 @@ Sub ConnectExtra()
     Dim edpPathFromSheet As String
     Dim ws As Worksheet
     Dim currentAction As String
-    Dim targetSessionViewTitle As String 
-    Dim OleObj As Object 
-    Dim tempView As Object 
-    Dim sessionIsOpen As Boolean
+    Dim OleObj As Object
 
     On Error GoTo ConnectExtra_ErrorHandler
 
     currentAction = "Initializing and getting session path"
-    On Error Resume Next 
-    Set ws = Sheet4 
+    On Error Resume Next
+    Set ws = Sheet4
     If Err.Number = 0 Then
-        Set OleObj = ws.OLEObjects("txtEDPPath") 
-        If Err.Number = 0 Then
-            If TypeOf OleObj.Object Is MSForms.TextBox Then
-                edpPathFromSheet = OleObj.Object.Text
-            Else
-                Debug.Print "ConnectExtra: txtEDPPath is not a MSForms.TextBox. Type: " & TypeName(OleObj.Object)
-            End If
-        Else
-             Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4. Error: " & Err.Description
+        Set OleObj = ws.OLEObjects("txtEDPPath")
+        If Err.Number = 0 And TypeOf OleObj.Object Is MSForms.TextBox Then
+            edpPathFromSheet = OleObj.Object.Text
         End If
-    Else
-        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
     End If
-    Err.Clear 
-    On Error GoTo ConnectExtra_ErrorHandler 
+    Err.Clear
+    On Error GoTo ConnectExtra_ErrorHandler
 
     If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
     Else
-        Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control not found. Prompting user."
         stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
@@ -326,137 +314,116 @@ Sub ConnectExtra()
         Set obScreen = Nothing: Exit Sub
     End If
     
-    strBoPath = stEDPFile 
+    strBoPath = stEDPFile
     sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
-    targetSessionViewTitle = sessionName
 
-    currentAction = "Attempting GetObject(, ""Reflection Workspace"")"
-    Debug.Print currentAction
-    On Error Resume Next
-    Set app = GetObject(, "Reflection Workspace")
+    currentAction = "Attempting CreateObject(""Attachmate.Reflection.Application"")"
+    On Error Resume Next ' Try specific Attachmate ProgID first
+    Set app = CreateObject("Attachmate.Reflection.Application")
     If Err.Number <> 0 Or app Is Nothing Then
         Err.Clear
-        Debug.Print "GetObject(""Reflection Workspace"") FAILED or app is Nothing. Attempting CreateObject..."
-        currentAction = "Attempting CreateObject(""Reflection Workspace"")"
+        currentAction = "Attempting CreateObject(""Reflection Workspace"")" ' Fallback
         Set app = CreateObject("Reflection Workspace")
         If Err.Number <> 0 Or app Is Nothing Then
             Err.Clear
-            Debug.Print "CreateObject(""Reflection Workspace"") also FAILED."
-            MsgBox "Could not connect to or create 'Reflection Workspace'.", vbCritical, sPrj_Name
+            MsgBox "Could not create 'Attachmate.Reflection.Application' or 'Reflection Workspace'. Ensure Reflection is installed.", vbCritical, sPrj_Name
             GoTo ConnectExtra_ErrorHandler_Exit
         End If
     End If
     Debug.Print "Reflection App Object obtained. TypeName: " & TypeName(app)
     On Error GoTo ConnectExtra_ErrorHandler
-
-    currentAction = "Attempting app.GetObject(""Frame"")"
-    Debug.Print currentAction
-    Set ThisFrame = app.GetObject("Frame")
-    If ThisFrame Is Nothing Then Debug.Print "Frame object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
-    Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
-
-    If Not ThisFrame.Visible Then ThisFrame.Visible = True
-    ThisFrame.Activate
-    Debug.Print "Frame Visible/Activated."
-
-    currentAction = "Checking ThisFrame.Views object"
-    Debug.Print currentAction
-    Dim viewsCollection As Object
-    On Error Resume Next ' Check if .Views itself is accessible
-    Set viewsCollection = ThisFrame.Views
-    If Err.Number <> 0 Then
-        Debug.Print "Error accessing ThisFrame.Views. Error: " & Err.Description
-        MsgBox "The Frame object does not support a .Views collection property as expected.", vbCritical, sPrj_Name
-        GoTo ConnectExtra_ErrorHandler_Exit
-    End If
-    If viewsCollection Is Nothing Then
-        Debug.Print "ThisFrame.Views is Nothing."
-        ' If Views is Nothing, maybe we should try CreateView directly, assuming no views exist.
-    End If
+    
+    ' Make app visible if it has that property
+    On Error Resume Next
+    app.Visible = True
+    Err.Clear
     On Error GoTo ConnectExtra_ErrorHandler
 
-    sessionIsOpen = False
-    If Not viewsCollection Is Nothing Then
-        currentAction = "Checking viewsCollection.Count"
+    Dim sess As Object ' Will hold the session object
+    
+    currentAction = "Attempting app.ActiveSession"
+    Debug.Print currentAction
+    On Error Resume Next ' ActiveSession might not exist
+    Set sess = app.ActiveSession
+    If Err.Number = 0 And Not sess Is Nothing Then
+        Debug.Print "app.ActiveSession returned an object. TypeName(sess): " & TypeName(sess)
+    Else
+        Debug.Print "app.ActiveSession failed or returned Nothing. Error: " & Err.Description
+        Err.Clear
+        Set sess = Nothing ' Ensure sess is Nothing if ActiveSession failed
+        
+        currentAction = "Attempting app.Open(""" & strBoPath & """)"
         Debug.Print currentAction
-        Dim viewsCount As Long
-        On Error Resume Next ' Count might fail on some empty/uninitialized collections
-        viewsCount = viewsCollection.Count
-        If Err.Number <> 0 Then
-            Debug.Print "Error getting viewsCollection.Count. Error: " & Err.Description
-            ' Proceed as if count is 0 or try CreateView directly
-            viewsCount = 0 ' Assume 0 if count fails
+        Set sess = app.Open(strBoPath) ' Try to open the session file directly
+        If Err.Number = 0 And Not sess Is Nothing Then
+            Debug.Print "app.Open succeeded. TypeName(sess): " & TypeName(sess)
+        Else
+            Debug.Print "app.Open failed or returned Nothing. Error: " & Err.Description
             Err.Clear
-        End If
-        On Error GoTo ConnectExtra_ErrorHandler
-        Debug.Print "viewsCollection.Count = " & viewsCount
-
-        If viewsCount > 0 Then
-            currentAction = "Iterating through existing Views"
-            Debug.Print currentAction
-            For Each tempView In viewsCollection
-                Dim viewTitle As String
-                On Error Resume Next ' View object might not have TitleText
-                viewTitle = tempView.TitleText
-                If Err.Number <> 0 Then
-                    Debug.Print "Error getting tempView.TitleText for a view. TypeName(tempView): " & TypeName(tempView)
-                    viewTitle = "" ' Cannot get title
-                    Err.Clear
-                End If
-                On Error GoTo ConnectExtra_ErrorHandler
-                
-                Debug.Print "Checking existing View: " & viewTitle
-                If InStr(1, viewTitle, sessionName, vbTextCompare) > 0 Then
-                    Set osView = tempView
-                    sessionIsOpen = True
-                    Debug.Print "Found matching running View: " & osView.TitleText
-                    Exit For
-                End If
-            Next tempView
-        End If
-    End If ' End If Not viewsCollection Is Nothing
-
-    If Not sessionIsOpen Then
-        Debug.Print "View not found or no views existed. Attempting to create/open view with path: " & strBoPath
-        currentAction = "Attempting ThisFrame.CreateView(""" & strBoPath & """)"
-        On Error Resume Next 
-        Set osView = ThisFrame.CreateView(strBoPath)
-        If Err.Number <> 0 Or osView Is Nothing Then
-            Err.Clear
-            Debug.Print "ThisFrame.CreateView FAILED or returned Nothing. Error: " & Err.Description
-            MsgBox "Could not find or create a Reflection session view for: '" & sessionName & "'. Ensure path is correct and Reflection can open it.", vbCritical, sPrj_Name
+            MsgBox "Could not get ActiveSession and app.Open failed for: " & strBoPath & vbCrLf & _
+                   "Ensure the session is the active window if relying on ActiveSession, or that the path is correct for Open.", vbCritical, sPrj_Name
             GoTo ConnectExtra_ErrorHandler_Exit
         End If
-        Debug.Print "Successfully created/opened View. Title: " & osView.TitleText
-        On Error GoTo ConnectExtra_ErrorHandler
     End If
-    
-    If osView Is Nothing Then 
-        MsgBox "osView object is Nothing after search/create. Cannot proceed.", vbCritical, sPrj_Name
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    If sess Is Nothing Then
+        MsgBox "Failed to obtain a session object (sess is Nothing).", vbCritical, sPrj_Name
         GoTo ConnectExtra_ErrorHandler_Exit
     End If
 
-    Debug.Print "View obtained. View Title: '" & osView.TitleText & "'. TypeName(osView): " & TypeName(osView)
-
-    currentAction = "Attempting osView.Control"
+    currentAction = "Getting Terminal and Screen from Session object (sess)"
     Debug.Print currentAction
-    Set ibmTerminal = osView.Control
-    If ibmTerminal Is Nothing Then Debug.Print "Terminal object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
-    Debug.Print "Terminal Object obtained. TypeName: " & TypeName(ibmTerminal)
+    
+    ' How to get terminal/screen from 'sess' depends on what 'sess' is.
+    ' Common patterns:
+    ' 1. sess IS the terminal: Set ibmTerminal = sess; Set obScreen = ibmTerminal.Screen
+    ' 2. sess has .Control: Set ibmTerminal = sess.Control; Set obScreen = ibmTerminal.Screen
+    ' 3. sess has .Screen: Set obScreen = sess.Screen (ibmTerminal might be harder to get)
 
-    currentAction = "Attempting ibmTerminal.Screen"
-    Debug.Print currentAction
-    Set obScreen = ibmTerminal.Screen
-    If obScreen Is Nothing Then Debug.Print "Screen object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
-    Debug.Print "Screen Object obtained. TypeName: " & TypeName(obScreen)
-
-    On Error Resume Next 
-    ibmTerminal.DisableKeystrokeProductivity = True
-    If Err.Number <> 0 Then Debug.Print "ConnectExtra Info: Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
-    ibmTerminal.DisableScreenHistory = True
-    If Err.Number <> 0 Then Debug.Print "ConnectExtra Info: Error setting DisableScreenHistory: " & Err.Description: Err.Clear
+    On Error Resume Next
+    Set ibmTerminal = sess.Control ' Try this first (common for framework Session objects)
+    If Err.Number = 0 And Not ibmTerminal Is Nothing Then
+        Debug.Print "Got ibmTerminal from sess.Control. TypeName(ibmTerminal): " & TypeName(ibmTerminal)
+        Set obScreen = ibmTerminal.Screen
+    Else
+        Err.Clear
+        Debug.Print "sess.Control failed or returned Nothing. TypeName(sess): " & TypeName(sess)
+        ' Try if sess itself is the terminal
+        If TypeName(sess) Like "*Terminal*" Or TypeName(sess) Like "*IbmHost*" Or TypeName(sess) Like "*CurrentSession*" Then
+            Debug.Print "Assuming sess IS the terminal object."
+            Set ibmTerminal = sess
+            Set obScreen = ibmTerminal.Screen
+        Else
+            ' Try if sess has a direct .Screen property
+            Debug.Print "Trying direct sess.Screen."
+            Set obScreen = sess.Screen
+            If Not obScreen Is Nothing Then
+                 Debug.Print "Got obScreen from direct sess.Screen. ibmTerminal will be Nothing."
+                 Set ibmTerminal = Nothing ' We can't set terminal properties then
+            End If
+        End If
+    End If
     On Error GoTo ConnectExtra_ErrorHandler
+        
+    If obScreen Is Nothing Then
+        MsgBox "Could not get Screen from the obtained Session object. TypeName(sess): " & TypeName(sess), vbCritical, sPrj_Name
+        GoTo ConnectExtra_ErrorHandler_Exit
+    End If
+    Debug.Print "Screen Object obtained. TypeName(obScreen): " & TypeName(obScreen)
 
+    currentAction = "Setting Terminal Properties"
+    If Not ibmTerminal Is Nothing Then
+        On Error Resume Next ' These properties might not exist or be writable
+        ibmTerminal.DisableKeystrokeProductivity = True
+        If Err.Number <> 0 Then Debug.Print "Info: Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
+        ibmTerminal.DisableScreenHistory = True
+        If Err.Number <> 0 Then Debug.Print "Info: Error setting DisableScreenHistory: " & Err.Description: Err.Clear
+        On Error GoTo ConnectExtra_ErrorHandler
+    Else
+        Debug.Print "Skipping terminal properties setup as ibmTerminal object not available."
+    End If
+    
     Debug.Print "ConnectExtra: All core Reflection objects set successfully."
     Exit Sub
 
@@ -466,7 +433,7 @@ ConnectExtra_ErrorHandler:
 ConnectExtra_ErrorHandler_Exit:
     Set obScreen = Nothing 
     Set ibmTerminal = Nothing
-    Set osView = Nothing
+    Set osView = Nothing ' osView and ThisFrame are not used in this version
     Set ThisFrame = Nothing
     Set app = Nothing
 End Sub
