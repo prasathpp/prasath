@@ -122,7 +122,7 @@ MainErrorHandler:
 End Sub
 
 '===============================================================================
-' PROCESS SINGLE ADJUSTMENT - CORRECTED SELECT CASE
+' PROCESS SINGLE ADJUSTMENT - Syntax Fixes for IF Blocks
 '===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
@@ -132,8 +132,8 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
     Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
     Dim screenType As String, tempStr As String, loopCounter As Long
-    Dim k As Integer, delCount As Integer ' Loop counters
-    Dim hostStatusMessage As String ' For messages from host
+    Dim k As Integer, delCount As Integer 
+    Dim hostStatusMessage As String 
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
@@ -150,26 +150,16 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Ws_Data.Range("H" & iRow).Value = "Missing Input Data": GoTo NextCase_Adjustment
     End If
     
-    ' --- CORRECTED Select Case iBrand ---
     Select Case iBrand
-        Case "RBS", "RBG", "RBI", "VIR"
-            confirmCode = "PRCIR#T#"
-        Case "NWB", "CTS", "NWO", "IOM"
-            confirmCode = "PRCIN#T#"
-        Case "UBN"
-            confirmCode = "PRCIJ#T#"
-        Case "UBR"
-            confirmCode = "PRCIK#T#"
+        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
+        Case "UBN": confirmCode = "PRCIJ#T#"
+        Case "UBR": confirmCode = "PRCIK#T#"
         Case Else
             Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand
             GoTo NextCase_Adjustment
     End Select
-    ' --- END CORRECTION ---
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
-
-    ' ... (Rest of the ProcessSingleAdjustment function remains the same as the previous "Full Code" version 
-    '      that included the Rule 1, 2, 3, 4 implementations for PageDown, Accepted By Operator, etc.) ...
-    ' ... (This includes navigation, checkpoint, screen type determination, data entry, CHARGEBACK, 3 Enters, etc.) ...
 
     Call WaitReady(200, 5000)
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then Ws_Data.Range("H" & iRow).Value = "Not on App Menu": GoTo NextCase_Adjustment
@@ -182,23 +172,35 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: Sent " & confirmCode
     If VerifyScreen("Command not recognized", 20, 36, 22) Then Ws_Data.Range("H" & iRow).Value = "Brand cmd NR": GoTo NextCase_Adjustment
     
+    ' --- CORRECTED ROYAL BANK OF SCOTLAND BLOCK ---
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
-        Call SendKey(ControlKeyCode_Transmit, 1000): obScreen.WaitForHostSettle 500, 2000
-        If VerifyScreen("", 1, 1, 80) Then
+        Call SendKey(ControlKeyCode_Transmit, 1000) 
+        obScreen.WaitForHostSettle 500, 2000
+
+        If VerifyScreen("", 1, 1, 80) Then ' Check for blank screen after Enter
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
-                If VerifyScreen("", 1, 1, 80) Then Call SendData("STAR", 1, 1, True, 1000)
-                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then Call SendKey(ControlKeyCode_Transmit, 1000)
+                If VerifyScreen("", 1, 1, 80) Then
+                    Call SendData("STAR", 1, 1, True, 1000) 
+                Else ' If not blank, check if it's RBS screen again
+                    If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
+                        Call SendKey(ControlKeyCode_Transmit, 1000) 
+                    End If
                 End If
-                obScreen.WaitForHostSettle 300, 1000: loopCounter = loopCounter + 1
+                obScreen.WaitForHostSettle 300, 1000 
+                loopCounter = loopCounter + 1
             Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10
-            If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
-        End If
-    End If
+            
+            If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
+                 Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
+            End If
+        End If 
+    End If 
+    ' --- END CORRECTED RBS BLOCK ---
 
-    obScreen.WaitForHostSettle 300, 1000
+    obScreen.WaitForHostSettle 300, 1000 
     If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Not on OptH": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
     
@@ -220,12 +222,20 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then Ws_Data.Range("H" & iRow).Value = "Not on IT": GoTo NextCase_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_INTERNAL_TXNS
 
-    Call SendData("04", 22, 8, True, 1000): obScreen.WaitForHostSettle 500, 2000
+    ' --- CORRECTED INTEREST AMENDMENTS SCREEN VERIFICATION ---
+    Call SendData("04", 22, 8, True, 1000)
+    obScreen.WaitForHostSettle 500, 2000
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then Ws_Data.Range("H" & iRow).Value = "Not on IA scrn": GoTo NextCase_Adjustment
+        ' SCREEN_INTEREST_AMENDMENTS not found, try fallback
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
+            Ws_Data.Range("H" & iRow).Value = "Not on IA scrn"
+            GoTo NextCase_Adjustment
         End If
+        ' If "INTEREST DETAILS" IS found, we are good, proceed.
     End If
+    ' If SCREEN_INTEREST_AMENDMENTS WAS found, we are also good, proceed.
     Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
+    ' --- END CORRECTION ---
 
     Call WaitReady(200) 
     If Trim(obScreen.GetText(20, 2, 20)) = "ACCEPTED BY OPERATOR" Then
