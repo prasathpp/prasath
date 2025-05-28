@@ -901,3 +901,177 @@ Private Function LoopControlKeyUntilScreen_V3(ByVal keyCode As Long, _
     ' LoopControlKeyUntilScreen_V3 is already False
 
 End Function
+
+
+--- Starting Back Office Automation V3 ---
+Connect_V3: Attempting GetObject("Reflection Workspace")...
+Connect_V3: RApp obtained. TypeName: ApplicationObject
+Connect_V3: Attempting objReflectionApp.GetObject("Frame")...
+Connect_V3: objFrame obtained. TypeName: Frame
+Connect_V3: Frame Visible/Activated.
+Connect_V3: Attempting objFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")...
+Connect_V3: objFrame.GetViewByTitleText SUCCEEDED. View Title: 'NTS Back Office - Prod.rd3x'. TypeName(objView): View
+Connect_V3: Skipping objView.Activate to avoid previous Error 438.
+Connect_V3: Attempting objView.Control...
+Connect_V3: objTerminal obtained. TypeName: IbmTerminal
+Connect_V3: Attempting objTerminal.Screen...
+Connect_V3: objScreen obtained. TypeName: IbmScreen
+Connect_V3: All core Reflection objects set successfully.
+Back Office Automation V3: Successfully connected to Reflection session.
+Back Office Automation V3: Successfully got worksheet 'Sheet1' from workbook 'Book1'.
+Back Office Automation V3: lastRow calculated as: 135 in column 1
+Back Office Automation V3: Found last data row: 135 in column 1.
+----------------------------------------------------
+Back Office Automation V3: Processing Row 2 | S/C: [524131] | Acc: [45042152] | Brand: [NWB]
+Back Office Automation V3: Deciding on full navigation. Reasons: First Row (True), Brand Change (True), Not returned to MI (True)
+Back Office Automation V3: Starting navigation from APPLICATION SELECTION MENU (Full Path).
+NavigateFromAppMenu_V3: Verifying start screen: APPLICATION SELECTION MENU
+VerifyScreen_V3: Confirmed 'APPLICATION SELECTION MENU' at R1C28L30.
+NavigateFromAppMenu_V3: Confirmed on APPLICATION SELECTION MENU.
+NavigateFromAppMenu_V3: Sending TERM ALL (with 3 Transmits)...
+SendTermAll_V3: Put data 'TERM ALL' at R21C13.
+SendTermAll_V3: Sending Transmit key (x3).
+NavigateFromAppMenu_V3: Sent TERM ALL + 3 Transmits.
+NavigateFromAppMenu_V3: Sending Brand code ''...
+SendText_V3: Put data '' at R21C13.
+SendText_V3: Sending Transmit key (x1).
+NavigateFromAppMenu_V3: Sent Brand code + 1 Transmit.
+NavigateFromAppMenu_V3: Checking for Command not recognized...
+VerifyScreen_V3 FAILED: Expected 'Command not recognized' at R20C36L22, Found ''.
+NavigateFromAppMenu_V3: Command not recognized screen NOT found.
+NavigateFromAppMenu_V3: Checking for Option Handler or intermediate screens...
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'ROYAL BANK OF SCOTLAND' at R1C1L22, Found 'Date :28/05/2025'.
+NavigateFromAppMenu_V3: On unexpected screen (Date :28/05/2025          APPLICATION SELECTION MENU            Userid:RAOSX) while waiting for OPTION HANDLER FUNCTION SCREEN.
+VerifyScreen_V3 FAILED: ExpectedBack Office Automation V3: Forward navigation failed for Row 2.
+Back Office Automation V3: Attempting to return to APPLICATION SELECTION MENU after forward nav failure.
+NavigateBack_V3: Attempting to navigate back to target: APPLICATION SELECTION MENU
+NavigateBack_V3: Navigating back to BACK OFFICE SYSTEM via F2 loop.
+LoopControlKeyUntilScreen_V3: Looping with key 11 until 'BACK OFFICE SYSTEM' at R1C7. Max attempts: 15
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 1.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 3
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 2.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 3.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 4.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 0
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 5.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 6.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 0
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 7.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 8.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 9.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 3
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 10.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 0
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 11.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 3
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 12.
+SendControlKey_V3: Sending key code 11.
+WaitUntilReady_V3: Timeout occurred (500ms) waiting for XStatus=0. Last XStatus: 3
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 13.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Not on target screen. Sending key code 11. Attempt 14.
+SendControlKey_V3: Sending key code 11.
+VerifyScreen_V3 FAILED: Expected 'BACK OFFICE SYSTEM' at R1C7L20, Found ':28/05/2025'.
+LoopControlKeyUntilScreen_V3: Last attempt (15). Sending key code 11.
+SendControlKey_V3: Sending key code 11.----------------------------------------------------
+Back Office Automation V3: Processing Row 3 | S/C: [602045] | Acc: [45188920] | Brand: [NWB]
+Back Office Automation V3: Deciding on full navigation. Reasons: First Row (False), Brand Change (False), Not returned to MI (True)
+Back Office Automation V3: Starting navigation from APPLICATION SELECTION MENU (Full Path).
+NavigateFromAppMenu_V3: Verifying start screen: APPLICATION SELECTION MENU
+VerifyScreen_V3 FAILED: Expected 'APPLICATION SELECTION MENU' at R1C28L30, Found 'EDIT APPLICATION MENU'.
+NavigateFromAppMenu_V3: Not starting on APPLICATION SELECTION MENU. Cannot perform full navigation.
+Back Office Automation V3: Forward navigation failed for Row 3.
+Back Office Automation V3: Attempting to return to APPLICATION SELECTION MENU after forward nav failure.
+NavigateBack_V3: Attempting to navigate back to target: APPLICATION SELECTION MENU
+NavigateBack_V3: Navigating back to BACK OFFICE SYSTEM via F2 loop.
+LoopControlKeyUntilScreen_V3: Looping with key 11 until 'BACK OFFICE SYSTEM' at R1C7. Max attempts: 15
+
+LoopControlKeyUntilScreen_V3: Failed to reach 'BACK OFFICE SYSTEM' after max attempts (15).
+NavigateBack_V3: Failed to reach BACK OFFICE SYSTEM via F2 loop.
+ 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+VerifyScreen_V3 FAILED: Expected 'OPTION HANDLER FUNCTION SCREEN' at R1C26L35, Found 'APPLICATION SELECTION MENU'.
+NavigateFromAppMenu_V3: Did not reach OPTION HANDLER FUNCTION SCREEN after maximum attempts (15).
+
