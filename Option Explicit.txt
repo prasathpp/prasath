@@ -1,4 +1,4 @@
-' Attribute VB_Name = "mod_BackOffice_TermAll_Step1_V9" ' Using a new module name for clarity
+' Attribute VB_Name = "mod_BackOffice_TermAll_V9_Revised" ' Using a new module name
 Option Explicit
 
 ' --- Attachmate Reflection Object Declarations ---
@@ -11,8 +11,17 @@ Public objTerminal As Object     ' Represents the terminal control within the vi
 Public objScreen As Object       ' Represents the interactive screen area of the terminal
 
 ' --- Constants for this specific automation ---
-' Define the part of the session file name we will look for in the window title.
-Private Const TARGET_SESSION_ID_PART As String = "NTS Back Office - Prod.rd3x"
+' Define the EXACT title of the session window we will look for using GetViewByTitleText.
+' *** IMPORTANT: This must match the window title EXACTLY! ***
+' You might need to adjust this if Reflection adds extra text like [Connected].
+' Check the window title bar carefully. If the title is like "C:\...\NTS Back Office - Prod.rd3x",
+' try using that full path here instead, or the method below won't work.
+' Based on the screenshot, the title is "Reflection Workspace - [NTS Back Office - Prod.rd3x]".
+' Let's try searching for the part inside the brackets, as GetViewByTitleText sometimes looks for just the session file part.
+' If the exact file name "NTS Back Office - Prod.rd3x" doesn't work, try the full title or just the file name.
+' Let's revert to the exact file name as in your working code snippet's GetViewByTitleText call.
+Private Const TARGET_SESSION_EXACT_TITLE As String = "NTS Back Office - Prod.rd3x"
+
 
 ' Define the text and coordinates for the command line where we type TERM ALL
 Private Const CMD_TERM_ALL As String = "TERM ALL"
@@ -26,19 +35,20 @@ Private Const SECURITY_REMINDER_COL As Long = 29
 Private Const SECURITY_REMINDER_LEN As Long = 20 ' Length of the text "SECURITY REMINDER"
 
 ' --- Script Title for MsgBoxes / Debugging ---
-Private Const SCRIPT_TITLE As String = "Back Office - Send TERM ALL (Step 1)"
+Private Const SCRIPT_TITLE As String = "Back Office - Send TERM ALL (Revised V9)"
 
 
 ' --- Main Entry Sub for Step 1 ---
 ' This is the procedure you will run to perform the first step:
 ' Connect to Reflection and send "TERM ALL" on the command line.
-Sub Main_SendTermAll_Step1_V9()
+Sub Main_SendTermAll_Step1_RevisedV9()
     On Error GoTo ErrorHandler
 
     Debug.Print "--- Starting " & SCRIPT_TITLE & " ---"
 
     ' 1. Attempt to connect to the existing Reflection session and get objects
-    If ConnectToReflection_V9(TARGET_SESSION_ID_PART) Then
+    ' Using the revised connection function that relies on GetViewByTitleText (as it worked before)
+    If ConnectToReflection_RevisedV9(TARGET_SESSION_EXACT_TITLE) Then
         Debug.Print SCRIPT_TITLE & ": Successfully connected to Reflection session."
 
         ' Ensure we have the necessary screen object to proceed
@@ -48,22 +58,22 @@ Sub Main_SendTermAll_Step1_V9()
         End If
 
         ' 2. Send "TERM ALL" to the command line (R21, C13)
-        ' The SendText_V9 function handles waiting for the screen to be ready and sending Transmit.
+        ' The SendText_RevisedV9 function will handle waiting for the screen to be ready and sending Transmit.
         Debug.Print SCRIPT_TITLE & ": Sending '" & CMD_TERM_ALL & "' to command line..."
-        Call SendText_V9(CMD_TERM_ALL, COMMAND_LINE_ROW, COMMAND_LINE_COL)
+        Call SendText_RevisedV9(CMD_TERM_ALL, COMMAND_LINE_ROW, COMMAND_LINE_COL)
 
         Debug.Print SCRIPT_TITLE & ": '" & CMD_TERM_ALL & "' sent. First step complete."
         MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line." & vbInformation, SCRIPT_TITLE
 
     Else
-        ' Connection failed - an error message was already shown by ConnectToReflection_V9
+        ' Connection failed - an error message was already shown by ConnectToReflection_RevisedV9
         Debug.Print SCRIPT_TITLE & ": Failed to connect to Reflection session. Aborting."
-        ' MsgBox already shown by ConnectToReflection_V9
+        ' MsgBox already shown by ConnectToReflection_RevisedV9
     End If
 
 CleanupAndExit:
     ' 3. Clean up the Reflection objects regardless of success or failure
-    Call CleanUpReflectionObjects_V9
+    Call CleanUpReflectionObjects_RevisedV9
 
     Debug.Print "--- Finished " & SCRIPT_TITLE & " ---"
     Exit Sub
@@ -76,111 +86,106 @@ ErrorHandler:
 End Sub
 
 
-' --- Connection Logic (V9 with Robust View Finding) ---
+' --- Connection Logic (Revised V9 - Reverting to GetViewByTitleText) ---
 ' Connects to an existing Reflection Workspace and finds the specified session
-' by searching for a partial match in the window titles of all open views.
+' using GetViewByTitleText, based on the observation that this method
+' successfully found the view in a previous debug log.
 ' Returns True if connection and object retrieval is successful, False otherwise.
-Private Function ConnectToReflection_V9(ByVal sessionTitlePart As String) As Boolean
-    On Error GoTo ConnectErrorHandler_V9
-    ConnectToReflection_V9 = False ' Assume failure initially
+Private Function ConnectToReflection_RevisedV9(ByVal targetSessionExactTitle As String) As Boolean
+    On Error GoTo ConnectErrorHandler_RevisedV9
+    ConnectToReflection_RevisedV9 = False ' Assume failure initially
 
-    Debug.Print "ConnectToReflection_V9: Attempting GetObject(""Reflection Workspace"")..."
-    On Error Resume Next ' Temporarily disable error handling for GetObject (in case Reflection isn't running)
+    Debug.Print "ConnectToReflection_RevisedV9: Attempting GetObject(""Reflection Workspace"")..."
+    On Error Resume Next ' Temporarily disable error handling for GetObject
     Set objReflectionApp = GetObject("Reflection Workspace")
     If Err.Number <> 0 Or objReflectionApp Is Nothing Then
         Err.Clear ' Clear the "Object not found" error
-        Debug.Print "ConnectToReflection_V9: GetObject(""Reflection Workspace"") FAILED."
+        Debug.Print "ConnectToReflection_RevisedV9: GetObject(""Reflection Workspace"") FAILED."
         MsgBox "Could not connect to Reflection Workspace." & vbCrLf & _
                "Please ensure Reflection is running and that 'Enable Reflection Automation' is checked in Reflection settings.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit the function indicating failure
     End If
-    Debug.Print "ConnectToReflection_V9: RApp obtained. TypeName: " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler_V9 ' Restore error handling
+    Debug.Print "ConnectToReflection_RevisedV9: RApp obtained. TypeName: " & TypeName(objReflectionApp)
+    On Error GoTo ConnectErrorHandler_RevisedV9 ' Restore error handling
 
-    Debug.Print "ConnectToReflection_V9: Attempting objReflectionApp.GetObject(""Frame"")..."
+    Debug.Print "ConnectToReflection_RevisedV9: Attempting objReflectionApp.GetObject(""Frame"")..."
     Set objFrame = objReflectionApp.GetObject("Frame")
     If objFrame Is Nothing Then
-         Debug.Print "ConnectToReflection_V9: Frame object is Nothing."
+         Debug.Print "ConnectToReflection_RevisedV9: Frame object is Nothing."
          MsgBox "Could not get the Reflection Frame object.", vbCritical, SCRIPT_TITLE
          Exit Function
     End If
-    Debug.Print "ConnectToReflection_V9: objFrame obtained. TypeName: " & TypeName(objFrame)
+    Debug.Print "ConnectToReflection_RevisedV9: objFrame obtained. TypeName: " & TypeName(objFrame)
 
-    ' Ensure the frame is visible and brought to front (optional but helpful for user experience)
+    ' Ensure the frame is visible and brought to front (optional but helpful)
     If Not objFrame.Visible Then objFrame.Visible = True
     objFrame.Activate ' Brings the main Reflection Workspace window to front
-    Debug.Print "ConnectToReflection_V9: Frame Visible/Activated."
+    Debug.Print "ConnectToReflection_RevisedV9: Frame Visible/Activated."
 
-    Debug.Print "ConnectToReflection_V9: Searching for view matching """ & sessionTitlePart & """ in title across all views..."
-    Dim viewFound As Boolean: viewFound = False
-    Dim view As Object
-    ' ** This is the robust part using the InStr loop we fixed yesterday **
-    ' Iterate through all open session views within the frame
-    For Each view In objFrame.Views
-        ' Check if the view's title text contains the specified part (case-insensitive)
-        If InStr(1, view.TitleText, sessionTitlePart, vbTextCompare) > 0 Then
-             Set objView = view ' Found the target view
-             viewFound = True
-             Debug.Print "ConnectToReflection_V9: Found matching view. Title: '" & view.TitleText & "'"
-             Exit For ' Exit the loop once found
-        End If
-    Next view
-
-    If Not viewFound Or objView Is Nothing Then
-        Debug.Print "ConnectToReflection_V9: Could not find view matching '" & sessionTitlePart & "' in any open session title."
-        MsgBox "Could not find an open Reflection session with '" & sessionTitlePart & "' in its title." & vbCrLf & _
-               "Please ensure the correct session file is open in Reflection.", vbCritical, SCRIPT_TITLE
+    ' ** Reverting to GetViewByTitleText as it worked before finding the view **
+    Debug.Print "ConnectToReflection_RevisedV9: Attempting objFrame.GetViewByTitleText(""" & targetSessionExactTitle & """)..."
+    On Error Resume Next ' Allow GetViewByTitleText to fail if title doesn't match
+    Set objView = objFrame.GetViewByTitleText(targetSessionExactTitle)
+    If Err.Number <> 0 Or objView Is Nothing Then
+        Err.Clear ' Clear the "Object not found" error
+        Debug.Print "ConnectToReflection_RevisedV9: objFrame.GetViewByTitleText FAILED or returned Nothing."
+        MsgBox "Could not find a Reflection session with the EXACT title: '" & targetSessionExactTitle & "'." & vbCrLf & _
+               "Please ensure the correct session file is open in Reflection and its window title matches exactly.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if the target view was not found
     End If
+    Debug.Print "ConnectToReflection_RevisedV9: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
+    On Error GoTo ConnectErrorHandler_RevisedV9 ' Restore error handling
 
-    ' Try activating the found view to bring its tab/window to focus (ignore error if it fails, as it's not critical)
-    On Error Resume Next
-    objView.Activate
-    If Err.Number <> 0 Then Debug.Print "ConnectToReflection_V9: Info - Error objView.Activate: " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler_V9 ' Restore error handling
+    ' ** Skipping explicit objView.Activate **
+    ' This was the line that caused Error 438 in the previous version,
+    ' and the view object *might* still be valid for getting Terminal/Screen even if Activate fails.
+    Debug.Print "ConnectToReflection_RevisedV9: Skipping objView.Activate to avoid previous Error 438."
+    ' On Error Resume Next ' Keep error handling enabled for next steps
+    ' objView.Activate
+    ' If Err.Number <> 0 Then Debug.Print "ConnectToReflection_RevisedV9: Info - Error objView.Activate: " & Err.Description: Err.Clear
+    ' On Error GoTo ConnectErrorHandler_RevisedV9
 
-
-    Debug.Print "ConnectToReflection_V9: Attempting objView.Control..."
+    Debug.Print "ConnectToReflection_RevisedV9: Attempting objView.Control..."
     Set objTerminal = objView.Control
     If objTerminal Is Nothing Then
-        Debug.Print "ConnectToReflection_V9: Terminal object is Nothing."
-        MsgBox "Could not get the Reflection Terminal control.", vbCritical, SCRIPT_TITLE
+        Debug.Print "ConnectToReflection_RevisedV9: Terminal object is Nothing."
+        MsgBox "Could not get the Reflection Terminal control from the found view.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "ConnectToReflection_V9: objTerminal obtained. TypeName: " & TypeName(objTerminal)
+    Debug.Print "ConnectToReflection_RevisedV9: objTerminal obtained. TypeName: " & TypeName(objTerminal)
 
-    Debug.Print "ConnectToReflection_V9: Attempting objTerminal.Screen..."
+    Debug.Print "ConnectToReflection_RevisedV9: Attempting objTerminal.Screen..."
     Set objScreen = objTerminal.Screen
     If objScreen Is Nothing Then
-        Debug.Print "ConnectToReflection_V9: Screen object is Nothing."
-        MsgBox "Could not get the Reflection Screen object.", vbCritical, SCRIPT_TITLE
+        Debug.Print "ConnectToReflection_RevisedV9: Screen object is Nothing."
+        MsgBox "Could not get the Reflection Screen object from the terminal control.", vbCritical, SCRIPT_TITLE
         Exit Function
-    End If
-    Debug.Print "ConnectToReflection_V9: objScreen obtained. TypeName: " & TypeName(objScreen)
+    ZF: End If
+    Debug.Print "ConnectToReflection_RevisedV9: objScreen obtained. TypeName: " & TypeName(objScreen)
 
     ' Optional but recommended settings for automation (ignore errors if properties don't exist)
     On Error Resume Next
     objTerminal.DisableKeystrokeProductivity = True ' Disable features that might interfere with scripting input
-    If Err.Number <> 0 Then Debug.Print "ConnectToReflection_V9: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
+    If Err.Number <> 0 Then Debug.Print "ConnectToReflection_RevisedV9: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
     objTerminal.DisableScreenHistory = True ' Disable screen history if not needed
-    If Err.Number <> 0 Then Debug.Print "ConnectToReflection_V9: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler_V9 ' Restore error handling
+    If Err.Number <> 0 Then Debug.Print "ConnectToReflection_RevisedV9: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear
+    On Error GoTo ConnectErrorHandler_RevisedV9 ' Restore error handling
 
-    ConnectToReflection_V9 = True ' Connection successful
-    Debug.Print "ConnectToReflection_V9: All core Reflection objects set successfully."
+    ConnectToReflection_RevisedV9 = True ' Connection successful
+    Debug.Print "ConnectToReflection_RevisedV9: All core Reflection objects set successfully."
     Exit Function ' Exit function indicating success
 
-ConnectErrorHandler_V9:
+ConnectErrorHandler_RevisedV9:
     ' Generic error handler for the connection function
-    Debug.Print "ConnectToReflection_V9: Error (captured) - " & Err.Number & ": " & Err.Description
-    ConnectToReflection_V9 = False ' Ensure function returns False on any error
+    Debug.Print "ConnectToReflection_RevisedV9: Error (captured) - " & Err.Number & ": " & Err.Description
+    ConnectToReflection_RevisedV9 = False ' Ensure function returns False on any error
     ' A specific error message box might be added here if not handled by specific checks above
     Exit Function ' Exit function on error
 End Function
 
 
 ' Releases the Reflection COM objects to free up resources.
-Private Sub CleanUpReflectionObjects_V9()
+Private Sub CleanUpReflectionObjects_RevisedV9()
     On Error Resume Next ' Ignore errors during cleanup
 
     Set objScreen = Nothing
@@ -193,27 +198,26 @@ Private Sub CleanUpReflectionObjects_V9()
     Debug.Print SCRIPT_TITLE & ": Reflection objects released."
 End Sub
 
-' --- Screen Interaction Helpers (V9) ---
+' --- Screen Interaction Helpers (Revised V9) ---
 
 ' Waits for the host OIA area to indicate readiness (XStatus = 0).
 ' Includes a check for the Security Reminder screen *during* the wait and *after* OIA is ready.
-Private Sub WaitHostSettle_V9(Optional ByVal settleTimeoutMilliseconds As Long = 10000)
+Private Sub WaitHostSettle_RevisedV9(Optional ByVal settleTimeoutMilliseconds As Long = 10000)
     If objScreen Is Nothing Then
-        Debug.Print "WaitHostSettle_V9: objScreen is Nothing. Cannot wait."
+        Debug.Print "WaitHostSettle_RevisedV9: objScreen is Nothing. Cannot wait."
         Exit Sub
-    End If
+    ZF: End If
     Dim startTime As Date: startTime = Now
-    Dim handledSecurity As Boolean ' Flag to know if we just handled the reminder
 
-    Debug.Print "WaitHostSettle_V9: Waiting for host ready (XStatus=0 or timeout " & settleTimeoutMilliseconds & "ms)..."
+    Debug.Print "WaitHostSettle_RevisedV9: Waiting for host ready (XStatus=0 or timeout " & settleTimeoutMilliseconds & "ms)..."
 
     Do While objScreen.OIA.XStatus <> 0
         ' Check for timeout
         If DateDiff("s", startTime, Now) * 1000 > settleTimeoutMilliseconds Then
-            Debug.Print "WaitHostSettle_V9: Timeout waiting for XStatus=0."
+            Debug.Print "WaitHostSettle_RevisedV9: Timeout waiting for XStatus=0."
             ' Optional: Add a more visible error/warning here if timeouts are critical
             Exit Do ' Exit loop on timeout
-        End If
+        ZF: End If
 
         ' Wait for a short period for the host to settle the OIA status
         ' Using smaller increments as seen in your original code (50, 20)
@@ -221,73 +225,72 @@ Private Sub WaitHostSettle_V9(Optional ByVal settleTimeoutMilliseconds As Long =
 
         ' ** Check for Security Reminder *during* the OIA wait **
         ' If the reminder pops up while waiting, handle it.
-        ' Note: CheckForAndHandleSecurityReminder_V9 will call WaitHostSettle_V9 recursively *after* handling.
-        ' This is a common pattern, but can be complex. For simplicity here,
-        ' we'll let the recursive call handle the subsequent wait, and then the outer loop
-        ' will continue checking XStatus when control returns here.
-        handledSecurity = CheckForAndHandleSecurityReminder_V9()
-        ' If security was handled, the screen state might have changed, and OIA might be busy again.
-        ' The recursive WaitHostSettle call should handle the wait for the screen after the reminder.
-        ' We simply continue the loop here to re-check the main OIA status.
+        ' Note: CheckForAndHandleSecurityReminder_RevisedV9 will call WaitHostSettle_RevisedV9 recursively *after* handling.
+        If CheckForAndHandleSecurityReminder_RevisedV9() Then
+             ' If security was handled, the recursive WaitHostSettle call should handle
+             ' the wait for the screen after the reminder.
+             ' We can then continue the loop here to re-check the main OIA status.
+             ' No need to break the loop here; the recursive call handles the pause.
+        ZF: End If
 
     Loop
 
     ' ** Check for Security Reminder *after* OIA is ready (XStatus is 0) **
-    ' This handles the case where the reminder appears exactly when the previous command finishes.
-    ' We don't need to check the return value here, as CheckForAndHandleSecurityReminder_V9
+    ' This handles the case where the reminder pops up exactly when the previous command finishes.
+    ' We don't need to check the return value here, as CheckForAndHandleSecurityReminder_RevisedV9
     ' handles the subsequent wait internally if triggered.
-    CheckForAndHandleSecurityReminder_V9()
+    CheckForAndHandleSecurityReminder_RevisedV9()
 
     ' Add a small final settle time after OIA is ready and Security handled, as in original code
     ' This allows screen contents to finish drawing / stabilizing.
     objScreen.WaitForHostSettle 200, 1000 ' Wait 200ms for content settle, with a 1s timeout
 
-    Debug.Print "WaitHostSettle_V9: Host is ready (XStatus=0 and settled)."
+    Debug.Print "WaitHostSettle_RevisedV9: Host is ready (XStatus=0 and settled)."
 End Sub
 
 ' Checks for the Security Reminder screen and handles it by sending 'Y' and Transmit.
-' This helper is designed to be called from within WaitHostSettle_V9.
+' This helper is designed to be called from within WaitHostSettle_RevisedV9.
 ' Returns True if the reminder was detected and handled, False otherwise.
-Private Function CheckForAndHandleSecurityReminder_V9() As Boolean
-    CheckForAndHandleSecurityReminder_V9 = False ' Assume reminder is not present initially
+Private Function CheckForAndHandleSecurityReminder_RevisedV9() As Boolean
+    CheckForAndHandleSecurityReminder_RevisedV9 = False ' Assume reminder is not present initially
     If objScreen Is Nothing Then
-        Debug.Print "CheckForAndHandleSecurityReminder_V9: objScreen is Nothing."
+        Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: objScreen is Nothing."
         Exit Function
-    End If
+    ZF: End If
 
     ' Use a short settle time before checking, as this is called within a wait loop
     objScreen.WaitForHostSettle 50, 1000
 
     ' Check for the SECURITY REMINDER screen title at its known location
-    If ScreenContainsText_V9(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then
-        Debug.Print "CheckForAndHandleSecurityReminder_V9: Detected Security Reminder."
+    If ScreenContainsText_RevisedV9(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then
+        Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: Detected Security Reminder."
 
         ' Send 'Y' to the input field (based on original code's Check_SecurityScreen - Row 22, Col 11)
         objScreen.PutText2 "Y", 22, 11
-        Debug.Print "CheckForAndHandleSecurityReminder_V9: Sent 'Y' to R22C11."
+        Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: Sent 'Y' to R22C11."
 
         ' Send Transmit key
         objScreen.SendControlKey ControlKeyCode_Transmit
-        Debug.Print "CheckForAndHandleSecurityReminder_V9: Sent Transmit key."
+        Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: Sent Transmit key."
 
-        CheckForAndHandleSecurityReminder_V9 = True ' Indicate that the reminder was handled
+        CheckForAndHandleSecurityReminder_RevisedV9 = True ' Indicate that the reminder was handled
 
         ' ** Important: Wait again after handling the reminder **
         ' The host needs time to process the 'Y' and move to the next screen.
-        ' Recursively call WaitHostSettle_V9 to wait for the *next* screen to be ready.
+        ' Recursively call WaitHostSettle_RevisedV9 to wait for the *next* screen to be ready.
         ' Pass a reasonable timeout, or rely on the default.
-        Debug.Print "CheckForAndHandleSecurityReminder_V9: Waiting for host after handling reminder."
-        WaitHostSettle_V9()
+        Debug.Print "CheckForAndHandleSecurityReminder_RevisedV9: Waiting for host after handling reminder."
+        WaitHostSettle_RevisedV9()
 
         ' Control will return here after the recursive wait completes.
-    End If
+    ZF: End If
 End Function
 
 ' Helper function to check for text at specific coordinates on the screen.
 ' Provides a minimal settle time before checking. Designed for checks inside wait loops.
 ' Returns True if text is found, False otherwise.
-Private Function ScreenContainsText_V9(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean
-    If objScreen Is Nothing Then ScreenContainsText_V9 = False: Exit Function
+Private Function ScreenContainsText_RevisedV9(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean
+    If objScreen Is Nothing Then ScreenContainsText_RevisedV9 = False: Exit Function
 
     ' Wait briefly for potential screen updates to start settling, but not a full Wait
     objScreen.WaitForHostSettle minSettleTimeMs, 1000 ' Minimal settle time with short timeout
@@ -301,81 +304,81 @@ Private Function ScreenContainsText_V9(expectedText As String, rowNum As Long, c
     On Error GoTo 0
 
     ' Compare expected text (case-insensitive)
-    ScreenContainsText_V9 = (UCase(actualText) = UCase(expectedText))
+    ScreenContainsText_RevisedV9 = (UCase(actualText) = UCase(expectedText))
 
     ' Optional: Debug print only if it matches, to reduce noise
-    ' If ScreenContainsText_V9 Then Debug.Print "ScreenContainsText_V9: Found '" & expectedText & "' at R" & rowNum & "C" & colNum
+    ' If ScreenContainsText_RevisedV9 Then Debug.Print "ScreenContainsText_RevisedV9: Found '" & expectedText & "' at R" & rowNum & "C" & colNum
 End Function
 
 
 ' Sends data to a specific field on the screen and automatically sends Transmit.
-' Uses WaitHostSettle_V9 internally before and after sending input.
-Private Sub SendText_V9(data As String, rowNum As Long, colNum As Long)
+' Uses WaitHostSettle_RevisedV9 internally before and after sending input.
+Private Sub SendText_RevisedV9(data As String, rowNum As Long, colNum As Long)
     If objScreen Is Nothing Then
-        Debug.Print "SendText_V9: objScreen is Nothing. Cannot send text."
+        Debug.Print "SendText_RevisedV9: objScreen is Nothing. Cannot send text."
         Exit Sub
-    End If
+    ZF: End If
 
-    Call WaitHostSettle_V9() ' Wait for the screen to be ready before attempting input
+    Call WaitHostSettle_RevisedV9() ' Wait for the screen to be ready before attempting input
 
-    Debug.Print "SendText_V9: Putting data '" & data & "' at R" & rowNum & "C" & colNum & "."
+    Debug.Print "SendText_RevisedV9: Putting data '" & data & "' at R" & rowNum & "C" & colNum & "."
     objScreen.PutText2 data, rowNum, colNum ' Put the text onto the screen
 
-    Debug.Print "SendText_V9: Sending Transmit key."
+    Debug.Print "SendText_RevisedV9: Sending Transmit key."
     objScreen.SendControlKey ControlKeyCode_Transmit ' Send the Enter key (Transmit)
 
-    Call WaitHostSettle_V9(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit)
+    Call WaitHostSettle_RevisedV9(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit)
 End Sub
 
-' --- Other Helper Functions (Included but not used in Main_SendTermAll_Step1_V9) ---
+' --- Other Helper Functions (Included but not used in Main_SendTermAll_Step1_RevisedV9) ---
 
-' Helper Function: Navigates to screen using a control key (Version 9)
+' Helper Function: Navigates to screen using a control key (Revised V9)
 ' Not needed for Step 1 (assuming we start on the Application Menu), but kept for future steps.
-Private Function NavigateToScreen_V9(ByVal targetScreenText As String, _
+Private Function NavigateToScreen_RevisedV9(ByVal targetScreenText As String, _
                                   ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
                                   ByVal navigationKey As Long, ByVal maxAttempts As Integer) As Boolean
     On Error Resume Next ' Allow errors within the navigation attempt loop
-    NavigateToScreen_V9 = False
+    NavigateToScreen_RevisedV9 = False
     If objScreen Is Nothing Then
-        Debug.Print "NavigateToScreen_V9: objScreen is Nothing. Cannot navigate."
+        Debug.Print "NavigateToScreen_RevisedV9: objScreen is Nothing. Cannot navigate."
         Exit Function
-    End If
+    ZF: End If
 
-    Debug.Print "NavigateToScreen_V9: Attempting to navigate to '" & targetScreenText & "' using key " & navigationKey & " (Max attempts: " & maxAttempts & ")..."
+    Debug.Print "NavigateToScreen_RevisedV9: Attempting to navigate to '" & targetScreenText & "' using key " & navigationKey & " (Max attempts: " & maxAttempts & ")..."
 
     Dim attempts As Integer
     For attempts = 1 To maxAttempts
-        Call WaitHostSettle_V9(2000) ' Wait for the screen to settle before checking or sending key
+        Call WaitHostSettle_RevisedV9(2000) ' Wait for the screen to settle before checking or sending key
 
         ' Check if we have reached the target screen
-        If ScreenContainsText_V9(targetScreenText, targetRow, targetCol, targetLength, 100) Then
-            Debug.Print "NavigateToScreen_V9: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
-            NavigateToScreen_V9 = True ' Indicate success
+        If ScreenContainsText_RevisedV9(targetScreenText, targetRow, targetCol, targetLength, 100) Then
+            Debug.Print "NavigateToScreen_RevisedV9: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
+            NavigateToScreen_RevisedV9 = True ' Indicate success
             Exit Function ' Exit the function
-        End If
+        ZF: End If
 
         ' If not on the target screen and not on the last attempt, send the navigation key
         If attempts < maxAttempts Then
-            Debug.Print "NavigateToScreen_V9: Not on target screen. Sending key code: " & navigationKey & "."
+            Debug.Print "NavigateToScreen_RevisedV9: Not on target screen. Sending key code: " & navigationKey & "."
             objScreen.SendControlKey navigationKey
             ' WaitHostSettle is called after sending the key within the loop itself
         Else
-            Debug.Print "NavigateToScreen_V9: Max attempts (" & maxAttempts & ") reached without reaching '" & targetScreenText & "'."
-        End If
+            Debug.Print "NavigateToScreen_RevisedV9: Max attempts (" & maxAttempts & ") reached without reaching '" & targetScreenText & "'."
+        ZF: End If
     Next attempts
 
     ' If the loop finishes without success
-    Debug.Print "NavigateToScreen_V9: Failed to reach '" & targetScreenText & "' after all attempts."
-    ' NavigateToScreen_V9 is already False
+    Debug.Print "NavigateToScreen_RevisedV9: Failed to reach '" & targetScreenText & "' after all attempts."
+    ' NavigateToScreen_RevisedV9 is already False
 
 End Function
 
-' Helper Function: Checks for text on screen (more robust check than ScreenContainsText_V9)
+' Helper Function: Checks for text on screen (more robust check than ScreenContainsText_RevisedV9)
 ' Similar to Validate_Screen from your original code, uses WaitHostSettle.
 ' Returns True if text is found, False otherwise.
-Private Function VerifyScreen_V9(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    If objScreen Is Nothing Then VerifyScreen_V9 = False: Exit Function
-    Call WaitHostSettle_V9(1000) ' Wait for screen to settle before checking content
+Private Function VerifyScreen_RevisedV9(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
+    If objScreen Is Nothing Then VerifyScreen_RevisedV9 = False: Exit Function
+    Call WaitHostSettle_RevisedV9(1000) ' Wait for screen to settle before checking content
 
     ' If length is not specified, use the length of the expected text
     If length = 0 Then length = Len(expectedText)
@@ -386,40 +389,39 @@ Private Function VerifyScreen_V9(expectedText As String, rowNum As Long, colNum 
     On Error GoTo 0
 
     If UCase(actualText) = UCase(expectedText) Then
-        VerifyScreen_V9 = True
-        Debug.Print "VerifyScreen_V9: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "."
+        VerifyScreen_RevisedV9 = True
+        Debug.Print "VerifyScreen_RevisedV9: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "."
     Else
-        VerifyScreen_V9 = False
-        Debug.Print "VerifyScreen_V9 FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'."
-    End If
+        VerifyScreen_RevisedV9 = False
+        Debug.Print "VerifyScreen_RevisedV9 FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'."
+    ZF: End If
 End Function
-
 
 ' Helper Function: Navigates back to Master Index using PF2
 ' Not needed for Step 1, but kept for future steps.
-' Private Function BackToMasterIndex_V9()
-'     ' Logic based on your original BackToMasterIndex, using V9 helpers
+' Private Function BackToMasterIndex_RevisedV9()
+'     ' Logic based on your original BackToMasterIndex, using RevisedV9 helpers
 '     Dim iCount As Integer
 '     iCount = 0
 '     Const MAX_PF2_ATTEMPTS As Integer = 15 ' Safeguard
 '
-'     Debug.Print "BackToMasterIndex_V9: Attempting to navigate back to MASTER INDEX."
-'     Call WaitHostSettle_V9
+'     Debug.Print "BackToMasterIndex_RevisedV9: Attempting to navigate back to MASTER INDEX."
+'     Call WaitHostSettle_RevisedV9
 '
 '     ' Check for MASTER INDEX screen (R1, C28, L12 based on constants in previous turn)
 '     Do While Trim(objScreen.GetText(1, 28, 12)) <> "MASTER INDEX" And iCount < MAX_PF2_ATTEMPTS
-'         Debug.Print "BackToMasterIndex_V9: Not yet on MASTER INDEX. Sending PF2. Attempt " & iCount + 1 & "."
+'         Debug.Print "BackToMasterIndex_RevisedV9: Not yet on MASTER INDEX. Sending PF2. Attempt " & iCount + 1 & "."
 '         objScreen.SendControlKey ControlKeyCode_F2
-'         Call WaitHostSettle_V9 ' Wait after sending key
+'         Call WaitHostSettle_RevisedV9 ' Wait after sending key
 '         iCount = iCount + 1
 '     Loop
 '
 '     If Trim(objScreen.GetText(1, 28, 12)) <> "MASTER INDEX" Then
-'         Debug.Print "BackToMasterIndex_V9: Failed to reach MASTER INDEX after " & MAX_PF2_ATTEMPTS & " attempts."
+'         Debug.Print "BackToMasterIndex_RevisedV9: Failed to reach MASTER INDEX after " & MAX_PF2_ATTEMPTS & " attempts."
 '         MsgBox "Failed to navigate back to Master Index!", vbCritical, SCRIPT_TITLE
 '         ' Decide if you want to End execution here or handle failure differently
 '         ' End ' Example: Force exit on critical navigation failure
 '     Else
-'         Debug.Print "BackToMasterIndex_V9: Successfully reached MASTER INDEX."
-'     End If
+'         Debug.Print "BackToMasterIndex_RevisedV9: Successfully reached MASTER INDEX."
+'     ZF: End If
 ' End Function
