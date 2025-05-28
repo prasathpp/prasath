@@ -1,4 +1,4 @@
-' Attribute VB_Name = "mod_BackOffice_Automation_V6" ' Module name reflecting version
+Attribute VB_Name = "mod_BackOffice_Automation_V6" ' Module name reflecting version
 Option Explicit
 
 ' --- Reflection COM Object Declarations ---
@@ -347,6 +347,37 @@ CleanupAndExit: ' Label for cleanup. Execution jumps here on error or when loop 
     Debug.Print "--- Finished " & SCRIPT_TITLE & " ---"
 End Sub
 
+' <<< THIS IS THE START OF THE ErrorHandler LABEL BLOCK FOR ProcessAccounts_V6 >>>
+ErrorHandler: ' Error handler label defined within this sub
+    ' Handle any unexpected runtime errors
+    Debug.Print "ErrorHandler: Error " & Err.Number & ": " & Err.Description & " at line: " & Erl
+    ' Record the error details to the spreadsheet for the current row if processing a data row
+    ' Check if ws is valid and currentRow is within a plausible range (could be 0 or 1 if error is early)
+    If Not ws Is Nothing And currentRow >= FIRST_DATA_ROW And currentRow <= lastRow Then
+         ws.Cells(currentRow, COL_STATUS).Value = "Error: " & Err.Number ' Record error number
+         ' Only update error description if it's not already set by a specific failure message
+         If ws.Cells(currentRow, COL_ERROR_DESC).Value = "" Then
+             ws.Cells(currentRow, COL_ERROR_DESC).Value = Err.Description ' Record error description
+         End If
+         Debug.Print SCRIPT_TITLE & ": Recorded error details for row " & currentRow
+    ElseIf Not ws Is Nothing Then
+         ' Error occurred before processing first row (e.g., during connection or getting sheet)
+         ' Can't easily tie to a row, maybe log on a separate sheet or just debug print/MsgBox
+         Debug.Print SCRIPT_TITLE & ": Error occurred before data processing loop or ws/currentRow invalid. Error: " & Err.Number & ": " & Err.Description
+         ' You could log here: ws.Cells(1, COL_STATUS).Value = "Setup Error: " & Err.Number & " - " & Err.Description ' Example logging to header row or separate sheet
+    End If
+
+
+    ' Show a message box about the error
+    ' Use the current row number in the message
+    MsgBox "Error in '" & SCRIPT_TITLE & "' at Row " & currentRow & ": " & vbCrLf & Err.Number & ": " & Err.Description & vbCrLf & _
+           "Processing will stop.", vbCritical, SCRIPT_TITLE
+
+    ' Go to the cleanup section
+    Resume CleanupAndExit
+
+End Sub ' <<< THIS IS THE END OF THE ProcessAccounts_V6 SUBROUTINE >>>
+
 
 ' --- Connection Logic (Version 6) ---
 ' Connects to an existing Reflection Workspace and finds the specified session
@@ -384,7 +415,7 @@ Private Function ConnectToReflection_V6(ByVal targetSessionExactTitle As String)
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear
         Debug.Print "Connect_V6: objFrame.GetViewByTitleText FAILED or returned Nothing."
-        MsgBox "Could not find a Reflection session with the EXACT title: '" & targetSessionExactTitle & "'.", vbCritical, SCRIPT_TITLE ' Corrected concatenation
+        MsgBox "Could not find a Reflection session with the EXACT title: '" & targetSessionExactTitle & "'.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
     Debug.Print "Connect_V6: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
@@ -414,7 +445,7 @@ Private Function ConnectToReflection_V6(ByVal targetSessionExactTitle As String)
     Exit Function
 
 ConnectErrorHandler_V6:
-    Debug.Print "Connect_V6: Error (captured) - " & Err.Number & ": " & Err.Description
+    Debug.Print "Connect_V6: Error (captured) - " & Err.Number & ": " + Err.Description
     ConnectToReflection_V6 = False
     Exit Function
 End Function
@@ -562,7 +593,7 @@ Private Sub SendControlKey_V6(keyCode As Long, Optional waitAfterMs As Long = 50
 
      Call WaitUntilReady_V6()
 
-     Debug.Print "SendControlKey_V6: Sending key code " & keyCode & "."
+     Debug.Print "SendControlKey_V6: Sending key code " + CStr(keyCode) + "." ' Changed concat to &
      objScreen.SendControlKey keyCode
 
      Call WaitUntilReady_V6(waitAfterMs)
@@ -598,17 +629,17 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
             MsgBox "Invalid Brand specified: '" & brnd & "'. Navigation aborted.", vbExclamation, SCRIPT_TITLE
             Exit Function
     End Select
-    Debug.Print "NavigateFromAppMenu_V6: Using confirm code: " & confirmCode & " for Brand: " & brnd & "."
+    Debug.Print "NavigateFromAppMenu_V6: Using confirm code: " & confirmCode + " for Brand: " + brnd + "." ' Changed concat to &
 
 
     ' --- Step 1: Verify starting screen is APPLICATION SELECTION MENU ---
     Debug.Print "NavigateFromAppMenu_V6: Verifying start screen: " & SCREEN_APP_MENU
     If Not VerifyScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-         Debug.Print "NavigateFromAppMenu_V6: NOT starting on " & SCREEN_APP_MENU & ". Actual: '" & Trim(objScreen.GetText(SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH)) & "'"
-         MsgBox "Automation expected to start on '" & SCREEN_APP_MENU & "' for full navigation path. Please check current screen and retry.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromAppMenu_V6: NOT starting on " & SCREEN_APP_MENU + ". Actual: '" + Trim(objScreen.GetText(SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH)) + "'" ' Changed concat to &
+         MsgBox "Automation expected to start on '" & SCREEN_APP_MENU + "' for full navigation path. Please check current screen and retry.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
     End If
-    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_APP_MENU & "."
+    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_APP_MENU + "." ' Changed concat to &
 
 
     ' --- Step 2: Send TERM ALL ---
@@ -620,27 +651,27 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
     Debug.Print "NavigateFromAppMenu_V6: Verifying screen is ready for Brand Code after TERM ALL."
     ' We MUST verify being on APP MENU or a compatible screen before sending Brand Code.
     If Not VerifyScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-        Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_APP_MENU & " after TERM ALL. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-        MsgBox "Automation failed to return to '" & SCREEN_APP_MENU & "' after sending TERM ALL. Navigation aborted.", vbCritical, SCRIPT_TITLE
+        Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_APP_MENU + " after TERM ALL. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+        MsgBox "Automation failed to return to '" & SCREEN_APP_MENU + "' after sending TERM ALL. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
         Exit Function
     End If
-    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_APP_MENU & " after TERM ALL."
+    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_APP_MENU + " after TERM ALL." ' Changed concat to &
 
 
     ' --- Step 4: Send Brand Code ---
     ' Verify prerequisite screen *before* sending command
-     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_APP_MENU & " before sending Brand code."
+     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_APP_MENU + " before sending Brand code." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_APP_MENU & " when expected before sending Brand code. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_APP_MENU & "' before sending Brand code. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_APP_MENU + " when expected before sending Brand code. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_APP_MENU + "' before sending Brand code. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
-    Debug.Print "NavigateFromAppMenu_V6: Sending Brand code '" & confirmCode & "'..."
+    Debug.Print "NavigateFromAppMenu_V6: Sending Brand code '" & confirmCode + "'..." ' Changed concat to &
     Call SendText_V6(confirmCode, CMD_LINE_ROW, CMD_LINE_COL)
     Debug.Print "NavigateFromAppMenu_V6: Sent Brand code + 1 Transmit."
 
     ' --- Step 5: Verify expected next screen (Option Handler or intermediate) ---
-    Debug.Print "NavigateFromAppMenu_V6: Navigating from post-Brand Code screen to " & SCREEN_OPT_HANDLER_MAIN & "."
+    Debug.Print "NavigateFromAppMenu_V6: Navigating from post-Brand Code screen to " & SCREEN_OPT_HANDLER_MAIN + "." ' Changed concat to &
     starLoopCount = 0
     Dim currentScreenTextR1C1L80 As String ' Variable to hold current screen text for debugging
 
@@ -654,7 +685,7 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
 
          ' Verify if we are on RBS Header
          If VerifyScreen_V6(SCREEN_RBS_HEADER, 1, 1, Len(SCREEN_RBS_HEADER)) Then
-              Debug.Print "NavigateFromAppMenu_V6: Detected " & SCREEN_RBS_HEADER & ". Sending Transmit."
+              Debug.Print "NavigateFromAppMenu_V6: Detected " & SCREEN_RBS_HEADER + ". Sending Transmit." ' Changed concat to &
               Call SendControlKey_V6(ControlKeyCode_Transmit)
               onKnownIntermediateScreen = True
          ' Verify if we are on a blank screen (simplified check R1C1L80 is empty)
@@ -664,7 +695,7 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
               onKnownIntermediateScreen = True
          ' Verify if we are still on APP MENU (Sometimes needed if brand code didn't work fully)
          ElseIf VerifyScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-              Debug.Print "NavigateFromAppMenu_V6: Detected still on " & SCREEN_APP_MENU & ". Resending Brand Code."
+              Debug.Print "NavigateFromAppMenu_V6: Detected still on " & SCREEN_APP_MENU + ". Resending Brand Code." ' Changed concat to &
               Call SendText_V6(confirmCode, CMD_LINE_ROW, CMD_LINE_COL)
               onKnownIntermediateScreen = True
          ' --- Optional: Handle other specific intermediate screens if they exist based on observation ---
@@ -675,7 +706,7 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
          ' If we weren't on a known intermediate screen that was handled, we might be stuck or on an unexpected screen.
          ' Log the screen content and consider failure if max attempts are reached.
          If Not onKnownIntermediateScreen Then
-             Debug.Print "NavigateFromAppMenu_V6: On unexpected screen (" & currentScreenTextR1C1L80 & ") while waiting for " & SCREEN_OPT_HANDLER_MAIN & ". Attempt " & starLoopCount + 1 & "."
+             Debug.Print "NavigateFromAppMenu_V6: On unexpected screen (" & currentScreenTextR1C1L80 + ") while waiting for " + SCREEN_OPT_HANDLER_MAIN + ". Attempt " + CStr(starLoopCount + 1) + "." ' Changed concat to &
              ' No key sent here, just rely on the next loop iteration's check.
              ' Add a small wait if no action was taken
              objReflectionApp.Wait 100
@@ -690,19 +721,19 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
 
     ' Final check after the STAR loop attempts
     If Not VerifyScreen_V6(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-         Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_OPT_HANDLER_MAIN & " after maximum attempts (" & maxStarLoops & ") in STAR loop. Last screen R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+         Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_OPT_HANDLER_MAIN + " after maximum attempts (" + CStr(maxStarLoops) + ") in STAR loop. Last screen R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
          MsgBox "Failed to navigate to Option Handler screen after Brand Code. Navigation aborted.", vbCritical, SCRIPT_TITLE
          Exit Function
     End If
-    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_OPT_HANDLER_MAIN & "."
+    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_OPT_HANDLER_MAIN + "." ' Changed concat to &
 
 
     ' --- Step 6: Option 19 (Back Office System) ---
     ' Verify prerequisite screen *before* sending command
-     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_OPT_HANDLER_MAIN & " before sending 19."
+     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_OPT_HANDLER_MAIN + " before sending 19." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_OPT_HANDLER_MAIN & " when expected before sending 19. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_OPT_HANDLER_MAIN & "' before sending 19. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_OPT_HANDLER_MAIN + " when expected before sending 19. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_OPT_HANDLER_MAIN + "' before sending 19. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
     Debug.Print "NavigateFromAppMenu_V6: Sending 19..."
@@ -712,19 +743,19 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
     ' --- Step 7: Verify expected next screen is BACK OFFICE SYSTEM ---
     Debug.Print "NavigateFromAppMenu_V6: Verifying expected next screen: " & SCREEN_BO_SYSTEM
     If Not VerifyScreen_V6(SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH) Then
-        Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_BO_SYSTEM & ". Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+        Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_BO_SYSTEM + ". Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
          MsgBox "Failed to navigate to Back Office System menu after sending 19. Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_BO_SYSTEM & "."
+    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_BO_SYSTEM + "." ' Changed concat to &
 
 
     ' --- Step 8: Option 1 (Master Index) ---
     ' Verify prerequisite screen *before* sending command
-     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_BO_SYSTEM & " before sending 1."
+     Debug.Print "NavigateFromAppMenu_V6: Verifying " & SCREEN_BO_SYSTEM + " before sending 1." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH) Then
-         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_BO_SYSTEM & " when expected before sending 1. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_BO_SYSTEM & "' before sending 1. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromAppMenu_V6: NOT on " & SCREEN_BO_SYSTEM + " when expected before sending 1. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_BO_SYSTEM + "' before sending 1. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
     Debug.Print "NavigateFromAppMenu_V6: Sending 1..."
@@ -734,18 +765,18 @@ Private Function NavigateFromAppMenu_V6(ByVal sc As String, ByVal acct As String
     ' --- Step 9: Verify expected next screen is MASTER INDEX ---
     Debug.Print "NavigateFromAppMenu_V6: Verifying expected next screen: " & SCREEN_MASTER_INDEX
     If Not VerifyScreen_V6(SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH) Then
-        Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_MASTER_INDEX & ". Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+        Debug.Print "NavigateFromAppMenu_V6: Did not reach " & SCREEN_MASTER_INDEX + ". Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
          MsgBox "Failed to navigate to Master Index after sending 1. Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_MASTER_INDEX & "."
+    Debug.Print "NavigateFromAppMenu_V6: Confirmed on " & SCREEN_MASTER_INDEX + "." ' Changed concat to &
 
     ' --- Proceed with common steps from Master Index to Interest Amendments ---
     Dim commonPathSuccess As Boolean
     commonPathSuccess = NavigateFromMasterIndexToInterestAmendments_V6(sc, acct)
 
     If commonPathSuccess Then
-        Debug.Print "NavigateFromAppMenu_V6: Successfully completed common path to " & SCREEN_INTEREST_AMENDMENTS & "."
+        Debug.Print "NavigateFromAppMenu_V6: Successfully completed common path to " & SCREEN_INTEREST_AMENDMENTS + "." ' Changed concat to &
         NavigateFromAppMenu_V6 = True ' Full navigation success!
     Else
         Debug.Print "NavigateFromAppMenu_V6: Common path from Master Index failed."
@@ -767,20 +798,20 @@ Private Function NavigateFromMasterIndex_V6(ByVal sc As String, ByVal acct As St
     End If
 
     ' --- Step 1: Verify starting screen is MASTER INDEX ---
-    Debug.Print "NavigateFromMasterIndex_V6: Verifying start screen: " & SCREEN_MASTER_INDEX & "."
+    Debug.Print "NavigateFromMasterIndex_V6: Verifying start screen: " & SCREEN_MASTER_INDEX + "." ' Changed concat to &
     If Not VerifyScreen_V6(SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH) Then
-         Debug.Print "NavigateFromMasterIndex_V6: NOT starting on " & SCREEN_MASTER_INDEX & ". Actual: '" & Trim(objScreen.GetText(SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH)) & "'"
-         MsgBox "Automation expected to start on '" & SCREEN_MASTER_INDEX & "' for shorter navigation path. Please check current state and retry.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromMasterIndex_V6: NOT starting on " & SCREEN_MASTER_INDEX + ". Actual: '" + Trim(objScreen.GetText(SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH)) + "'" ' Changed concat to &
+         MsgBox "Automation expected to start on '" & SCREEN_MASTER_INDEX + "' for shorter navigation path. Please check current state and retry.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
     End If
-    Debug.Print "NavigateFromMasterIndex_V6: Confirmed on " & SCREEN_MASTER_INDEX & "."
+    Debug.Print "NavigateFromMasterIndex_V6: Confirmed on " & SCREEN_MASTER_INDEX + "." ' Changed concat to &
 
     ' --- Proceed with common steps from Master Index to Interest Amendments ---
     Dim commonPathSuccess As Boolean
     commonPathSuccess = NavigateFromMasterIndexToInterestAmendments_V6(sc, acct)
 
      If commonPathSuccess Then
-        Debug.Print "NavigateFromMasterIndex_V6: Successfully completed common path to " & SCREEN_INTEREST_AMENDMENTS & "."
+        Debug.Print "NavigateFromMasterIndex_V6: Successfully completed common path to " & SCREEN_INTEREST_AMENDMENTS + "." ' Changed concat to &
         NavigateFromMasterIndex_V6 = True ' Shorter navigation success!
     Else
         Debug.Print "NavigateFromMasterIndex_V6: Common path from Master Index failed."
@@ -804,16 +835,16 @@ Private Function NavigateFromMasterIndexToInterestAmendments_V6(ByVal sc As Stri
     End If
 
     ' --- Step 1: Verify prerequisite screen is MASTER INDEX ---
-     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_MASTER_INDEX & " before sending 20 + S/C."
+     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_MASTER_INDEX + " before sending 20 + S/C." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH) Then
-         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_MASTER_INDEX & " when expected before sending 20 + S/C. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_MASTER_INDEX & "' before sending 20+S/C. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_MASTER_INDEX + " when expected before sending 20 + S/C. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_MASTER_INDEX + "' before sending 20+S/C. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
 
     ' --- Step 2: Master Index - Action 20, Sort Code ---
     Dim formattedSC As String: formattedSC = Format(sc, "000000")
-    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Sending 20 + S/C " & formattedSC & "..."
+    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Sending 20 + S/C " & formattedSC + "..." ' Changed concat to &
     Call WaitUntilReady_V6(100)
     objScreen.PutText2 "20", MASTER_INDEX_ACTION_ROW, MASTER_INDEX_ACTION_COL
     objScreen.PutText2 formattedSC, MASTER_INDEX_SC_ROW, MASTER_INDEX_SC_COL
@@ -823,24 +854,24 @@ Private Function NavigateFromMasterIndexToInterestAmendments_V6(ByVal sc As Stri
     ' --- Step 3: Verify expected next screen is FILE MAINTENANCE INPUT INDEX ---
     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying expected next screen: " & SCREEN_FILE_MAINT_IDX
     If Not VerifyScreen_V6(SCREEN_FILE_MAINT_IDX, SCREEN_FILE_MAINT_IDX_ROW, SCREEN_FILE_MAINT_IDX_COL, SCREEN_FILE_MAINT_IDX_LENGTH) Then
-        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_FILE_MAINT_IDX & ". Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_FILE_MAINT_IDX + ". Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
          MsgBox "Failed to navigate to File Maintenance Index after 20+S/C. Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Confirmed on " & SCREEN_FILE_MAINT_IDX & "."
+    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Confirmed on " & SCREEN_FILE_MAINT_IDX + "." ' Changed concat to &
 
 
     ' --- Step 4: Verify prerequisite screen is FILE MAINTENANCE INPUT INDEX ---
-     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_FILE_MAINT_IDX & " before sending 20 + A/N."
+     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_FILE_MAINT_IDX + " before sending 20 + A/N." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_FILE_MAINT_IDX, SCREEN_FILE_MAINT_IDX_ROW, SCREEN_FILE_MAINT_IDX_COL, SCREEN_FILE_MAINT_IDX_LENGTH) Then
-         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_FILE_MAINT_IDX & " when expected before sending 20 + A/N. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_FILE_MAINT_IDX & "' before sending 20+A/N. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_FILE_MAINT_IDX + " when expected before sending 20 + A/N. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_FILE_MAINT_IDX + "' before sending 20+A/N. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
 
     ' --- Step 5: File Maint Idx - Action 20, Account Number ---
     Dim formattedAcct As String: formattedAcct = Format(acct, "00000000")
-    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Sending 20 + A/N " & formattedAcct & "..."
+    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Sending 20 + A/N " & formattedAcct + "..." ' Changed concat to &
     Call WaitUntilReady_V6(100)
     objScreen.PutText2 "20", FILE_MAINT_IDX_ACTION_ROW, FILE_MAINT_IDX_ACTION_COL
     objScreen.PutText2 formattedAcct, FILE_MAINT_IDX_ACCOUNT_ROW, FILE_MAINT_IDX_ACCOUNT_COL
@@ -850,18 +881,18 @@ Private Function NavigateFromMasterIndexToInterestAmendments_V6(ByVal sc As Stri
     ' --- Step 6: Verify expected next screen is INTERNAL TRANSACTIONS ---
     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying expected next screen: " & SCREEN_INTERNAL_TXNS
     If Not VerifyScreen_V6(SCREEN_INTERNAL_TXNS, SCREEN_INTERNAL_TXNS_ROW, SCREEN_INTERNAL_TXNS_COL, SCREEN_INTERNAL_TXNS_LENGTH) Then
-        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_INTERNAL_TXNS & ". Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_INTERNAL_TXNS + ". Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
          MsgBox "Failed to navigate to Internal Transactions screen after 20+A/N. Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Confirmed on " & SCREEN_INTERNAL_TXNS & "."
+    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Confirmed on " & SCREEN_INTERNAL_TXNS + "." ' Changed concat to &
 
 
      ' --- Step 7: Verify prerequisite screen is INTERNAL TRANSACTIONS ---
-     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_INTERNAL_TXNS & " before sending 04."
+     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying " & SCREEN_INTERNAL_TXNS + " before sending 04." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_INTERNAL_TXNS, SCREEN_INTERNAL_TXNS_ROW, SCREEN_INTERNAL_TXNS_COL, SCREEN_INTERNAL_TXNS_LENGTH) Then
-         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_INTERNAL_TXNS & " when expected before sending 04. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync. Expected '" & SCREEN_INTERNAL_TXNS & "' before sending 04. Navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: NOT on " & SCREEN_INTERNAL_TXNS + " when expected before sending 04. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync. Expected '" & SCREEN_INTERNAL_TXNS + "' before sending 04. Navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
 
@@ -871,12 +902,12 @@ Private Function NavigateFromMasterIndexToInterestAmendments_V6(ByVal sc As Stri
     Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Sent 04 + 1 Transmit."
 
     ' --- Step 9: Verify arrival at the target screen (Interest Amendments) ---
-    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS & "."
+    Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS + "." ' Changed concat to &
     If VerifyScreen_V6(SCREEN_INTEREST_AMENDMENTS, SCREEN_INTEREST_AMENDMENTS_ROW, SCREEN_INTEREST_AMENDMENTS_COL, SCREEN_INTEREST_AMENDMENTS_LENGTH) Then
-        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Successfully reached primary target: " & SCREEN_INTEREST_AMENDMENTS & "."
+        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Successfully reached primary target: " & SCREEN_INTEREST_AMENDMENTS + "." ' Changed concat to &
         NavigateFromMasterIndexToInterestAmendments_V6 = True ' Common path success!
     Else
-        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_INTEREST_AMENDMENTS & ". Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
+        Debug.Print "NavigateFromMasterIndexToInterestAmendments_V6: Did not reach " & SCREEN_INTEREST_AMENDMENTS + ". Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
         MsgBox "Failed to navigate to the expected Interest Amendment screen after 04. Navigation aborted.", vbCritical, SCRIPT_TITLE
         NavigateFromMasterIndexToInterestAmendments_V6 = False
     End If
@@ -902,85 +933,85 @@ Private Function NavigateBack_V6(ByVal targetScreenEnum As Long) As Boolean
         Exit Function
     End If
 
-    Debug.Print "NavigateBack_V6: Attempting to navigate back to target: " & IIf(targetScreenEnum = NAV_TARGET_APP_MENU, SCREEN_APP_MENU, SCREEN_MASTER_INDEX) & "."
+    Debug.Print "NavigateBack_V6: Attempting to navigate back to target: " & IIf(targetScreenEnum = NAV_TARGET_APP_MENU, SCREEN_APP_MENU, SCREEN_MASTER_INDEX) + "." ' Changed concat to &
 
     ' --- Step 1: Navigate back towards BACK OFFICE SYSTEM from current screen via F2 loop ---
     ' This handles navigating back from Interest Amendments, or potentially other screens if forward nav failed.
     ' We loop F2 until we reach BACK OFFICE SYSTEM, verifying before each key.
-    Debug.Print "NavigateBack_V6: Starting back navigation via F2 loop towards " & SCREEN_BO_SYSTEM & "."
+    Debug.Print "NavigateBack_V6: Starting back navigation via F2 loop towards " & SCREEN_BO_SYSTEM + "." ' Changed concat to &
     ' Loop until BO System is reached or max F2 attempts are exhausted.
-    backNavSuccess = LoopControlKeyUntilScreen_V6(ControlKeyCode_F2, SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH, MAX_F2_ATTEMPTS_TO_BO_SYSTEM)
+    backNavSuccess = LoopControlKeyUntilScreen_V6(ControlKeyCode_F2, SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH, MAX_BACK_NAV_LOOPS)
 
     If Not backNavSuccess Then
-        Debug.Print "NavigateBack_V6: Failed to reach " & SCREEN_BO_SYSTEM & " via F2 loop."
-        MsgBox "Failed to navigate back to " & SCREEN_BO_SYSTEM & " via F2 loop. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+        Debug.Print "NavigateBack_V6: Failed to reach " & SCREEN_BO_SYSTEM + " via F2 loop." ' Changed concat to &
+        MsgBox "Failed to navigate back to " & SCREEN_BO_SYSTEM + " via F2 loop. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
         Exit Function ' Critical failure
     End If
-    Debug.Print "NavigateBack_V6: Confirmed on " & SCREEN_BO_SYSTEM & " after F2 loop."
+    Debug.Print "NavigateBack_V6: Confirmed on " & SCREEN_BO_SYSTEM + " after F2 loop." ' Changed concat to &
 
 
-    ' --- Step 2: Navigate from BACK OFFICE SYSTEM to target (Master Index or App Menu) ---
+    ' --- Step 2: Navigate from BACK OFFICE SYSTEM to target (Master Index or App Menu) via specific F3 steps/loop ---
     ' Verify prerequisite screen is BACK OFFICE SYSTEM before sending F3
-    Debug.Print "NavigateBack_V6: Verifying " & SCREEN_BO_SYSTEM & " before starting F3 sequence to target."
+    Debug.Print "NavigateBack_V6: Verifying " & SCREEN_BO_SYSTEM + " before starting F3 sequence to target." ' Changed concat to &
      If Not VerifyScreen_V6(SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH) Then
-         Debug.Print "NavigateBack_V6: NOT on " & SCREEN_BO_SYSTEM & " when expected before sending F3 sequence. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-         MsgBox "Automation lost sync during back navigation. Expected '" & SCREEN_BO_SYSTEM & "'. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+         Debug.Print "NavigateBack_V6: NOT on " & SCREEN_BO_SYSTEM + " when expected before sending F3 sequence. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+         MsgBox "Automation lost sync during back navigation. Expected '" & SCREEN_BO_SYSTEM + "'. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
          Exit Function
      End If
 
     ' Now, proceed based on the final target
     If targetScreenEnum = NAV_TARGET_MASTER_INDEX Then
         ' Target is Master Index
-        Debug.Print "NavigateBack_V6: Target is " & SCREEN_MASTER_INDEX & ". Navigating from " & SCREEN_BO_SYSTEM & " via F3 loop."
+        Debug.Print "NavigateBack_V6: Target is " & SCREEN_MASTER_INDEX + ". Navigating from " + SCREEN_BO_SYSTEM + " via F3 loop." ' Changed concat to &
         ' Loop F3 until we reach MASTER INDEX. LoopControlKeyUntilScreen_V6 stops when the target is verified.
-        backNavSuccess = LoopControlKeyUntilScreen_V6(ControlKeyCode_F3, SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH, MAX_F3_ATTEMPTS_FROM_BO_TO_MI)
+        backNavSuccess = LoopControlKeyUntilScreen_V6(ControlKeyCode_F3, SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH, MAX_BACK_NAV_LOOPS)
         If backNavSuccess Then
-            Debug.Print "NavigateBack_V6: Successfully reached " & SCREEN_MASTER_INDEX & "."
+            Debug.Print "NavigateBack_V6: Successfully reached " & SCREEN_MASTER_INDEX + "." ' Changed concat to &
             NavigateBack_V6 = True ' Success!
         Else
-            Debug.Print "NavigateBack_V6: Failed to reach " & SCREEN_MASTER_INDEX & " via F3 loop from " & SCREEN_BO_SYSTEM & "."
-            MsgBox "Failed to navigate back to " & SCREEN_MASTER_INDEX & " via F3 loop. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+            Debug.Print "NavigateBack_V6: Failed to reach " & SCREEN_MASTER_INDEX + " via F3 loop from " + SCREEN_BO_SYSTEM + "." ' Changed concat to &
+            MsgBox "Failed to navigate back to " & SCREEN_MASTER_INDEX + " via F3 loop. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
              ' NavigateBack_V6 is already False
         End If
 
     ElseIf targetScreenEnum = NAV_TARGET_APP_MENU Then
         ' Target is Application Selection Menu
-        Debug.Print "NavigateBack_V6: Target is " & SCREEN_APP_MENU & ". Navigating from " & SCREEN_BO_SYSTEM & " via specific F3 steps."
+        Debug.Print "NavigateBack_V6: Target is " & SCREEN_APP_MENU + ". Navigating from " + SCREEN_BO_SYSTEM + " via specific F3 steps." ' Changed concat to &
 
         ' --- Step 2a: Send F3 from BACK OFFICE SYSTEM to OPTION HANDLER FUNCTION SCREEN ---
-        Debug.Print "NavigateBack_V6: Sending F3 from " & SCREEN_BO_SYSTEM & " to reach " & SCREEN_OPT_HANDLER_MAIN & "."
-        Call SendControlKey_V6(ControlKeyCode_F3) ' Send F3, includes WaitUntilReady_V6
+        Debug.Print "NavigateBack_V6: Sending F3 from " & SCREEN_BO_SYSTEM + " to reach " + SCREEN_OPT_HANDLER_MAIN + "." ' Changed concat to &
+        Call SendControlKey_V6(ControlKeyCode_F3)
 
         ' Step 2a Verification: Check if we reached OPTION HANDLER FUNCTION SCREEN
-        Debug.Print "NavigateBack_V6: Verifying expected next screen: " & SCREEN_OPT_HANDLER_MAIN & " after first F3."
+        Debug.Print "NavigateBack_V6: Verifying expected next screen: " + SCREEN_OPT_HANDLER_MAIN + " after first F3." ' Changed concat to &
         If Not VerifyScreen_V6(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-             Debug.Print "NavigateBack_V6: Did not reach " & SCREEN_OPT_HANDLER_MAIN & " after first F3. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-             MsgBox "Failed to navigate back to " & SCREEN_OPT_HANDLER_MAIN & " after first F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+             Debug.Print "NavigateBack_V6: Did not reach " & SCREEN_OPT_HANDLER_MAIN + " after first F3. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+             MsgBox "Failed to navigate back to " & SCREEN_OPT_HANDLER_MAIN + " after first F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
              Exit Function ' Critical failure
         End If
-        Debug.Print "NavigateBack_V6: Confirmed on " & SCREEN_OPT_HANDLER_MAIN & " after first F3."
+        Debug.Print "NavigateBack_V6: Confirmed on " + SCREEN_OPT_HANDLER_MAIN + " after first F3." ' Changed concat to &
 
 
         ' --- Step 2b: Verify prerequisite screen is OPTION HANDLER FUNCTION SCREEN before sending second F3 ---
-        Debug.Print "NavigateBack_V6: Verifying " & SCREEN_OPT_HANDLER_MAIN & " before sending second F3."
+        Debug.Print "NavigateBack_V6: Verifying " + SCREEN_OPT_HANDLER_MAIN + " before sending second F3." ' Changed concat to &
         If Not VerifyScreen_V6(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-             Debug.Print "NavigateBack_V6: NOT on " & SCREEN_OPT_HANDLER_MAIN & " when expected before sending second F3. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-             MsgBox "Automation lost sync during back navigation. Expected '" & SCREEN_OPT_HANDLER_MAIN & "' before sending second F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+             Debug.Print "NavigateBack_V6: NOT on " + SCREEN_OPT_HANDLER_MAIN + " when expected before sending second F3. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+             MsgBox "Automation lost sync during back navigation. Expected '" + SCREEN_OPT_HANDLER_MAIN + "' before sending second F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
              Exit Function
         End If
 
         ' Step 2b: Send F3 from OPTION HANDLER FUNCTION SCREEN to APPLICATION SELECTION MENU
-        Debug.Print "NavigateBack_V6: Sending F3 from " & SCREEN_OPT_HANDLER_MAIN & " to reach " & SCREEN_APP_MENU & "."
+        Debug.Print "NavigateBack_V6: Sending F3 from " + SCREEN_OPT_HANDLER_MAIN + " to reach " + SCREEN_APP_MENU + "." ' Changed concat to &
         Call SendControlKey_V6(ControlKeyCode_F3)
 
         ' Step 2b Verification: Check if we reached APPLICATION SELECTION MENU (Final Target)
-        Debug.Print "NavigateBack_V6: Verifying expected next screen: " & SCREEN_APP_MENU & " after second F3."
+        Debug.Print "NavigateBack_V6: Verifying expected next screen: " + SCREEN_APP_MENU + " after second F3." ' Changed concat to &
         If VerifyScreen_V6(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-            Debug.Print "NavigateBack_V6: Successfully reached " & SCREEN_APP_MENU & "."
+            Debug.Print "NavigateBack_V6: Successfully reached " + SCREEN_APP_MENU + "." ' Changed concat to &
             NavigateBack_V6 = True ' Success!
         Else
-            Debug.Print "NavigateBack_V6: Did not reach " & SCREEN_APP_MENU & " after second F3. Actual R1C1L80: '" & Trim(objScreen.GetText(1,1,80)) & "'"
-            MsgBox "Failed to navigate back to " & SCREEN_APP_MENU & " after second F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE
+            Debug.Print "NavigateBack_V6: Did not reach " + SCREEN_APP_MENU + " after second F3. Actual R1C1L80: '" + Trim(objScreen.GetText(1,1,80)) + "'" ' Changed concat to &
+            MsgBox "Failed to navigate back to " + SCREEN_APP_MENU + " after second F3. Back navigation aborted.", vbCritical, SCRIPT_TITLE ' Changed concat to &
              ' NavigateBack_V6 is already False
         End If
 
@@ -1003,27 +1034,28 @@ Private Function LoopControlKeyUntilScreen_V6(ByVal keyCode As Long, _
     LoopControlKeyUntilScreen_V6 = False
     Dim attempts As Integer: attempts = 0
 
-    Debug.Print "LoopControlKeyUntilScreen_V6: Looping with key " & keyCode & " until '" & targetScreenText & "' at R" & targetRow & "C" & targetCol & ". Max attempts: " & maxAttempts
+    Debug.Print "LoopControlKeyUntilScreen_V6: Looping with key " + CStr(keyCode) + " until '" + targetScreenText + "' at R" + CStr(targetRow) + "C" + CStr(targetCol) + ". Max attempts: " + CStr(maxAttempts) + "." ' Changed concat to &
+
 
     ' Loop up to max attempts. The target screen check happens at the START of the loop.
     Do While attempts < maxAttempts
         ' *** CRITICAL VERIFICATION: Check CURRENT screen at the start of the loop ***
         If VerifyScreen_V6(targetScreenText, targetRow, targetCol, targetLength) Then
-            Debug.Print "LoopControlKeyUntilScreen_V6: Reached target screen '" & targetScreenText & "' on attempt " & attempts & "."
+            Debug.Print "LoopControlKeyUntilScreen_V6: Reached target screen '" + targetScreenText + "' on attempt " + CStr(attempts) + "." ' Changed concat to &
             LoopControlKeyUntilScreen_V6 = True
             Exit Function ' Success! Exit the loop and the function.
         End If
 
         ' If not on the target screen and we still have attempts left
-        If attempts < maxAttempts - 1 Then
-            Debug.Print "LoopControlKeyUntilScreen_V6: Not on target screen '" & targetScreenText & "'. Sending key code " & keyCode & ". Attempt " & attempts + 1 & "."
+        If attempts < maxAttempts - 1 Then ' Check against maxAttempts -1 because we send *then* check again
+            Debug.Print "LoopControlKeyUntilScreen_V6: Not on target screen '" + targetScreenText + "'. Sending key code " + CStr(keyCode) + ". Attempt " + CStr(attempts + 1) + "." ' Changed concat to &
             ' Send the key. SendControlKey_V6 includes a WaitUntilReady_V6 call.
             Call SendControlKey_V6(keyCode)
             ' After sending the key and waiting, the loop will reiterate and VerifyScreen_V6 will check the *new* screen.
         ElseIf attempts = maxAttempts - 1 Then
             ' This is the last attempt. Send the key. The *final* verification
             ' will happen at the very top of the loop in the next (and last) iteration.
-             Debug.Print "LoopControlKeyUntilScreen_V6: Last attempt (" & attempts + 1 & "). Sending key code " & keyCode & "."
+             Debug.Print "LoopControlKeyUntilScreen_V6: Last attempt (" + CStr(attempts + 1) + "). Sending key code " + CStr(keyCode) + "." ' Changed concat to &
              Call SendControlKey_V6(keyCode)
              ' The loop condition (attempts < maxAttempts) will be false after incrementing attempts.
              ' The loop will run one last time, the VerifyScreen_V6 at the top will check the final screen state.
@@ -1034,7 +1066,7 @@ Private Function LoopControlKeyUntilScreen_V6(ByVal keyCode As Long, _
     Loop
 
     ' If the loop finishes, it means VerifyScreen_V6(targetScreenText, ...) was never True within max attempts.
-    Debug.Print "LoopControlKeyUntilScreen_V6: Failed to reach '" & targetScreenText & "' after max attempts (" & maxAttempts & ")."
+    Debug.Print "LoopControlKeyUntilScreen_V6: Failed to reach '" + targetScreenText + "' after max attempts (" + CStr(maxAttempts) + ")." ' Changed concat to &
     ' LoopControlKeyUntilScreen_V6 is already False
 
 End Function
