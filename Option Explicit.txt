@@ -153,10 +153,10 @@ Sub ProcessAccounts_V2_TermAll() ' Main sub name updated
 
         ' Skip row if essential data is missing after trimming
         If sortCode = "" Or accountNumber = "" Or brand = "" Then
-            Debug.Print SCRIPT_TITLE & ": Skipping Row " & currentRow & " - Missing Sort Code, Account, or Brand."
+            Debug.Print SCRIPT_TITLE & ": Skipping Row " & currentRow + " - Missing Sort Code, Account, or Brand." ' Corrected debug print
             ws.Cells(currentRow, COL_STATUS).Value = "Skipped - Missing Data"
             GoTo NextRow ' Skip to the next iteration of the loop
-        End If ' Corrected from End EndIf
+        End If
 
 
         ' 5. Navigate to the target screen for this account
@@ -168,12 +168,12 @@ Sub ProcessAccounts_V2_TermAll() ' Main sub name updated
             Debug.Print SCRIPT_TITLE & ": Navigation successful for Row " & currentRow & "."
             ws.Cells(currentRow, COL_STATUS).Value = "Navigated - OK"
             ' *** PLACEHOLDER FOR CORE BUSINESS LOGIC (Interest Amendment/Checking) ***
-            ' This is where you would add code to interact with the screens
+            ' If navigation was successful, you would call other subs/functions here
             ' to perform the actual interest amendment or checking steps.
             ' For now, this version just navigates *to* the screen.
 
             ' To allow manual checking after navigation, you could add a MsgBox here:
-             MsgBox "PAUSED: On target screen for S/C: " & sortCode & ", A/N: " & accountNumber & vbInformation, SCRIPT_TITLE
+             MsgBox "PAUSED: On target screen for S/C: " & sortCode & ", A/N: " & accountNumber, vbInformation, SCRIPT_TITLE
             ' To proceed without pausing, remove the MsgBox above.
             ' *** END PLACEHOLDER ***
 
@@ -186,7 +186,7 @@ Sub ProcessAccounts_V2_TermAll() ' Main sub name updated
 
 
         Else
-            Debug.Print SCRIPT_TITLE & ": Navigation Failed for Row " & currentRow & "."
+            Debug.Print SCRIPT_TITLE & ": Navigation Failed for Row " & currentRow + "." ' Corrected debug print
             ws.Cells(currentRow, COL_STATUS).Value = "Navigation Failed"
             ' The navigation function will show specific error messages during failure
         End If
@@ -205,7 +205,31 @@ CleanupAndExit:
     Set ws = Nothing
 
     Debug.Print "--- Finished " & SCRIPT_TITLE & " ---"
-End Sub
+    Exit Sub
+
+ErrorHandler: ' >>> THIS LABEL MUST BE HERE <<<
+    ' Handle any unexpected errors during the macro execution
+    ' Err.Number and Err.Description give details about the error
+    Debug.Print "ErrorHandler: Error " & Err.Number & ": " & Err.Description
+    ' Optionally log the error details to the spreadsheet for the current row
+    If currentRow >= FIRST_DATA_ROW Then ' Check if we are processing a data row
+         ws.Cells(currentRow, COL_STATUS).Value = "Error: " & Err.Number ' Record error number
+         ws.Cells(currentRow, COL_STATUS + 1).Value = Err.Description ' Record error description (adjust column if needed)
+         Debug.Print SCRIPT_TITLE & ": Recorded error for row " & currentRow
+    Else
+         ' Error occurred before processing first row (e.g., during connection or getting sheet)
+         Debug.Print SCRIPT_TITLE & ": Error occurred before data processing loop."
+    End If
+
+    MsgBox "Error in '" & SCRIPT_TITLE & "' at Row " & currentRow & ": " & vbCrLf & Err.Number & ": " & Err.Description & vbCrLf & _
+           "Processing will stop.", vbCritical, SCRIPT_TITLE
+
+    ' Go to the cleanup section (CleanupAndExit label)
+    ' Note: Resume Next could be used to continue after some errors, but stopping on error is safer for automation
+    Resume CleanupAndExit
+    ' End Sub ' Alternatively, use End Sub to stop immediately without cleanup
+
+End Sub ' End of ProcessAccounts_V2_TermAll subroutine
 
 
 ' --- Connection Logic (Version 2 TermAll) ---
