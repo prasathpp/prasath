@@ -425,19 +425,16 @@ End Function
 '===============================================================================
 ' Supporting Attachmate Interaction Functions (from your provided code)
 '===============================================================================
+
 Sub ConnectExtra()
     Dim edpPathFromSheet As String
     Dim ws As Worksheet
     Dim currentAction As String ' For debugging
-    Dim tempView As Object    ' <<< Changed from specific type to Object for late binding test
+    ' Dim tempView As Object    ' Not needed in this version if we bypass Frame/View
 
-    On Error GoTo MyHandler 
+    On Error GoTo MyHandler
 
     currentAction = "Initializing ConnectExtra"
-    ' ...(rest of ConnectExtra from the version that gave "TypeName of app object: ApplicationObject" error)...
-    ' (No other logical changes needed inside ConnectExtra for this specific test, 
-    '  only the global declarations of app, ThisFrame, osView and the local Dim tempView)
-
     ' --- Get path from Sheet4.txtEDPPath ---
     On Error Resume Next
     Set ws = Sheet4
@@ -464,9 +461,9 @@ Sub ConnectExtra()
     If strBoPath = "" Then strBoPath = stEDPFile
     
     Mysession = Split(strBoPath, "\")
-    sessionName = Mysession(UBound(Mysession))
+    sessionName = Mysession(UBound(Mysession)) ' This is the FILENAME like "NTS Back Office - Prod.rd3x"
     
-    currentAction = "Creating Attachmate.Reflection.Application (Framework)"
+    currentAction = "Creating Attachmate.Reflection.Application"
     On Error Resume Next
     Set app = CreateObject("Attachmate.Reflection.Application")
     If Err.Number <> 0 Then
@@ -477,66 +474,133 @@ Sub ConnectExtra()
             GoTo MyHandler
         End If
     End If
-    On Error GoTo MyHandler 
+    On Error GoTo MyHandler
     
     If app Is Nothing Then
         MsgBox "Failed to create Reflection Application object.", vbCritical, sPrj_Name
         GoTo MyHandler
     End If
 
-    Debug.Print "TypeName of app object (Late Binding): " & TypeName(app)
+    Debug.Print "TypeName of app object: " & TypeName(app) ' Expect ApplicationObject
 
     currentAction = "Waiting for app to be ready (simple delay)"
-    Application.Wait (Now + TimeValue("0:00:01"))
+    Application.Wait (Now + TimeValue("0:00:02")) ' Increased delay slightly
 
-    currentAction = "Getting Frame from Application Object"
-    Set ThisFrame = app.Frame ' This is the line that previously failed
-    If ThisFrame Is Nothing Then
-        MsgBox "Could not get Frame from Reflection Application object.", vbCritical, sPrj_Name
+    ' --- Attempt to access Sessions collection directly from app object ---
+    currentAction = "Accessing app.Sessions collection"
+    Dim sessionsCol As Object ' To hold app.Sessions
+    Dim sess As Object        ' To iterate through sessions
+    Dim foundSession As Boolean
+    
+    Set sessionsCol = app.Sessions ' This is the critical line to test now
+    If sessionsCol Is Nothing Then
+        MsgBox "The 'app' object (TypeName: " & TypeName(app) & ") does not have a .Sessions collection directly.", vbCritical, sPrj_Name
         GoTo MyHandler
     End If
-    ThisFrame.Visible = True
 
-    currentAction = "Finding or Creating View for session: " & sessionName
-    Dim sessionIsOpen As Boolean
-    sessionIsOpen = False
-    ' tempView already Dim'd as Object above
-    
-    If ThisFrame.Views.Count > 0 Then
-        For Each tempView In ThisFrame.Views
-            If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
-                Set osView = tempView
-                sessionIsOpen = True
+    If sessionsCol.Count = 0 Then
+        currentAction = "No sessions open, attempting to open: " & strBoPath
+        ' Some versions use app.Open, others app.Sessions.Open, or app.CreateSession
+        On Error Resume Next ' Try different open methods
+        Set sess = app.Open(strBoPath) ' Common for "Reflection.Application"
+        If sess Is Nothing Then
+            Err.Clear
+            Set sess = sessionsCol.Open(strBoPath) ' Common for "Attachmate.Reflection.Application" if Sessions is a collection
+        End If
+        If sess Is Nothing Then
+             Err.Clear
+             ' If CreateSession exists and returns the terminal object directly
+             ' Set ibmTerminal = app.CreateSession(strBoPath) 
+             ' If ibmTerminal Is Nothing Then
+             '    MsgBox "Could not open or create session: " & strBoPath, vbCritical, sPrj_Name
+             '    GoTo MyHandler
+             ' Else
+             '    foundSession = True
+             ' End If
+             MsgBox "Could not open session using app.Open or sessionsCol.Open: " & strBoPath & ". Try opening it manually first.", vbCritical, sPrj_Name
+             GoTo MyHandler
+        Else
+             foundSession = True
+        End If
+        On Error GoTo MyHandler
+    Else
+        currentAction = "Searching for already open session: " & sessionName
+        For Each sess In sessionsCol
+            ' Compare by looking for the session file name in the session's caption or name
+            ' The property for caption/name can vary: .Name, .Caption, .Window.Caption, .FullName, .FileName
+            Dim sessTitle As String
+            On Error Resume Next ' Try different properties to get a title
+            sessTitle = sess.Window.Caption
+            If sessTitle = "" Then sessTitle = sess.Caption
+            If sessTitle = "" Then sessTitle = sess.Name
+            If sessTitle = "" Then sessTitle = sess.FileName ' Often contains just the file name
+            On Error GoTo MyHandler
+
+            If InStr(1, sessTitle, sessionName, vbTextCompare) > 0 Then
+                foundSession = True
                 Exit For
             End If
-        Next tempView
-    End If
-
-    If Not sessionIsOpen Then
-        currentAction = "Creating new View for: " & strBoPath
-        Set osView = ThisFrame.CreateView(strBoPath)
-        If osView Is Nothing Then
-            MsgBox "Could not create view for session: " & strBoPath, vbCritical, sPrj_Name
-            GoTo MyHandler
+        Next sess
+        
+        If Not foundSession Then
+            MsgBox "Session '" & sessionName & "' not found in open sessions. Please ensure it's running or path is correct.", vbInformation, sPrj_Name
+            ' Optionally, try to open it if not found
+            currentAction = "Session not found, attempting to open: " & strBoPath
+            Set sess = sessionsCol.Open(strBoPath)
+            If sess Is Nothing Then GoTo MyHandler Else foundSession = True
         End If
     End If
-    
-    currentAction = "Getting Terminal Control and Screen"
-    Set ibmTerminal = osView.Control
-    If ibmTerminal Is Nothing Then
-        MsgBox "Could not get Terminal Control from View object.", vbCritical, sPrj_Name
+
+    If Not foundSession Or sess Is Nothing Then
+        MsgBox "Failed to find or open session: " & sessionName, vbCritical, sPrj_Name
         GoTo MyHandler
     End If
+
+    currentAction = "Getting Terminal and Screen from Session object"
+    ' Now, 'sess' should be our session object.
+    ' We need to get the IbmScreen object from it.
+    ' For Attachmate_Reflection_Objects_Framework.ApplicationObject, 'sess' is usually 
+    ' an Attachmate_Reflection_Objects.Session object.
+    ' This Session object should have a .Control property which is the IbmTerminal.
     
-    Set obScreen = ibmTerminal.Screen
+    On Error Resume Next ' sess.Control might fail if 'sess' is not the expected type
+    Set ibmTerminal = sess.Control ' This is the key for framework's Session object
+    If Err.Number <> 0 Or ibmTerminal Is Nothing Then
+        Err.Clear
+        ' If sess.Control doesn't work, perhaps 'sess' *is* the terminal object
+        ' or has a direct .Screen property (older models)
+        If TypeName(sess) Like "*Terminal*" Or TypeName(sess) Like "*IbmTerminal*" Then
+            Set ibmTerminal = sess
+        ElseIf Not sess.Screen Is Nothing Then ' Direct .Screen property?
+            Set obScreen = sess.Screen
+        End If
+    End If
+    On Error GoTo MyHandler
+
+    If Not obScreen Is Nothing Then ' If we got screen directly
+        ' ibmTerminal might still be Nothing, but obScreen is what we need for GetText etc.
+        ' However, SetProperties needs ibmTerminal.
+        If ibmTerminal Is Nothing And TypeName(obScreen) Like "*IbmScreen*" Then
+            ' This is tricky; can't easily get parent terminal from screen alone.
+            ' For now, we'll assume if obScreen is set, we can proceed, but properties won't be set.
+             Debug.Print "Got obScreen directly, but ibmTerminal is not set. Cannot set terminal properties."
+        End If
+    ElseIf Not ibmTerminal Is Nothing Then ' If we got ibmTerminal (from sess.Control or sess being the terminal)
+        Set obScreen = ibmTerminal.Screen
+    End If
+        
     If obScreen Is Nothing Then
-        MsgBox "Could not get Screen from Terminal object.", vbCritical, sPrj_Name
+        MsgBox "Could not get Screen from Session/Terminal object. TypeName(sess) was: " & TypeName(sess), vbCritical, sPrj_Name
         GoTo MyHandler
     End If
         
     currentAction = "Setting Terminal Properties"
-    ibmTerminal.DisableKeystrokeProductivity = True
-    ibmTerminal.DisableScreenHistory = True
+    If Not ibmTerminal Is Nothing Then ' Only if we have the terminal object
+        ibmTerminal.DisableKeystrokeProductivity = True
+        ibmTerminal.DisableScreenHistory = True
+    Else
+        Debug.Print "Skipping terminal properties setup as ibmTerminal object not available."
+    End If
     
     currentAction = "ConnectExtra Successful"
     Exit Sub
