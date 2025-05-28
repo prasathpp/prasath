@@ -134,24 +134,27 @@ Sub ProcessAccounts_V3()
     End If
     Debug.Print SCRIPT_TITLE & ": Successfully connected to Reflection session."
 
-    ' 2. Get Excel Worksheet
+        ' 2. Get Excel Worksheet
     On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets(DATA_SHEET_NAME)
+    ' *** TEMPORARY DEBUGGING: Use ActiveWorkbook instead of ThisWorkbook ***
+    Set ws = ActiveWorkbook.Worksheets(DATA_SHEET_NAME)
+    ' *** END TEMPORARY DEBUGGING ***
+
     If ws Is Nothing Then
         On Error GoTo 0
-        MsgBox "Could not find worksheet named '" & DATA_SHEET_NAME & "'. Please check the sheet name.", vbCritical, SCRIPT_TITLE
+        MsgBox "Could not find worksheet named '" & DATA_SHEET_NAME & "' in the Active Workbook. Please check the sheet name and that the correct workbook is active.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit ' Clean up Reflection objects before exiting
     End If
     On Error GoTo 0
-    Debug.Print SCRIPT_TITLE & ": Successfully got worksheet '" & DATA_SHEET_NAME & "'."
+    Debug.Print SCRIPT_TITLE & ": Successfully got worksheet '" & ws.Name & "' from workbook '" & ws.Parent.Name & "'." ' Added workbook name to debug print
 
-        ' 3. Find the last row with data in Column A
+    ' 3. Find the last row with data in Column A
     Dim lastRow As Long
 
     ' Ensure ws object is valid before using it
-    If ws Is Nothing Then
+    If ws Is Nothing Then ' Should be caught above, but double-check
          Debug.Print SCRIPT_TITLE & ": Error - ws object is Nothing before finding last row."
-         MsgBox "Internal Error: Worksheet object is not set.", vbCritical, SCRIPT_TITLE
+         MsgBox "Internal Error: Worksheet object is not set before finding last row.", vbCritical, SCRIPT_TITLE
          GoTo CleanupAndExit
     End If
 
