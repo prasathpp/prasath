@@ -35,7 +35,7 @@ Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
 
 
 '===============================================================================
-' MAIN PROCESSING SUB
+' MAIN PROCESSING SUB - CORRECTED IF/ELSE FOR STATUS
 '===============================================================================
 Sub ProcessInterestAdjustments_Main()
     Dim Ws_Data As Worksheet
@@ -96,9 +96,13 @@ Sub ProcessInterestAdjustments_Main()
         Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
     Next i
 
-    If i > lastRow Then processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
-    Else processingStatus = "Processing stopped at row " & i & "."
+    ' --- CORRECTED IF/ELSE BLOCK for processingStatus ---
+    If i > lastRow Then ' Check if loop completed fully
+        processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
+    Else ' Loop was exited prematurely (e.g., due to obScreen becoming Nothing)
+        processingStatus = "Processing stopped at row " & i & "."
     End If
+    ' --- END CORRECTION ---
     
     MsgBox "Processing complete. " & processingStatus, vbInformation, SCRIPT_TITLE
     Call CleanUpReflectionObjects
@@ -108,7 +112,7 @@ Sub ProcessInterestAdjustments_Main()
 MainErrorHandler:
     processingStatus = "VBA Error in Main: " & Err.Description & " (ErrNo " & Err.Number & ")"
     MsgBox processingStatus, vbCritical, SCRIPT_TITLE
-    If i >= START_ROW And i <= lastRow And Not Ws_Data Is Nothing Then
+    If i >= START_ROW And i <= lastRow And Not Ws_Data Is Nothing Then ' Check if 'i' is initialized
         On Error Resume Next
         Ws_Data.Range("H" & i).Value = "Main Sub Error: " & Err.Description
         On Error GoTo 0
