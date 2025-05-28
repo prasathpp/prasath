@@ -85,6 +85,10 @@ End Sub
 ' FUNCTION TO PROCESS A SINGLE ROW ADJUSTMENT
 ' (Adapted to use established global vars and constants from this module)
 '===============================================================================
+'===============================================================================
+' FUNCTION TO PROCESS A SINGLE ROW ADJUSTMENT
+' (Adapted to use established global vars and constants from this module)
+'===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
 
@@ -116,11 +120,15 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     
     ' --- Determine Confirmation Code based on Brand ---
     Select Case iBrand
-        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
-        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
-        Case "UBN": confirmCode = "PRCIJ#T#"
-        Case "UBR": confirmCode = "PRCIK#T#"
-        Case Else
+        Case "RBS", "RBG", "RBI", "VIR"
+            confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM"
+            confirmCode = "PRCIN#T#"
+        Case "UBN"
+            confirmCode = "PRCIJ#T#"
+        Case "UBR"
+            confirmCode = "PRCIK#T#"
+        Case Else ' <<< CORRECTED HERE
             Debug.Print "ProcessSingle: Invalid Brand '" & iBrand & "' for row " & iRow
             Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand
             GoTo NextCase_Adjustment
@@ -228,7 +236,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Screen Type is " & screenType
 
-    ' (Accrued, Cutoff, Applied data entry logic from previous ProcessSingleAdjustment - remains the same)
+    ' (Accrued, Cutoff, Applied data entry logic - this was already correct)
     ' ... PASTE THE ACCRUED, CUTOFF, APPLIED DATA ENTRY LOGIC HERE ...
     ' --- Start of Pasted Data Entry Logic ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
