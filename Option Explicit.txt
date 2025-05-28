@@ -464,7 +464,7 @@ ErrorHandler_Adjustment:
 End Function
 
 '===============================================================================
-' CONNECTION SUB (Should be stable now)
+' CONNECTION SUB (Corrected and with enhanced CreateView error handling)
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
@@ -480,12 +480,10 @@ Sub ConnectExtra()
     On Error Resume Next ' To handle if Sheet4 or control doesn't exist
     Set ws = Sheet4 ' Assumes CodeName of the sheet is Sheet4
     If Err.Number = 0 Then
-        ' Sheet4 CodeName exists, now check for OLEObject
         Set OleObj = Nothing ' Ensure OleObj is reset
         Set OleObj = ws.OLEObjects("txtEDPPath") ' Assumes ActiveX TextBox named txtEDPPath
         If Err.Number = 0 Then
-            ' OLEObject "txtEDPPath" exists, now check its type
-            If Not OleObj Is Nothing Then ' Further check if OleObj was actually set
+            If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
                     edpPathFromSheet = OleObj.Object.Text
                 Else
@@ -522,7 +520,7 @@ Sub ConnectExtra()
 
     currentAction = "GetObject(, ""Reflection Workspace"")"
     Debug.Print currentAction
-    On Error Resume Next
+    On Error Resume Next ' Temporarily allow GetObject to fail without halting
     Set app = GetObject(, "Reflection Workspace")
     If Err.Number <> 0 Or app Is Nothing Then
         Err.Clear: Debug.Print "GetObject FAILED. Attempting CreateObject..."
@@ -530,18 +528,20 @@ Sub ConnectExtra()
         Set app = CreateObject("Reflection Workspace")
         If Err.Number <> 0 Or app Is Nothing Then
             Err.Clear: Debug.Print "CreateObject FAILED."
+            ' Restore main error handler before GoTo for consistent cleanup
+            On Error GoTo ConnectExtra_ErrorHandler
             GoTo ConnectExtra_ErrorHandler_FinalMsg
         End If
     End If
     Debug.Print "App Object obtained. TypeName: " & TypeName(app)
-    On Error GoTo ConnectExtra_ErrorHandler
+    On Error GoTo ConnectExtra_ErrorHandler ' Restore main error handler
 
     currentAction = "app.GetObject(""Frame"")"
     Debug.Print currentAction
     Set ThisFrame = app.GetObject("Frame")
     If ThisFrame Is Nothing Then
         Debug.Print "Frame obj is Nothing."
-        GoTo ConnectExtra_ErrorHandler_FinalMsg
+        GoTo ConnectExtra_ErrorHandler_FinalMsg ' Will trigger error message and cleanup
     End If
     Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
 
@@ -550,23 +550,29 @@ Sub ConnectExtra()
 
     currentAction = "ThisFrame.GetViewByTitleText(""" & targetSessionViewTitle & """)"
     Debug.Print currentAction
-    On Error Resume Next
+    On Error Resume Next ' Temporarily allow GetViewByTitleText to fail
     Set osView = ThisFrame.GetViewByTitleText(targetSessionViewTitle)
+    
+    ' This is the main If block that was previously unclosed
     If Err.Number <> 0 Or osView Is Nothing Then
-        Err.Clear: Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
+        Err.Clear ' Clear error from GetViewByTitleText attempt
+        Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
         Debug.Print "Iterating views for: " & sessionName
         sessionIsOpen = False
         
         Dim viewsCollection As Object
         Set viewsCollection = Nothing
         currentAction = "Accessing ThisFrame.Views for iteration"
-        On Error Resume Next
+        ' On Error Resume Next is still active from GetViewByTitleText
         Set viewsCollection = ThisFrame.Views
         If Err.Number = 0 And Not viewsCollection Is Nothing Then
             If viewsCollection.Count > 0 Then
-                 For Each tempView In viewsCollection ' tempView Dim'd as Object at sub start
+                 For Each tempView In viewsCollection
                     If InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then
-                        Set osView = tempView: sessionIsOpen = True: Debug.Print "Found view by iteration: " & osView.titleText: Exit For
+                        Set osView = tempView
+                        sessionIsOpen = True
+                        Debug.Print "Found view by iteration: " & osView.titleText
+                        Exit For
                     End If
                 Next tempView
             Else
@@ -575,21 +581,46 @@ Sub ConnectExtra()
         Else
             Debug.Print "Could not access ThisFrame.Views or it is Nothing. Err: " & Err.Description
         End If
-        Err.Clear
-        On Error GoTo ConnectExtra_ErrorHandler
-        
+        Err.Clear ' Clear any error from viewsCollection access attempt
+
+        ' If view still not found after GetViewByTitleText and iteration, try CreateView
         If Not sessionIsOpen Then
             Debug.Print "View not found by GetViewByTitleText or iteration. Attempting CreateView: " & strBoPath
             currentAction = "ThisFrame.CreateView(""" & strBoPath & """)"
+
+            ' On Error Resume Next is effectively still active from the GetViewByTitleText call
+            ' (or should be re-established if any On Error GoTo was hit in between)
+            ' To be certain, set it locally for CreateView
+            On Error Resume Next
             Set osView = ThisFrame.CreateView(strBoPath)
+            
             If Err.Number <> 0 Or osView Is Nothing Then
-                Err.Clear: Debug.Print "CreateView FAILED. Err: " & Err.Description
+                Dim capturedErrNumber As Long: capturedErrNumber = Err.Number
+                Dim capturedErrDesc As String: capturedErrDesc = Err.Description
+                Err.Clear ' Clear the CreateView error
+                Debug.Print "CreateView FAILED. ErrNo: " & capturedErrNumber & " Desc: " & capturedErrDesc
+                On Error GoTo ConnectExtra_ErrorHandler ' Restore main error handler
                 GoTo ConnectExtra_ErrorHandler_FinalMsg
             End If
+            ' If CreateView was successful, ensure main error handler is active
+            On Error GoTo ConnectExtra_ErrorHandler
+        Else
+            ' Session was found by iteration, ensure main error handler is active
+            On Error GoTo ConnectExtra_ErrorHandler
         End If
+    Else
+        ' GetViewByTitleText was successful, ensure main error handler is active
+        On Error GoTo ConnectExtra_ErrorHandler
+    End If ' <<<< ***** THIS IS THE CORRECTED/ADDED END IF *****
+
+    ' Final check: After all attempts, osView must be a valid object
+    If osView Is Nothing Then
+        currentAction = "Final osView Validity Check"
+        Debug.Print "ConnectExtra: Critical - osView is Nothing after all acquisition attempts."
+        GoTo ConnectExtra_ErrorHandler_FinalMsg ' This will trigger cleanup and message
     End If
+
     Debug.Print "View obtained. Title: '" & osView.titleText & "'. TypeName: " & TypeName(osView)
-    On Error GoTo ConnectExtra_ErrorHandler
 
     currentAction = "osView.Control": Debug.Print currentAction
     Set ibmTerminal = osView.Control
@@ -601,22 +632,34 @@ Sub ConnectExtra()
     If obScreen Is Nothing Then Debug.Print "Screen obj Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
     Debug.Print "Screen Object. TypeName: " & TypeName(obScreen)
 
-    On Error Resume Next
+    On Error Resume Next ' These properties might not exist or be settable on all Reflection versions
     ibmTerminal.DisableKeystrokeProductivity = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableKeystrokeProd: " & Err.Description: Err.Clear
     ibmTerminal.DisableScreenHistory = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableScreenHist: " & Err.Description: Err.Clear
-    On Error GoTo ConnectExtra_ErrorHandler
+    On Error GoTo ConnectExtra_ErrorHandler ' Restore main error handler
 
     Debug.Print "ConnectExtra: Success."
     Exit Sub
 
 ConnectExtra_ErrorHandler:
+    ' Ensure currentAction has a value if error occurred very early
+    If currentAction = "" Then currentAction = "Unknown step in ConnectExtra"
     MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
 ConnectExtra_ErrorHandler_FinalMsg:
-    If obScreen Is Nothing And app Is Nothing And currentAction <> "Initializing ConnectExtra" Then ' Avoid double message if initial prompt cancelled
+    ' Avoid double message if initial prompt was cancelled AND app object was never created.
+    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then
+        ' Do nothing, initial MsgBox already shown or handled by stEDPFile check
+    ElseIf obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" Then
          MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
     End If
     Call CleanUpReflectionObjects
 End Sub
+```**Key changes in `ConnectExtra`:**
+1.  **Added `End If`:** The missing `End If` for the `If Err.Number <> 0 Or osView Is Nothing Then` block (related to `GetViewByTitleText` failure) has been added.
+2.  **Robust `CreateView` Error Handling:** The logic around `ThisFrame.CreateView` now uses a local `On Error Resume Next` to ensure that `Err.Number` and `osView Is Nothing` can be checked immediately after the call, capturing any errors from `CreateView` itself more reliably. The main error handler (`On Error GoTo ConnectExtra_ErrorHandler`) is reinstated afterwards.
+3.  **Final `osView` Check:** Added a check `If osView Is Nothing Then` after all acquisition attempts (GetByTitle, Iterate, CreateView) to ensure that `osView` is valid before proceeding. If it's not, the sub will go to the error handler.
+4.  **Error Handler Refinements:** Minor adjustments to error handler messages and conditions to avoid redundant pop-ups.
+
+Make sure to replace your existing `ConnectExtra` subroutine with this corrected version. The line numbers in your VBA editor might shift, but the logical structure is what's important. This should resolve the "End If without Block If" error and make the connection process more resilient.
 
 '===============================================================================
 ' HELPER FUNCTIONS
