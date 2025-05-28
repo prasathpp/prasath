@@ -62,7 +62,11 @@ Sub Main_SendTermAll_Step1_ManualWait()
         Call SendText_ManualWait(CMD_TERM_ALL, COMMAND_LINE_ROW, COMMAND_LINE_COL)
 
         Debug.Print SCRIPT_TITLE & ": '" & CMD_TERM_ALL & "' sent. First step complete."
-        MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line." & vbInformation, SCRIPT_TITLE
+
+        ' ** CORRECTED MsgBox Call Syntax **
+        ' Separate the message string, buttons (vbInformation), and title (SCRIPT_TITLE)
+        MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line.", vbInformation, SCRIPT_TITLE
+
 
     Else
         ' Connection failed - an error message was already shown by ConnectToReflection_ManualWait
@@ -78,7 +82,7 @@ CleanupAndExit:
     Exit Sub
 
 ErrorHandler:
-    ' Handle any unexpected errors during the macro execution
+    ' This is where the MsgBox in the screenshot is generated from
     MsgBox "Error in '" & SCRIPT_TITLE & "':" & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, SCRIPT_TITLE
     Resume CleanupAndExit ' Go to the cleanup section after showing the error
 
@@ -201,7 +205,7 @@ Private Sub WaitUntilReady_Manual(Optional ByVal timeoutMilliseconds As Long = 1
     End If
 
     Dim startTime As Date: startTime = Now
-    Dim timeoutTime As Date: timeoutTime = DateAdd("m", timeoutMilliseconds / 1000, startTime) ' Calculate timeout time
+    Dim timeoutTime As Date: timeoutTime = DateAdd("s", timeoutMilliseconds / 1000, startTime) ' Calculate timeout time (corrected DateAdd interval)
 
     Debug.Print "WaitUntilReady_Manual: Waiting for host ready (XStatus=0) or timeout (" & timeoutMilliseconds & "ms)... Current XStatus: " & objScreen.OIA.XStatus
 
@@ -210,7 +214,6 @@ Private Sub WaitUntilReady_Manual(Optional ByVal timeoutMilliseconds As Long = 1
 
         ' ** Check for Security Reminder *during* the wait **
         ' If the reminder pops up while waiting, handle it.
-        ' This call is NOT recursive. It handles the reminder and returns True/False.
         If CheckForAndHandleSecurityReminder_Manual() Then
             Debug.Print "WaitUntilReady_Manual: Security Reminder handled. Continuing wait loop."
             ' After handling, the screen likely refreshed, OIA might be busy again.
@@ -231,7 +234,7 @@ Private Sub WaitUntilReady_Manual(Optional ByVal timeoutMilliseconds As Long = 1
         DoEvents ' Allow other events (like screen updates) to process
 
         ' Optional: Debug print progress periodically if needed
-        ' If DateDiff("s", startTime, Now) Mod 2 == 0 Then ' Print every 2 seconds
+        ' If DateDiff("s", startTime, Now) Mod 2 = 0 Then ' Print every 2 seconds
         '    Debug.Print "WaitUntilReady_Manual: Waiting... Elapsed: " & DateDiff("s", startTime, Now) & "s. XStatus: " & objScreen.OIA.XStatus
         ' End If
 
@@ -370,7 +373,7 @@ Private Function NavigateToScreen_ManualWait(ByVal targetScreenText As String, _
         Call WaitUntilReady_Manual(2000) ' Wait for the screen to settle before checking or sending key
 
         ' Check if we have reached the target screen
-        Debug.Print "NavigateToScreen_ManualWait: Checking screen text at R" & targetRow & "C" & targetCol & "..."
+        Debug.Print "NavigateToScreen_ManualWait: Checking screen text at R" & targetRow & "C" & colNum & "..." ' Corrected colNum here
         If ScreenContainsText_ManualWait(targetScreenText, targetRow, targetCol, targetLength, 100) Then
             Debug.Print "NavigateToScreen_ManualWait: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
             NavigateToScreen_ManualWait = True ' Indicate success
