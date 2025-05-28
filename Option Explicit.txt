@@ -1,54 +1,23 @@
 Option Explicit
-' Public app As Attachmate_Reflection_Objects_Framework.ApplicationObject ' <<< Comment this out
-' Public ThisFrame As Attachmate_Reflection_Objects.frame             ' <<< Comment this out
-' Public osView As Attachmate_Reflection_Objects.View                  ' <<< Comment this out
 
-Public app As Object         ' <<< USE THIS
-Public ThisFrame As Object   ' <<< USE THIS
-Public osView As Object      ' <<< USE THIS
+' --- Global/Module-Level Reflection Object Variables ---
+Public app As Object         ' For Reflection Application/Workspace
+Public ThisFrame As Object   ' For Reflection Frame
+Public osView As Object      ' For Reflection View
+Public ibmTerminal As Object ' For Reflection Terminal Control (late bound for flexibility)
+Public obScreen As Object    ' For Reflection Screen (late bound for flexibility)
 
-Public ibmTerminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal ' Keep as is
-Public obScreen As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen    ' Keep as is
-Public sessionName As String
-Public Mysession As Variant
-
-'Variables used by ConnectExtra - ensure these are handled or defined if needed globally
-Public strBoPath As String ' Used in ConnectExtra
-Public stEDPFile As String ' Used in ConnectExtra
+' --- Other Global/Module-Level Variables ---
+Public sessionName As String ' Holds the filename of the session (e.g., "NTS Back Office - Prod.rd3x")
+Public strBoPath As String   ' Holds the full path to the .rd3x session file
+Public stEDPFile As String   ' Temporary holder for file path from dialog/sheet
 
 'Global Project Name Constant
 Public Const sPrj_Name As String = "Interest Adjustment Automation"
 
-Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
-    If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    
-    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
-        Validate_Screen = True
-    Else
-        Validate_Screen = False
-    End If
-End Function
-
-Function WaitForScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    Call Check_SecurityScreen
-End Function
-
-Function Check_SecurityScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    If Validate_Screen("SECURITY REMINDER", 1, 29, 20) = True Then
-        obScreen.PutText2 "Y", 22, 11
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen
-    End If
-End Function
-
+'===============================================================================
+' MAIN PROCESSING SUB
+'===============================================================================
 Sub ProcessInterestAdjustments_Main()
     Dim Ws_Data As Worksheet
     Dim lastRow As Long
@@ -74,7 +43,7 @@ Sub ProcessInterestAdjustments_Main()
     ' Connect to Reflection - ensure obScreen is available after this
     Call ConnectExtra
     If obScreen Is Nothing Then
-        MsgBox "Failed to connect to Reflection. Exiting.", vbCritical, sPrj_Name
+        MsgBox "Failed to connect to Reflection (obScreen is Nothing). Exiting.", vbCritical, sPrj_Name
         Exit Sub
     End If
     Call WaitForScreen ' Initial wait and security check
@@ -87,7 +56,7 @@ Sub ProcessInterestAdjustments_Main()
         
         If obScreen Is Nothing Then ' Check if session was lost due to critical error
              Ws_Data.Range("H" & i).Value = "Critical Error - Session Lost"
-             MsgBox "Reflection session lost. Aborting further processing.", vbCritical, sPrj_Name
+             MsgBox "Reflection session lost (obScreen became Nothing). Aborting further processing.", vbCritical, sPrj_Name
              Exit For
         End If
     Next i
@@ -96,40 +65,30 @@ Sub ProcessInterestAdjustments_Main()
     Exit Sub
 
 MainErrorHandler:
-    MsgBox "An unexpected error occurred in the main sub: " & Err.Description, vbCritical, sPrj_Name
+    MsgBox "An unexpected error occurred in ProcessInterestAdjustments_Main: " & Err.Description, vbCritical, sPrj_Name
     If Not Ws_Data Is Nothing Then Set Ws_Data = Nothing
+    Set obScreen = Nothing: Set app = Nothing: Set ThisFrame = Nothing: Set osView = Nothing: Set ibmTerminal = Nothing
 End Sub
 
-
+'===============================================================================
+' FUNCTION TO PROCESS A SINGLE ROW ADJUSTMENT
+'===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
-    On Error GoTo ErrorHandler_Adjustment ' Moved to the top
+    On Error GoTo ErrorHandler_Adjustment
 
-    Dim sortCode As String
-    Dim accountNo As String
-    Dim iBrand As String
-    Dim confirm As String
-    
-    Dim excel_D_Accrued As Double
-    Dim excel_E_Cutoff As Double
-    Dim excel_F_Applied_Debit As Double
-    Dim excel_G_Applied_Credit As Double
-    
-    Dim Carry_Over_Cutoff_To_Applied_Amount As Double
-    Dim Total_Applied_Debtor_Amount As Double
-    
-    Dim screenType As String ' "BC", "Normal", "Unknown"
-    Dim tempStr As String
-    Dim loopCounter As Integer
+    Dim sortCode As String, accountNo As String, iBrand As String, confirm As String
+    Dim excel_D_Accrued As Double, excel_E_Cutoff As Double
+    Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
+    Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
+    Dim screenType As String, tempStr As String, loopCounter As Integer
+    Dim k As Integer ' Loop counter for Enter presses
 
-    ' Initialize
-    ProcessSingleAdjustment = False ' Assume failure until success
+    ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
     
-    ' --- Read data from Excel for the current row ---
     sortCode = Format(Ws_Data.Range("A" & iRow).Value, "000000")
     accountNo = Format(Ws_Data.Range("B" & iRow).Value, "00000000")
     iBrand = UCase(Trim(CStr(Ws_Data.Range("C" & iRow).Value)))
-    
     excel_D_Accrued = Val(CStr(Ws_Data.Range("D" & iRow).Value))
     excel_E_Cutoff = Val(CStr(Ws_Data.Range("E" & iRow).Value))
     excel_F_Applied_Debit = Val(CStr(Ws_Data.Range("F" & iRow).Value))
@@ -148,24 +107,18 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         GoTo NextCase_Adjustment
     End If
 
-    If iBrand = "RBS" Or iBrand = "RBG" Or iBrand = "RBI" Or iBrand = "VIR" Then
-        confirm = "PRCIR#T#"
-    ElseIf iBrand = "NWB" Or iBrand = "CTS" Or iBrand = "NWO" Or iBrand = "IOM" Then
-        confirm = "PRCIN#T#"
-    ElseIf iBrand = "UBN" Then
-        confirm = "PRCIJ#T#"
-    ElseIf iBrand = "UBR" Then
-        confirm = "PRCIK#T#"
-    Else
-        Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand
-        GoTo NextCase_Adjustment
+    If iBrand = "RBS" Or iBrand = "RBG" Or iBrand = "RBI" Or iBrand = "VIR" Then confirm = "PRCIR#T#"
+    ElseIf iBrand = "NWB" Or iBrand = "CTS" Or iBrand = "NWO" Or iBrand = "IOM" Then confirm = "PRCIN#T#"
+    ElseIf iBrand = "UBN" Then confirm = "PRCIJ#T#"
+    ElseIf iBrand = "UBR" Then confirm = "PRCIK#T#"
+    Else Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand: GoTo NextCase_Adjustment
     End If
 
     obScreen.PutText2 "TERM ALL", 21, 13
-    obScreen.SendControlKey ControlKeyCode_Transmit
+    obScreen.SendControlKey 14 ' ControlKeyCode_Transmit (assuming 14, check your Reflection's specific enum value if this fails)
     Call WaitForScreen
     obScreen.PutText2 confirm, 21, 13
-    obScreen.SendControlKey ControlKeyCode_Transmit
+    obScreen.SendControlKey 14 ' ControlKeyCode_Transmit
     Call WaitForScreen
     obScreen.WaitForHostSettle 500, 200
 
@@ -175,31 +128,19 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     
     If Validate_Screen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen
-        obScreen.WaitForHostSettle 500, 200
-        
+        obScreen.SendControlKey 14 ' ControlKeyCode_Transmit
+        Call WaitForScreen: obScreen.WaitForHostSettle 500, 200
         If Validate_Screen("", 1, 1, 80) = True Then
             loopCounter = 1
             Do
-                If Validate_Screen("", 1, 1, 80) = True Then
-                    obScreen.PutText2 "STAR", 1, 1
-                    obScreen.SendControlKey ControlKeyCode_Transmit
-                    Call WaitForScreen
-                    obScreen.WaitForHostSettle 500, 200
-                Else
-                    If Validate_Screen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then
-                        obScreen.SendControlKey ControlKeyCode_Transmit
-                        Call WaitForScreen
-                        obScreen.WaitForHostSettle 500, 200
-                    End If
+                If Validate_Screen("", 1, 1, 80) = True Then obScreen.PutText2 "STAR", 1, 1: obScreen.SendControlKey 14
+                ElseIf Validate_Screen("ROYAL BANK OF SCOTLAND", 1, 1, 24) = True Then obScreen.SendControlKey 14
                 End If
-                obScreen.WaitForHostSettle 500, 200
+                Call WaitForScreen: obScreen.WaitForHostSettle 500, 200
                 loopCounter = loopCounter + 1
             Loop While Validate_Screen("Option Handler Function Screen", 1, 26, 35) = False And loopCounter <= 10
             If Validate_Screen("Option Handler Function Screen", 1, 26, 35) = False Then
-                 Ws_Data.Range("H" & iRow).Value = "Failed to navigate past STAR screen."
-                 GoTo NextCase_Adjustment
+                 Ws_Data.Range("H" & iRow).Value = "Failed to navigate past STAR screen.": GoTo NextCase_Adjustment
             End If
         End If
     End If
@@ -209,47 +150,35 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Ws_Data.Range("H" & iRow).Value = "Not on Option Handler. Text: " & obScreen.GetText(1, 26, 35)
         GoTo NextCase_Adjustment
     End If
-    obScreen.PutText2 "19", 21, 16
-    obScreen.SendControlKey ControlKeyCode_Transmit
-    Call WaitForScreen
+    obScreen.PutText2 "19", 21, 16: obScreen.SendControlKey 14: Call WaitForScreen
 
     ' --- 3. BACK OFFICE SYSTEM ---
     If Validate_Screen("BACK OFFICE SYSTEM", 1, 7, 20) <> True Then
         Ws_Data.Range("H" & iRow).Value = "Not on Back Office System. Text: " & obScreen.GetText(1, 7, 20)
         GoTo NextCase_Adjustment
     End If
-    obScreen.PutText2 "01", 22, 16
-    obScreen.SendControlKey ControlKeyCode_Transmit
-    Call WaitForScreen
+    obScreen.PutText2 "01", 22, 16: obScreen.SendControlKey 14: Call WaitForScreen
 
     ' --- 4. MASTER INDEX ---
     If Trim(obScreen.GetText(1, 28, 12)) <> "MASTER INDEX" Then
         Ws_Data.Range("H" & iRow).Value = "Not on Master Index. Text: " & obScreen.GetText(1, 28, 12)
         GoTo NextCase_Adjustment
     End If
-    obScreen.PutText2 "20", 22, 8
-    obScreen.PutText2 sortCode, 22, 74
-    obScreen.SendControlKey ControlKeyCode_Transmit
-    Call WaitForScreen
+    obScreen.PutText2 "20", 22, 8: obScreen.PutText2 sortCode, 22, 74: obScreen.SendControlKey 14: Call WaitForScreen
 
     ' --- 5. FILE MAINTENANCE INPUT INDEX ---
     If Trim(obScreen.GetText(1, 21, 40)) <> "FILE MAINTENANCE INPUT INDEX" Then
         Ws_Data.Range("H" & iRow).Value = "Not on File Maint Input Index. Text: " & obScreen.GetText(1, 21, 40)
         GoTo NextCase_Adjustment
     End If
-    obScreen.PutText2 "20", 22, 8
-    obScreen.PutText2 accountNo, 22, 21
-    obScreen.SendControlKey ControlKeyCode_Transmit
-    Call WaitForScreen
+    obScreen.PutText2 "20", 22, 8: obScreen.PutText2 accountNo, 22, 21: obScreen.SendControlKey 14: Call WaitForScreen
 
     ' --- 6. INTERNAL TRANSACTIONS ---
     If Validate_Screen("INTERNAL TRANSACTIONS", 1, 19, 21) <> True Then
         Ws_Data.Range("H" & iRow).Value = "Not on Internal Transactions. Text: " & obScreen.GetText(1, 19, 21)
         GoTo NextCase_Adjustment
     End If
-    obScreen.PutText2 "04", 22, 8
-    obScreen.SendControlKey ControlKeyCode_Transmit
-    Call WaitForScreen
+    obScreen.PutText2 "04", 22, 8: obScreen.SendControlKey 14: Call WaitForScreen
 
     ' --- 7. INTEREST AMENDMENTS ---
     If Validate_Screen("INTEREST AMENDMENTS", 1, 27, 19) <> True Then
@@ -259,97 +188,53 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
 
     screenType = "Unknown"
     tempStr = Trim(obScreen.GetText(3, 42, 16))
-    If tempStr = "BUSINESS CURRENT" Then
-        screenType = "BC"
-    Else
-        tempStr = Trim(obScreen.GetText(3, 42, 14))
-        If tempStr = "SELECT ACCOUNT" Then
-            screenType = "Normal"
-        End If
+    If tempStr = "BUSINESS CURRENT" Then screenType = "BC"
+    Else tempStr = Trim(obScreen.GetText(3, 42, 14)): If tempStr = "SELECT ACCOUNT" Then screenType = "Normal"
     End If
-
     If screenType = "Unknown" Then
         Ws_Data.Range("H" & iRow).Value = "Unknown Interest Amendments screen type. Text at (3,42): " & obScreen.GetText(3, 42, 16)
         GoTo NextCase_Adjustment
     End If
 
-    Dim current_screen_arr_val As Double
-    Dim current_screen_unar_val As Double
-    Dim val_to_input_in_arr As Double
-    Dim val_to_input_in_unar As Double
-    Dim remaining_excel_val_for_unar_accr As Double 'Specific name for accrued
+    Dim current_screen_arr_val As Double, current_screen_unar_val As Double
+    Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
+    Dim remaining_excel_val_for_unar_accr As Double
 
     If excel_D_Accrued > 0 Then
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 8, 31
-            obScreen.PutText2 CStr(excel_D_Accrued), 8, 35
-            obScreen.PutText2 "01", 8, 47
+            obScreen.PutText2 "dec", 8, 31: obScreen.PutText2 CStr(excel_D_Accrued), 8, 35: obScreen.PutText2 "01", 8, 47
         ElseIf screenType = "Normal" Then
             current_screen_arr_val = Val(Trim(obScreen.GetText(8, 21, 6)))
             current_screen_unar_val = Val(Trim(obScreen.GetText(9, 21, 6)))
-            val_to_input_in_arr = 0
-            val_to_input_in_unar = 0
-
-            If current_screen_arr_val > 0 Then
-                val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
-            End If
+            val_to_input_in_arr = 0: val_to_input_in_unar = 0
+            If current_screen_arr_val > 0 Then val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
             remaining_excel_val_for_unar_accr = excel_D_Accrued - val_to_input_in_arr
-            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then
-                val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
-            End If
-
-            If val_to_input_in_arr > 0 Then
-                obScreen.PutText2 "dec", 8, 31
-                obScreen.PutText2 CStr(val_to_input_in_arr), 8, 35
-            End If
-            If val_to_input_in_unar > 0 Then
-                obScreen.PutText2 "dec", 9, 31
-                obScreen.PutText2 CStr(val_to_input_in_unar), 9, 35
-                obScreen.PutText2 "01", 9, 47
-            End If
+            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            If val_to_input_in_arr > 0 Then obScreen.PutText2 "dec", 8, 31: obScreen.PutText2 CStr(val_to_input_in_arr), 8, 35
+            If val_to_input_in_unar > 0 Then obScreen.PutText2 "dec", 9, 31: obScreen.PutText2 CStr(val_to_input_in_unar), 9, 35: obScreen.PutText2 "01", 9, 47
         End If
     End If
 
-    Dim current_screen_cutoff_arr_val As Double
-    Dim current_screen_cutoff_unar_val As Double
-    Dim val_to_input_in_cutoff_arr As Double
-    Dim val_to_input_in_cutoff_unar As Double
-    Dim remaining_excel_val_for_cutoff_unar As Double 'Specific name for cutoff
-    Dim cutoff_deferred As Boolean
+    Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double
+    Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double
+    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean
     cutoff_deferred = False
 
     If excel_E_Cutoff > 0 Then
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 12, 31
-            obScreen.PutText2 CStr(excel_E_Cutoff), 12, 35
-            obScreen.PutText2 "01", 12, 47
+            obScreen.PutText2 "dec", 12, 31: obScreen.PutText2 CStr(excel_E_Cutoff), 12, 35: obScreen.PutText2 "01", 12, 47
         ElseIf screenType = "Normal" Then
             current_screen_cutoff_arr_val = Val(Trim(obScreen.GetText(12, 21, 6)))
             current_screen_cutoff_unar_val = Val(Trim(obScreen.GetText(13, 21, 6)))
-
             If current_screen_cutoff_arr_val <= 0 And current_screen_cutoff_unar_val <= 0 Then
-                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff
-                cutoff_deferred = True
+                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff: cutoff_deferred = True
             Else
-                val_to_input_in_cutoff_arr = 0
-                val_to_input_in_cutoff_unar = 0
-                If current_screen_cutoff_arr_val > 0 Then
-                    val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
-                End If
+                val_to_input_in_cutoff_arr = 0: val_to_input_in_cutoff_unar = 0
+                If current_screen_cutoff_arr_val > 0 Then val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
                 remaining_excel_val_for_cutoff_unar = excel_E_Cutoff - val_to_input_in_cutoff_arr
-                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then
-                    val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
-                End If
-
-                If val_to_input_in_cutoff_arr > 0 Then
-                    obScreen.PutText2 "dec", 12, 31
-                    obScreen.PutText2 CStr(val_to_input_in_cutoff_arr), 12, 35
-                End If
-                If val_to_input_in_cutoff_unar > 0 Then
-                    obScreen.PutText2 "dec", 13, 31
-                    obScreen.PutText2 CStr(val_to_input_in_cutoff_unar), 13, 35
-                    obScreen.PutText2 "01", 13, 47
-                End If
+                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                If val_to_input_in_cutoff_arr > 0 Then obScreen.PutText2 "dec", 12, 31: obScreen.PutText2 CStr(val_to_input_in_cutoff_arr), 12, 35
+                If val_to_input_in_cutoff_unar > 0 Then obScreen.PutText2 "dec", 13, 31: obScreen.PutText2 CStr(val_to_input_in_cutoff_unar), 13, 35: obScreen.PutText2 "01", 13, 47
             End If
         End If
     End If
@@ -357,39 +242,20 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
 
     If screenType = "BC" Then
-        If excel_G_Applied_Credit > 0 Then
-            obScreen.PutText2 "inc", 14, 31
-            obScreen.PutText2 CStr(excel_G_Applied_Credit), 14, 35
-            obScreen.PutText2 "01", 14, 47
-        End If
-        If Total_Applied_Debtor_Amount > 0 Then
-            obScreen.PutText2 "dec", 15, 31
-            obScreen.PutText2 CStr(Total_Applied_Debtor_Amount), 15, 35
-            obScreen.PutText2 "01", 15, 47
-        End If
+        If excel_G_Applied_Credit > 0 Then obScreen.PutText2 "inc", 14, 31: obScreen.PutText2 CStr(excel_G_Applied_Credit), 14, 35: obScreen.PutText2 "01", 14, 47
+        If Total_Applied_Debtor_Amount > 0 Then obScreen.PutText2 "dec", 15, 31: obScreen.PutText2 CStr(Total_Applied_Debtor_Amount), 15, 35: obScreen.PutText2 "01", 15, 47
     ElseIf screenType = "Normal" Then
-        If excel_G_Applied_Credit > 0 Then
-            obScreen.PutText2 "inc", 15, 31
-            obScreen.PutText2 CStr(excel_G_Applied_Credit), 15, 35
-            obScreen.PutText2 "01", 15, 47
-        End If
-        If Total_Applied_Debtor_Amount > 0 Then
-            obScreen.PutText2 "dec", 16, 31
-            obScreen.PutText2 CStr(Total_Applied_Debtor_Amount), 16, 35
-            obScreen.PutText2 "01", 16, 47
-        End If
+        If excel_G_Applied_Credit > 0 Then obScreen.PutText2 "inc", 15, 31: obScreen.PutText2 CStr(excel_G_Applied_Credit), 15, 35: obScreen.PutText2 "01", 15, 47
+        If Total_Applied_Debtor_Amount > 0 Then obScreen.PutText2 "dec", 16, 31: obScreen.PutText2 CStr(Total_Applied_Debtor_Amount), 16, 35: obScreen.PutText2 "01", 16, 47
     End If
 
-    Dim k As Integer
     For k = 1 To 3
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen
-        obScreen.WaitForHostSettle 300, 100
+        obScreen.SendControlKey 14 ' ControlKeyCode_Transmit
+        Call WaitForScreen: obScreen.WaitForHostSettle 300, 100
     Next k
 
     obScreen.SendKeys "<S_ESC>" ' Shift+Esc - !!! VERIFY THIS KEYSTROKE !!!
-    Call WaitForScreen
-    obScreen.WaitForHostSettle 500, 200
+    Call WaitForScreen: obScreen.WaitForHostSettle 500, 200
 
     If Validate_Screen("APPLICATION SELECTION MENU", 1, 28, 30) <> True Then
         Ws_Data.Range("H" & iRow).Value = "Failed to return to App Menu after Shift+Esc. Text: " & obScreen.GetText(1, 28, 30)
@@ -400,56 +266,59 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     ProcessSingleAdjustment = True
 
 NextCase_Adjustment:
-    If ProcessSingleAdjustment = False And Ws_Data.Range("H" & iRow).Value = "" Then
-        Ws_Data.Range("H" & iRow).Value = "Unknown Error or Incomplete"
-    End If
+    If ProcessSingleAdjustment = False And Ws_Data.Range("H" & iRow).Value = "" Then Ws_Data.Range("H" & iRow).Value = "Unknown Error or Incomplete"
     Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
     Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
     Exit Function
-
 ErrorHandler_Adjustment:
-    Ws_Data.Range("H" & iRow).Value = "VBA Error: " & Err.Description
+    Ws_Data.Range("H" & iRow).Value = "VBA Error in ProcessSingleAdjustment: " & Err.Description & " (Line: " & Erl & ")"
     On Error Resume Next
     Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
     Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
     On Error GoTo 0
-    
-    If Err.Number = 91 Or Err.Number = 424 Then ' Object variable not set (obScreen likely lost)
-        Set obScreen = Nothing
-    End If
+    If Err.Number = 91 Or Err.Number = 424 Then Set obScreen = Nothing
     ProcessSingleAdjustment = False
 End Function
 
-
-
 '===============================================================================
-' Supporting Attachmate Interaction Functions (from your provided code)
+' CONNECTION SUB (Incorporating ConnectToReflection_V7 logic)
 '===============================================================================
-
 Sub ConnectExtra()
     Dim edpPathFromSheet As String
     Dim ws As Worksheet
-    Dim currentAction As String ' For debugging
-    ' Dim tempView As Object    ' Not needed in this version if we bypass Frame/View
+    Dim currentAction As String
+    Dim targetSessionViewTitle As String ' This will be the VIEW title searched for
+    Dim OleObj As Object ' For ActiveX control
+    Dim tempView As Object ' For iterating views
+    Dim sessionIsOpen As Boolean ' Flag
 
-    On Error GoTo MyHandler
+    On Error GoTo ConnectExtra_ErrorHandler
 
-    currentAction = "Initializing ConnectExtra"
+    currentAction = "Initializing and getting session path"
     ' --- Get path from Sheet4.txtEDPPath ---
-    On Error Resume Next
-    Set ws = Sheet4
+    On Error Resume Next ' To handle if Sheet4 or control doesn't exist
+    Set ws = Sheet4 ' Assumes CodeName of the sheet is Sheet4
     If Err.Number = 0 Then
-        Dim OleObj As OLEObject
-        Set OleObj = ws.OLEObjects("txtEDPPath")
-        If Err.Number = 0 And TypeOf OleObj.Object Is MSForms.TextBox Then
-            edpPathFromSheet = OleObj.Object.Text
+        Set OleObj = ws.OLEObjects("txtEDPPath") ' Assumes ActiveX TextBox named txtEDPPath
+        If Err.Number = 0 Then
+            If TypeOf OleObj.Object Is MSForms.TextBox Then
+                edpPathFromSheet = OleObj.Object.Text
+            Else
+                Debug.Print "ConnectExtra: txtEDPPath is not a MSForms.TextBox. Type: " & TypeName(OleObj.Object)
+            End If
+        Else
+             Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4. Error: " & Err.Description
         End If
+    Else
+        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
     End If
-    On Error GoTo MyHandler
+    Err.Clear ' Clear any error from checking Sheet4/control
+    On Error GoTo ConnectExtra_ErrorHandler ' Restore error handling
 
     If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
     Else
+        Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control not found. Prompting user."
         stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
@@ -458,195 +327,160 @@ Sub ConnectExtra()
         Set obScreen = Nothing: Exit Sub
     End If
     
-    If strBoPath = "" Then strBoPath = stEDPFile
-    
-    Mysession = Split(strBoPath, "\")
-    sessionName = Mysession(UBound(Mysession)) ' This is the FILENAME like "NTS Back Office - Prod.rd3x"
-    
-    currentAction = "Creating Attachmate.Reflection.Application"
+    strBoPath = stEDPFile ' Full path
+    sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1) ' Extract filename, e.g., "NTS Back Office - Prod.rd3x"
+    targetSessionViewTitle = sessionName ' Start with filename, will refine if needed by iterating views
+
+    currentAction = "Attempting GetObject(, ""Reflection Workspace"")"
+    Debug.Print currentAction
     On Error Resume Next
-    Set app = CreateObject("Attachmate.Reflection.Application")
-    If Err.Number <> 0 Then
+    Set app = GetObject(, "Reflection Workspace") ' Using comma before ProgID to get running instance
+    If Err.Number <> 0 Or app Is Nothing Then
         Err.Clear
-        Set app = CreateObject("Reflection Workspace") 
-        If Err.Number <> 0 Then
-             MsgBox "Could not CreateObject 'Attachmate.Reflection.Application' or 'Reflection Workspace'.", vbCritical, sPrj_Name
-            GoTo MyHandler
-        End If
-    End If
-    On Error GoTo MyHandler
-    
-    If app Is Nothing Then
-        MsgBox "Failed to create Reflection Application object.", vbCritical, sPrj_Name
-        GoTo MyHandler
-    End If
-
-    Debug.Print "TypeName of app object: " & TypeName(app) ' Expect ApplicationObject
-
-    currentAction = "Waiting for app to be ready (simple delay)"
-    Application.Wait (Now + TimeValue("0:00:02")) ' Increased delay slightly
-
-    ' --- Attempt to access Sessions collection directly from app object ---
-    currentAction = "Accessing app.Sessions collection"
-    Dim sessionsCol As Object ' To hold app.Sessions
-    Dim sess As Object        ' To iterate through sessions
-    Dim foundSession As Boolean
-    
-    Set sessionsCol = app.Sessions ' This is the critical line to test now
-    If sessionsCol Is Nothing Then
-        MsgBox "The 'app' object (TypeName: " & TypeName(app) & ") does not have a .Sessions collection directly.", vbCritical, sPrj_Name
-        GoTo MyHandler
-    End If
-
-    If sessionsCol.Count = 0 Then
-        currentAction = "No sessions open, attempting to open: " & strBoPath
-        ' Some versions use app.Open, others app.Sessions.Open, or app.CreateSession
-        On Error Resume Next ' Try different open methods
-        Set sess = app.Open(strBoPath) ' Common for "Reflection.Application"
-        If sess Is Nothing Then
+        Debug.Print "GetObject(""Reflection Workspace"") FAILED or app is Nothing. Attempting CreateObject..."
+        currentAction = "Attempting CreateObject(""Reflection Workspace"")" ' Update current action
+        Set app = CreateObject("Reflection Workspace")
+        If Err.Number <> 0 Or app Is Nothing Then
             Err.Clear
-            Set sess = sessionsCol.Open(strBoPath) ' Common for "Attachmate.Reflection.Application" if Sessions is a collection
+            Debug.Print "CreateObject(""Reflection Workspace"") also FAILED."
+            MsgBox "Could not connect to or create 'Reflection Workspace'." & vbCrLf & _
+                   "Please ensure Reflection is installed and running if GetObject is preferred.", vbCritical, sPrj_Name
+            GoTo ConnectExtra_ErrorHandler_Exit
         End If
-        If sess Is Nothing Then
-             Err.Clear
-             ' If CreateSession exists and returns the terminal object directly
-             ' Set ibmTerminal = app.CreateSession(strBoPath) 
-             ' If ibmTerminal Is Nothing Then
-             '    MsgBox "Could not open or create session: " & strBoPath, vbCritical, sPrj_Name
-             '    GoTo MyHandler
-             ' Else
-             '    foundSession = True
-             ' End If
-             MsgBox "Could not open session using app.Open or sessionsCol.Open: " & strBoPath & ". Try opening it manually first.", vbCritical, sPrj_Name
-             GoTo MyHandler
-        Else
-             foundSession = True
-        End If
-        On Error GoTo MyHandler
-    Else
-        currentAction = "Searching for already open session: " & sessionName
-        For Each sess In sessionsCol
-            ' Compare by looking for the session file name in the session's caption or name
-            ' The property for caption/name can vary: .Name, .Caption, .Window.Caption, .FullName, .FileName
-            Dim sessTitle As String
-            On Error Resume Next ' Try different properties to get a title
-            sessTitle = sess.Window.Caption
-            If sessTitle = "" Then sessTitle = sess.Caption
-            If sessTitle = "" Then sessTitle = sess.Name
-            If sessTitle = "" Then sessTitle = sess.FileName ' Often contains just the file name
-            On Error GoTo MyHandler
+    End If
+    Debug.Print "Reflection App Object obtained. TypeName: " & TypeName(app)
+    On Error GoTo ConnectExtra_ErrorHandler
 
-            If InStr(1, sessTitle, sessionName, vbTextCompare) > 0 Then
-                foundSession = True
+    currentAction = "Attempting app.GetObject(""Frame"")"
+    Debug.Print currentAction
+    Set ThisFrame = app.GetObject("Frame")
+    If ThisFrame Is Nothing Then Debug.Print "Frame object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
+    Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
+
+    If Not ThisFrame.Visible Then ThisFrame.Visible = True
+    ThisFrame.Activate ' Bring to front
+    Debug.Print "Frame Visible/Activated."
+
+    currentAction = "Searching for or Creating View for: " & sessionName
+    Debug.Print currentAction
+    
+    sessionIsOpen = False
+    If ThisFrame.Views.Count > 0 Then
+        For Each tempView In ThisFrame.Views
+            Debug.Print "Checking existing View: " & tempView.TitleText
+            If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
+                Set osView = tempView
+                sessionIsOpen = True
+                Debug.Print "Found matching running View: " & osView.TitleText
                 Exit For
             End If
-        Next sess
-        
-        If Not foundSession Then
-            MsgBox "Session '" & sessionName & "' not found in open sessions. Please ensure it's running or path is correct.", vbInformation, sPrj_Name
-            ' Optionally, try to open it if not found
-            currentAction = "Session not found, attempting to open: " & strBoPath
-            Set sess = sessionsCol.Open(strBoPath)
-            If sess Is Nothing Then GoTo MyHandler Else foundSession = True
+        Next tempView
+    End If
+
+    If Not sessionIsOpen Then
+        Debug.Print "View not found by title containing '" & sessionName & "'. Attempting to create/open view with path: " & strBoPath
+        currentAction = "Attempting ThisFrame.CreateView(""" & strBoPath & """)"
+        On Error Resume Next 
+        Set osView = ThisFrame.CreateView(strBoPath) ' CreateView opens the .rd3x file
+        If Err.Number <> 0 Or osView Is Nothing Then
+            Err.Clear
+            Debug.Print "ThisFrame.CreateView FAILED or returned Nothing."
+            MsgBox "Could not find or create a Reflection session view for: '" & sessionName & "'. Ensure path is correct and Reflection can open it.", vbCritical, sPrj_Name
+            GoTo ConnectExtra_ErrorHandler_Exit
         End If
+        Debug.Print "Successfully created/opened View. Title: " & osView.TitleText
+        On Error GoTo ConnectExtra_ErrorHandler
     End If
-
-    If Not foundSession Or sess Is Nothing Then
-        MsgBox "Failed to find or open session: " & sessionName, vbCritical, sPrj_Name
-        GoTo MyHandler
-    End If
-
-    currentAction = "Getting Terminal and Screen from Session object"
-    ' Now, 'sess' should be our session object.
-    ' We need to get the IbmScreen object from it.
-    ' For Attachmate_Reflection_Objects_Framework.ApplicationObject, 'sess' is usually 
-    ' an Attachmate_Reflection_Objects.Session object.
-    ' This Session object should have a .Control property which is the IbmTerminal.
     
-    On Error Resume Next ' sess.Control might fail if 'sess' is not the expected type
-    Set ibmTerminal = sess.Control ' This is the key for framework's Session object
-    If Err.Number <> 0 Or ibmTerminal Is Nothing Then
-        Err.Clear
-        ' If sess.Control doesn't work, perhaps 'sess' *is* the terminal object
-        ' or has a direct .Screen property (older models)
-        If TypeName(sess) Like "*Terminal*" Or TypeName(sess) Like "*IbmTerminal*" Then
-            Set ibmTerminal = sess
-        ElseIf Not sess.Screen Is Nothing Then ' Direct .Screen property?
-            Set obScreen = sess.Screen
-        End If
+    If osView Is Nothing Then ' Should not happen if logic above is correct
+        MsgBox "osView object is Nothing after search/create. Cannot proceed.", vbCritical, sPrj_Name
+        GoTo ConnectExtra_ErrorHandler_Exit
     End If
-    On Error GoTo MyHandler
 
-    If Not obScreen Is Nothing Then ' If we got screen directly
-        ' ibmTerminal might still be Nothing, but obScreen is what we need for GetText etc.
-        ' However, SetProperties needs ibmTerminal.
-        If ibmTerminal Is Nothing And TypeName(obScreen) Like "*IbmScreen*" Then
-            ' This is tricky; can't easily get parent terminal from screen alone.
-            ' For now, we'll assume if obScreen is set, we can proceed, but properties won't be set.
-             Debug.Print "Got obScreen directly, but ibmTerminal is not set. Cannot set terminal properties."
-        End If
-    ElseIf Not ibmTerminal Is Nothing Then ' If we got ibmTerminal (from sess.Control or sess being the terminal)
-        Set obScreen = ibmTerminal.Screen
-    End If
-        
-    If obScreen Is Nothing Then
-        MsgBox "Could not get Screen from Session/Terminal object. TypeName(sess) was: " & TypeName(sess), vbCritical, sPrj_Name
-        GoTo MyHandler
-    End If
-        
-    currentAction = "Setting Terminal Properties"
-    If Not ibmTerminal Is Nothing Then ' Only if we have the terminal object
-        ibmTerminal.DisableKeystrokeProductivity = True
-        ibmTerminal.DisableScreenHistory = True
+    ' osView.Activate ' Might not be necessary or could cause issues
+    Debug.Print "View obtained. View Title: '" & osView.TitleText & "'. TypeName(osView): " & TypeName(osView)
+
+    currentAction = "Attempting osView.Control"
+    Debug.Print currentAction
+    Set ibmTerminal = osView.Control
+    If ibmTerminal Is Nothing Then Debug.Print "Terminal object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
+    Debug.Print "Terminal Object obtained. TypeName: " & TypeName(ibmTerminal)
+
+    currentAction = "Attempting ibmTerminal.Screen"
+    Debug.Print currentAction
+    Set obScreen = ibmTerminal.Screen
+    If obScreen Is Nothing Then Debug.Print "Screen object is Nothing.": GoTo ConnectExtra_ErrorHandler_Exit
+    Debug.Print "Screen Object obtained. TypeName: " & TypeName(obScreen)
+
+    On Error Resume Next ' These properties might not be writable or exist on all versions
+    ibmTerminal.DisableKeystrokeProductivity = True
+    If Err.Number <> 0 Then Debug.Print "ConnectExtra Info: Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
+    ibmTerminal.DisableScreenHistory = True
+    If Err.Number <> 0 Then Debug.Print "ConnectExtra Info: Error setting DisableScreenHistory: " & Err.Description: Err.Clear
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    Debug.Print "ConnectExtra: All core Reflection objects set successfully."
+    Exit Sub
+
+ConnectExtra_ErrorHandler:
+    MsgBox "ConnectExtra Error during: '" & currentAction & "'" & vbCrLf & _
+           "Error " & Err.Number & ": " & Err.Description, vbCritical, sPrj_Name
+ConnectExtra_ErrorHandler_Exit:
+    Set obScreen = Nothing 
+    Set ibmTerminal = Nothing
+    Set osView = Nothing
+    Set ThisFrame = Nothing
+    Set app = Nothing
+End Sub
+
+'===============================================================================
+' HELPER FUNCTIONS (SCREEN VALIDATION, WAITS)
+'===============================================================================
+Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
+    If obScreen Is Nothing Then Validate_Screen = False: Exit Function
+    On Error Resume Next ' In case screen object becomes invalid mid-operation
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+        If Err.Number <> 0 Then Validate_Screen = False: Exit Function ' Error during wait
+    Loop
+    If Err.Number <> 0 Then Validate_Screen = False: Exit Function
+    On Error GoTo 0
+
+    Dim screenReadText As String
+    On Error Resume Next
+    screenReadText = obScreen.GetText(iRow, icol, iLen)
+    If Err.Number <> 0 Then Validate_Screen = False: Exit Function ' Error during GetText
+    On Error GoTo 0
+    
+    If UCase(VBA.Trim(screenReadText)) = UCase(VBA.Trim(strText)) Then
+        Validate_Screen = True
     Else
-        Debug.Print "Skipping terminal properties setup as ibmTerminal object not available."
+        Validate_Screen = False
     End If
-    
-    currentAction = "ConnectExtra Successful"
-    Exit Sub
-                         
-MyHandler:
-    MsgBox "Session connection error during: '" & currentAction & "'" & vbNewLine & _
-           "Error: " & Err.Description & " (Error No. " & Err.Number & ")" & vbNewLine & vbNewLine & _
-           "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
-    Set obScreen = Nothing
-End Sub
+End Function
 
+Function WaitForScreen()
+    If obScreen Is Nothing Then Exit Function
+    On Error Resume Next 
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+        If Err.Number <> 0 Then Exit Function ' Error during wait
+    Loop
+    If Err.Number <> 0 Then Exit Function
+    On Error GoTo 0
+    Call Check_SecurityScreen
+End Function
 
-Sub ConnectExtra_Test_ActiveSession()
-    Dim currentAction As String
-    On Error GoTo MyHandler
+Function Check_SecurityScreen()
+    If obScreen Is Nothing Then Exit Function
+    ' Temporarily disable error handler within this check if Validate_Screen has its own robust one
+    Dim tempScreenCheck As Boolean
+    tempScreenCheck = Validate_Screen("SECURITY REMINDER", 1, 29, 20)
     
-    currentAction = "Creating Attachmate.Reflection.Application"
-    Set app = CreateObject("Attachmate.Reflection.Application")
-    If app Is Nothing Then GoTo MyHandler
-    Debug.Print "TypeName of app: " & TypeName(app)
-
-    currentAction = "Trying app.ActiveSession"
-    Dim activeSess As Object
-    Set activeSess = app.ActiveSession ' <<< TEST THIS LINE
-    
-    If activeSess Is Nothing Then
-        MsgBox "app.ActiveSession did not return an object.", vbInformation, sPrj_Name
-        GoTo MyHandler
+    If tempScreenCheck Then ' Check if Validate_Screen itself errored by checking obScreen
+         If obScreen Is Nothing Then Exit Function
+         obScreen.PutText2 "Y", 22, 11
+         obScreen.SendControlKey 14 ' ControlKeyCode_Transmit
+         Call WaitForScreen ' Recursive call, ensure this doesn't lead to stack overflow if screen persists
     End If
-    
-    Debug.Print "TypeName of activeSess: " & TypeName(activeSess)
-    
-    currentAction = "Getting Screen from ActiveSession"
-    Set obScreen = activeSess.Screen ' Common way to get screen from a session obj
-    If obScreen Is Nothing Then
-        MsgBox "Could not get .Screen from activeSess.", vbInformation, sPrj_Name
-        GoTo MyHandler
-    End If
-    
-    MsgBox "Successfully got obScreen via app.ActiveSession.Screen! Screen Title: " & obScreen.GetText(1,1,20), vbInformation, sPrj_Name
-    ' If this works, we need to get ibmTerminal as well for properties
-    ' Set ibmTerminal = activeSess.Control ' if activeSess is a View-like object
-    ' Or Set ibmTerminal = activeSess ' if activeSess is the Terminal object itself
-    Exit Sub
-
-MyHandler:
-    MsgBox "Error during: '" & currentAction & "'" & vbNewLine & Err.Description, vbCritical
-    Set obScreen = Nothing
-End Sub
+End Function
