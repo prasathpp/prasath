@@ -1,13 +1,16 @@
 Option Explicit
+' Public app As Attachmate_Reflection_Objects_Framework.ApplicationObject ' <<< Comment this out
+' Public ThisFrame As Attachmate_Reflection_Objects.frame             ' <<< Comment this out
+' Public osView As Attachmate_Reflection_Objects.View                  ' <<< Comment this out
 
-'''''''''''''''''''''''''''''''''''Attachmate Declaration''''''''''''''''''''''''''''''''''''''''''''''
-Public obScreen As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen
-Public ibmTerminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal
-Public app As Attachmate_Reflection_Objects_Framework.ApplicationObject
-Public ThisFrame As Attachmate_Reflection_Objects.frame
+Public app As Object         ' <<< USE THIS
+Public ThisFrame As Object   ' <<< USE THIS
+Public osView As Object      ' <<< USE THIS
+
+Public ibmTerminal As Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal ' Keep as is
+Public obScreen As Attachmate_Reflection_Objects_Emulation_IbmHosts.IbmScreen    ' Keep as is
 Public sessionName As String
 Public Mysession As Variant
-Public osView As Attachmate_Reflection_Objects.View
 
 'Variables used by ConnectExtra - ensure these are handled or defined if needed globally
 Public strBoPath As String ' Used in ConnectExtra
@@ -16,6 +19,35 @@ Public stEDPFile As String ' Used in ConnectExtra
 'Global Project Name Constant
 Public Const sPrj_Name As String = "Interest Adjustment Automation"
 
+Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
+    If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+    Loop
+    
+    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
+        Validate_Screen = True
+    Else
+        Validate_Screen = False
+    End If
+End Function
+
+Function WaitForScreen()
+    If obScreen Is Nothing Then Exit Function ' Safety check
+    Do While obScreen.OIA.XStatus <> 0
+        obScreen.WaitForHostSettle 50, 20
+    Loop
+    Call Check_SecurityScreen
+End Function
+
+Function Check_SecurityScreen()
+    If obScreen Is Nothing Then Exit Function ' Safety check
+    If Validate_Screen("SECURITY REMINDER", 1, 29, 20) = True Then
+        obScreen.PutText2 "Y", 22, 11
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitForScreen
+    End If
+End Function
 
 Sub ProcessInterestAdjustments_Main()
     Dim Ws_Data As Worksheet
@@ -388,6 +420,8 @@ ErrorHandler_Adjustment:
     ProcessSingleAdjustment = False
 End Function
 
+
+
 '===============================================================================
 ' Supporting Attachmate Interaction Functions (from your provided code)
 '===============================================================================
@@ -395,10 +429,14 @@ Sub ConnectExtra()
     Dim edpPathFromSheet As String
     Dim ws As Worksheet
     Dim currentAction As String ' For debugging
+    Dim tempView As Object    ' <<< Changed from specific type to Object for late binding test
 
-    On Error GoTo MyHandler ' General error handler for the sub
+    On Error GoTo MyHandler 
 
     currentAction = "Initializing ConnectExtra"
+    ' ...(rest of ConnectExtra from the version that gave "TypeName of app object: ApplicationObject" error)...
+    ' (No other logical changes needed inside ConnectExtra for this specific test, 
+    '  only the global declarations of app, ThisFrame, osView and the local Dim tempView)
 
     ' --- Get path from Sheet4.txtEDPPath ---
     On Error Resume Next
@@ -428,38 +466,33 @@ Sub ConnectExtra()
     Mysession = Split(strBoPath, "\")
     sessionName = Mysession(UBound(Mysession))
     
-    ' --- Using Attachmate Framework Object Model ---
     currentAction = "Creating Attachmate.Reflection.Application (Framework)"
-    On Error Resume Next ' Try creating the specific framework application object
-    Set app = CreateObject("Attachmate.Reflection.Application") ' ProgID for framework app
+    On Error Resume Next
+    Set app = CreateObject("Attachmate.Reflection.Application")
     If Err.Number <> 0 Then
         Err.Clear
-        ' Fallback if the above ProgID is not registered, try another common one
-        Set app = CreateObject("Reflection Workspace") ' This was used in your original provided code
+        Set app = CreateObject("Reflection Workspace") 
         If Err.Number <> 0 Then
-             MsgBox "Could not CreateObject 'Attachmate.Reflection.Application' or 'Reflection Workspace'." & vbNewLine & _
-                    "Ensure Reflection is installed and 'Attachmate_Reflection_Objects_Framework' library is correctly referenced and registered.", vbCritical, sPrj_Name
+             MsgBox "Could not CreateObject 'Attachmate.Reflection.Application' or 'Reflection Workspace'.", vbCritical, sPrj_Name
             GoTo MyHandler
         End If
     End If
-    On Error GoTo MyHandler ' Restore general error handling
+    On Error GoTo MyHandler 
     
     If app Is Nothing Then
         MsgBox "Failed to create Reflection Application object.", vbCritical, sPrj_Name
         GoTo MyHandler
     End If
 
-    Debug.Print "TypeName of app object: " & TypeName(app) ' CRUCIAL: What type is 'app'?
+    Debug.Print "TypeName of app object (Late Binding): " & TypeName(app)
 
-    ' If 'app' is created, it should support these if the framework is working
     currentAction = "Waiting for app to be ready (simple delay)"
-    Application.Wait (Now + TimeValue("0:00:01")) ' Simple 1-second pause
+    Application.Wait (Now + TimeValue("0:00:01"))
 
     currentAction = "Getting Frame from Application Object"
-    ' Accessing Frame directly is often available on the ApplicationObject
-    Set ThisFrame = app.Frame
+    Set ThisFrame = app.Frame ' This is the line that previously failed
     If ThisFrame Is Nothing Then
-        MsgBox "Could not get Frame from Reflection Application object. The object may not be fully initialized or version mismatch.", vbCritical, sPrj_Name
+        MsgBox "Could not get Frame from Reflection Application object.", vbCritical, sPrj_Name
         GoTo MyHandler
     End If
     ThisFrame.Visible = True
@@ -467,12 +500,10 @@ Sub ConnectExtra()
     currentAction = "Finding or Creating View for session: " & sessionName
     Dim sessionIsOpen As Boolean
     sessionIsOpen = False
-    Dim tempView As Object ' Attachmate_Reflection_Objects.View
+    ' tempView already Dim'd as Object above
     
     If ThisFrame.Views.Count > 0 Then
         For Each tempView In ThisFrame.Views
-            ' Compare title - sessionName is just the file name "NTS Back Office - Prod.rd3x"
-            ' tempView.TitleText could be "NTS Back Office - Prod.rd3x" or "View 1 - NTS Back Office - Prod.rd3x" etc.
             If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
                 Set osView = tempView
                 sessionIsOpen = True
@@ -483,7 +514,7 @@ Sub ConnectExtra()
 
     If Not sessionIsOpen Then
         currentAction = "Creating new View for: " & strBoPath
-        Set osView = ThisFrame.CreateView(strBoPath) ' Open the session by its full path
+        Set osView = ThisFrame.CreateView(strBoPath)
         If osView Is Nothing Then
             MsgBox "Could not create view for session: " & strBoPath, vbCritical, sPrj_Name
             GoTo MyHandler
@@ -491,8 +522,6 @@ Sub ConnectExtra()
     End If
     
     currentAction = "Getting Terminal Control and Screen"
-    ' osView should be Attachmate_Reflection_Objects.View
-    ' osView.Control should give Attachmate_Reflection_Objects_Emulation_IbmHosts.ibmTerminal
     Set ibmTerminal = osView.Control
     If ibmTerminal Is Nothing Then
         MsgBox "Could not get Terminal Control from View object.", vbCritical, sPrj_Name
@@ -518,33 +547,3 @@ MyHandler:
            "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
     Set obScreen = Nothing
 End Sub
-
-Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
-    If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    
-    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
-        Validate_Screen = True
-    Else
-        Validate_Screen = False
-    End If
-End Function
-
-Function WaitForScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    Call Check_SecurityScreen
-End Function
-
-Function Check_SecurityScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    If Validate_Screen("SECURITY REMINDER", 1, 29, 20) = True Then
-        obScreen.PutText2 "Y", 22, 11
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen
-    End If
-End Function
