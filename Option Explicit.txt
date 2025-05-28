@@ -1,7 +1,7 @@
-' Attribute VB_Name = "mod_BackOffice_TermAll_V9_ManualWait" ' Using a new module name
+' Attribute VB_Name = "mod_BackOffice_Automation_V1" ' Simplified module name
 Option Explicit
 
-' --- Attachmate/Micro Focus Reflection Object Declarations ---
+' --- Reflection COM Object Declarations ---
 ' These variables will hold the references to the Reflection objects
 ' needed to control the host session.
 Public objReflectionApp As Object          ' Represents the main Reflection Workspace application
@@ -10,14 +10,12 @@ Public objView As Object         ' Represents the specific session view/tab (e.g
 Public objTerminal As Object     ' Represents the terminal control within the view
 Public objScreen As Object       ' Represents the interactive screen area of the terminal
 
-' --- Constants for this specific automation ---
+' --- Constants for this specific automation (Version 1 - Send TERM ALL) ---
 ' Define the EXACT title of the session window we will look for using GetViewByTitleText.
 ' *** IMPORTANT: This must match the window title EXACTLY! ***
-' Check the window title bar carefully. If the title is like "Reflection Workspace - [NTS Back Office - Prod.rd3x]",
-' GetViewByTitleText *might* look for "NTS Back Office - Prod.rd3x" or the full string.
-' Based on previous success logs, let's stick with "NTS Back Office - Prod.rd3x".
-' If it fails again, you MUST verify the exact window title and update this constant.
-Private Const TARGET_SESSION_EXACT_TITLE As String = "NTS Back Office - Prod.rd3x"
+' Check the window title bar carefully. Example: "Reflection Workspace - [NTS Back Office - Prod.rd3x]"
+' Based on previous logs, "NTS Back Office - Prod.rd3x" seems to be the part GetViewByTitleText uses.
+Private Const SESSION_TITLE_PART As String = "NTS Back Office - Prod.rd3x"
 
 
 ' Define the text and coordinates for the command line where we type TERM ALL
@@ -34,20 +32,19 @@ Private Const SECURITY_REMINDER_INPUT_ROW As Long = 22 ' Row for 'Y' input
 Private Const SECURITY_REMINDER_INPUT_COL As Long = 11 ' Col for 'Y' input
 
 ' --- Script Title for MsgBoxes / Debugging ---
-Private Const SCRIPT_TITLE As String = "Back Office - Send TERM ALL (Manual Wait)"
+Private Const SCRIPT_TITLE As String = "Back Office Automation V1"
 
 
-' --- Main Entry Sub for Step 1 ---
+' --- Main Entry Sub (Version 1) ---
 ' This is the procedure you will run to perform the first step:
 ' Connect to Reflection and send "TERM ALL" on the command line.
-Sub Main_SendTermAll_Step1_ManualWait()
+Sub Main_SendTermAll_V1()
     On Error GoTo ErrorHandler
 
-    Debug.Print "--- Starting " & SCRIPT_TITLE & " ---"
+    Debug.Print "--- Starting " & SCRIPT_TITLE & " - Send TERM ALL ---"
 
     ' 1. Attempt to connect to the existing Reflection session and get objects
-    ' Using the connection function that relies on GetViewByTitleText
-    If ConnectToReflection_ManualWait(TARGET_SESSION_EXACT_TITLE) Then
+    If ConnectToReflection_V1(SESSION_TITLE_PART) Then
         Debug.Print SCRIPT_TITLE & ": Successfully connected to Reflection session."
 
         ' Ensure we have the necessary screen object to proceed
@@ -57,131 +54,130 @@ Sub Main_SendTermAll_Step1_ManualWait()
         End If
 
         ' 2. Send "TERM ALL" to the command line (R21, C13)
-        ' The SendText_ManualWait function will handle waiting for the screen to be ready and sending Transmit.
+        ' The SendText_V1 function will handle waiting for the screen to be ready and sending Transmit.
         Debug.Print SCRIPT_TITLE & ": Sending '" & CMD_TERM_ALL & "' to command line..."
-        Call SendText_ManualWait(CMD_TERM_ALL, COMMAND_LINE_ROW, COMMAND_LINE_COL)
+        Call SendText_V1(CMD_TERM_ALL, COMMAND_LINE_ROW, COMMAND_LINE_COL)
 
         Debug.Print SCRIPT_TITLE & ": '" & CMD_TERM_ALL & "' sent. First step complete."
 
-        ' ** CORRECTED MsgBox Call Syntax **
-        ' Separate the message string, buttons (vbInformation), and title (SCRIPT_TITLE)
+        ' Confirmation message box (Corrected syntax)
         MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line.", vbInformation, SCRIPT_TITLE
 
 
     Else
-        ' Connection failed - an error message was already shown by ConnectToReflection_ManualWait
+        ' Connection failed - an error message was already shown by ConnectToReflection_V1
         Debug.Print SCRIPT_TITLE & ": Failed to connect to Reflection session. Aborting."
-        ' MsgBox already shown by ConnectToReflection_ManualWait
+        ' MsgBox already shown by ConnectToReflection_V1
     End If
 
 CleanupAndExit:
     ' 3. Clean up the Reflection objects regardless of success or failure
-    Call CleanUpReflectionObjects_ManualWait
+    Call CleanUpReflectionObjects_V1
 
-    Debug.Print "--- Finished " & SCRIPT_TITLE & " ---"
+    Debug.Print "--- Finished " & SCRIPT_TITLE & " - Send TERM ALL ---"
     Exit Sub
 
 ErrorHandler:
-    ' This is where the MsgBox in the screenshot is generated from
+    ' Handle any unexpected errors during the macro execution
     MsgBox "Error in '" & SCRIPT_TITLE & "':" & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, SCRIPT_TITLE
     Resume CleanupAndExit ' Go to the cleanup section after showing the error
 
 End Sub
 
 
-' --- Connection Logic (Manual Wait Version - Reverting to GetViewByTitleText) ---
+' --- Connection Logic (Version 1) ---
 ' Connects to an existing Reflection Workspace and finds the specified session
 ' using GetViewByTitleText.
 ' Returns True if connection and object retrieval is successful, False otherwise.
-Private Function ConnectToReflection_ManualWait(ByVal targetSessionExactTitle As String) As Boolean
-    On Error GoTo ConnectErrorHandler_ManualWait
-    ConnectToReflection_ManualWait = False ' Assume failure initially
+Private Function ConnectToReflection_V1(ByVal targetSessionExactTitle As String) As Boolean
+    On Error GoTo ConnectErrorHandler_V1
+    ConnectToReflection_V1 = False ' Assume failure initially
 
-    Debug.Print "Connect_ManualWait: Attempting GetObject(""Reflection Workspace"")..."
+    Debug.Print "Connect_V1: Attempting GetObject(""Reflection Workspace"")..."
     On Error Resume Next ' Temporarily disable error handling for GetObject
     Set objReflectionApp = GetObject("Reflection Workspace")
     If Err.Number <> 0 Or objReflectionApp Is Nothing Then
         Err.Clear ' Clear the "Object not found" error
-        Debug.Print "Connect_ManualWait: GetObject(""Reflection Workspace"") FAILED."
+        Debug.Print "Connect_V1: GetObject(""Reflection Workspace"") FAILED."
         MsgBox "Could not connect to Reflection Workspace." & vbCrLf & _
                "Please ensure Reflection is running and that 'Enable Reflection Automation' is checked in Reflection settings.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit the function indicating failure
     End If
-    Debug.Print "Connect_ManualWait: RApp obtained. TypeName: " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler_ManualWait ' Restore error handling
+    Debug.Print "Connect_V1: RApp obtained. TypeName: " & TypeName(objReflectionApp)
+    On Error GoTo ConnectErrorHandler_V1 ' Restore error handling
 
-    Debug.Print "Connect_ManualWait: Attempting objReflectionApp.GetObject(""Frame"")..."
+    Debug.Print "Connect_V1: Attempting objReflectionApp.GetObject(""Frame"")..."
     Set objFrame = objReflectionApp.GetObject("Frame")
     If objFrame Is Nothing Then
-         Debug.Print "Connect_ManualWait: Frame object is Nothing."
+         Debug.Print "Connect_V1: Frame object is Nothing."
          MsgBox "Could not get the Reflection Frame object.", vbCritical, SCRIPT_TITLE
          Exit Function
     End If
-    Debug.Print "Connect_ManualWait: objFrame obtained. TypeName: " & TypeName(objFrame)
+    Debug.Print "Connect_V1: objFrame obtained. TypeName: " & TypeName(objFrame)
 
     ' Ensure the frame is visible and brought to front (optional but helpful)
     If Not objFrame.Visible Then objFrame.Visible = True
     objFrame.Activate ' Brings the main Reflection Workspace window to front
-    Debug.Print "Connect_ManualWait: Frame Visible/Activated."
+    Debug.Print "Connect_V1: Frame Visible/Activated."
 
     ' ** Using GetViewByTitleText as it previously seemed to work for finding the view **
-    Debug.Print "Connect_ManualWait: Attempting objFrame.GetViewByTitleText(""" & targetSessionExactTitle & """)..."
+    Debug.Print "Connect_V1: Attempting objFrame.GetViewByTitleText(""" & targetSessionExactTitle & """)..."
     On Error Resume Next ' Allow GetViewByTitleText to fail if title doesn't match
     Set objView = objFrame.GetViewByTitleText(targetSessionExactTitle)
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear ' Clear the "Object not found" error
-        Debug.Print "Connect_ManualWait: objFrame.GetViewByTitleText FAILED or returned Nothing."
+        Debug.Print "Connect_V1: objFrame.GetViewByTitleText FAILED or returned Nothing."
         MsgBox "Could not find a Reflection session with the EXACT title: '" & targetSessionExactTitle & "'." & vbCrLf & _
                "Please ensure the correct session file is open in Reflection and its window title matches exactly.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if the target view was not found
     End If
-    Debug.Print "Connect_ManualWait: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
-    On Error GoTo ConnectErrorHandler_ManualWait ' Restore error handling
+    Debug.Print "Connect_V1: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
+    On Error GoTo ConnectErrorHandler_V1 ' Restore error handling
 
     ' ** Skipping explicit objView.Activate to avoid previous Error 438 **
-    Debug.Print "Connect_ManualWait: Skipping objView.Activate to avoid previous Error 438."
+    Debug.Print "Connect_V1: Skipping objView.Activate to avoid previous Error 438."
 
-    Debug.Print "Connect_ManualWait: Attempting objView.Control..."
+    Debug.Print "Connect_V1: Attempting objView.Control..."
     Set objTerminal = objView.Control
     If objTerminal Is Nothing Then
-        Debug.Print "Connect_ManualWait: Terminal object is Nothing."
+        Debug.Print "Connect_V1: Terminal object is Nothing."
         MsgBox "Could not get the Reflection Terminal control from the found view.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "Connect_ManualWait: objTerminal obtained. TypeName: " & TypeName(objTerminal)
+    Debug.Print "Connect_V1: objTerminal obtained. TypeName: " & TypeName(objTerminal)
 
-    Debug.Print "Connect_ManualWait: Attempting objTerminal.Screen..."
+    Debug.Print "Connect_V1: Attempting objTerminal.Screen..."
     Set objScreen = objTerminal.Screen
     If objScreen Is Nothing Then
-        Debug.Print "Connect_ManualWait: Screen object is Nothing."
+        Debug.Print "Connect_V1: Screen object is Nothing."
         MsgBox "Could not get the Reflection Screen object from the terminal control.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
-    Debug.Print "Connect_ManualWait: objScreen obtained. TypeName: " & TypeName(objScreen)
+    Debug.Print "Connect_V1: objScreen obtained. TypeName: " & TypeName(objScreen)
 
     ' Optional but recommended settings for automation (ignore errors if properties don't exist)
     On Error Resume Next
     objTerminal.DisableKeystrokeProductivity = True ' Disable features that might interfere with scripting input
-    If Err.Number <> 0 Then Debug.Print "Connect_ManualWait: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
+    If Err.Number <> 0 Then Debug.Print "Connect_V1: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
     objTerminal.DisableScreenHistory = True ' Disable screen history if not needed
-    If Err.Number <> 0 Then Debug.Print "Connect_ManualWait: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler_ManualWait ' Restore error handling
+    If Err.Number <> 0 Then Debug.Print "Connect_V1: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear
+    On Error GoTo ConnectErrorHandler_V1 ' Restore error handling
 
-    ConnectToReflection_ManualWait = True ' Connection successful
-    Debug.Print "Connect_ManualWait: All core Reflection objects set successfully."
+    ConnectToReflection_V1 = True ' Connection successful
+    Debug.Print "Connect_V1: All core Reflection objects set successfully."
     Exit Function ' Exit function indicating success
 
-ConnectErrorHandler_ManualWait:
+ConnectErrorHandler_V1:
     ' Generic error handler for the connection function
-    Debug.Print "Connect_ManualWait: Error (captured) - " & Err.Number & ": " & Err.Description
-    ConnectToReflection_ManualWait = False ' Ensure function returns False on any error
+    Debug.Print "Connect_V1: Error (captured) - " & Err.Number & ": " & Err.Description
+    ConnectToReflection_V1 = False ' Ensure function returns False on any error
     ' A specific error message box might be added here if not handled by specific checks above
     Exit Function ' Exit function on error
 End Function
 
 
 ' Releases the Reflection COM objects to free up resources.
-Private Sub CleanUpReflectionObjects_ManualWait()
+Private Sub CleanUpReflectionObjects_V1()
     On Error Resume Next ' Ignore errors during cleanup
 
     Set objScreen = Nothing
@@ -194,122 +190,105 @@ Private Sub CleanUpReflectionObjects_ManualWait()
     Debug.Print SCRIPT_TITLE & ": Reflection objects released."
 End Sub
 
-' --- Screen Interaction Helpers (Manual Wait Version) ---
+' --- Screen Interaction Helpers (Version 1 - Manual Wait) ---
 
 ' Waits for the host to be ready (OIA XStatus=0) using a manual loop with App.Wait and DoEvents.
 ' Also checks for and handles the Security Reminder screen within the loop.
-Private Sub WaitUntilReady_Manual(Optional ByVal timeoutMilliseconds As Long = 10000)
-    If objScreen Is Nothing Then
-        Debug.Print "WaitUntilReady_Manual: objScreen is Nothing. Cannot wait."
+Private Sub WaitUntilReady_V1(Optional ByVal timeoutMilliseconds As Long = 10000)
+    If objScreen Is Nothing Or objReflectionApp Is Nothing Then
+        Debug.Print "WaitUntilReady_V1: objScreen or objReflectionApp is Nothing. Cannot wait."
         Exit Sub
     End If
 
     Dim startTime As Date: startTime = Now
-    Dim timeoutTime As Date: timeoutTime = DateAdd("s", timeoutMilliseconds / 1000, startTime) ' Calculate timeout time (corrected DateAdd interval)
+    Dim timeoutTime As Date: timeoutTime = DateAdd("s", timeoutMilliseconds / 1000, startTime) ' Calculate timeout time
 
-    Debug.Print "WaitUntilReady_Manual: Waiting for host ready (XStatus=0) or timeout (" & timeoutMilliseconds & "ms)... Current XStatus: " & objScreen.OIA.XStatus
+    ' Debug.Print "WaitUntilReady_V1: Waiting for host ready (XStatus=0) or timeout (" & timeoutMilliseconds & "ms)... Current XStatus: " & objScreen.OIA.XStatus
 
     ' Loop until host is ready or timeout
     Do While objScreen.OIA.XStatus <> 0 And Now < timeoutTime
 
         ' ** Check for Security Reminder *during* the wait **
-        ' If the reminder pops up while waiting, handle it.
-        If CheckForAndHandleSecurityReminder_Manual() Then
-            Debug.Print "WaitUntilReady_Manual: Security Reminder handled. Continuing wait loop."
+        If CheckForAndHandleSecurityReminder_V1() Then
+            ' Debug.Print "WaitUntilReady_V1: Security Reminder handled. Continuing wait loop."
             ' After handling, the screen likely refreshed, OIA might be busy again.
             ' The loop condition (objScreen.OIA.XStatus <> 0) will re-evaluate,
             ' and we'll continue waiting for the host to settle on the next screen.
         End If
 
-        ' Wait for a short period using App.Wait (if objReflectionApp is available) or a standard Sleep
-        If Not objReflectionApp Is Nothing Then
-            objReflectionApp.Wait 50 ' Wait 50ms using Reflection's built-in wait
-        Else
-             ' Fallback if App object wasn't available (less ideal)
-             ' Note: Sleep requires a Declare statement in a standard module (or conditional compile)
-             ' For simplicity and reliance on App object, we'll focus on App.Wait
-             Debug.Print "WaitUntilReady_Manual: Warning: objReflectionApp is Nothing, cannot use App.Wait."
-        End If
-
+        ' Wait for a short period using App.Wait and allow other events to process
+        objReflectionApp.Wait 50 ' Wait 50ms using Reflection's built-in wait
         DoEvents ' Allow other events (like screen updates) to process
 
         ' Optional: Debug print progress periodically if needed
         ' If DateDiff("s", startTime, Now) Mod 2 = 0 Then ' Print every 2 seconds
-        '    Debug.Print "WaitUntilReady_Manual: Waiting... Elapsed: " & DateDiff("s", startTime, Now) & "s. XStatus: " & objScreen.OIA.XStatus
+        '    Debug.Print "WaitUntilReady_V1: Waiting... Elapsed: " & DateDiff("s", startTime, Now) & "s. XStatus: " & objScreen.OIA.XStatus
         ' End If
 
     Loop
 
     ' Check if loop exited due to timeout
     If Now >= timeoutTime And objScreen.OIA.XStatus <> 0 Then
-        Debug.Print "WaitUntilReady_Manual: Timeout occurred (" & timeoutMilliseconds & "ms) waiting for XStatus=0. Last XStatus: " & objScreen.OIA.XStatus
+        Debug.Print "WaitUntilReady_V1: Timeout occurred (" & timeoutMilliseconds & "ms) waiting for XStatus=0. Last XStatus: " & objScreen.OIA.XStatus
         ' Optional: Add a more prominent warning or error here
         ' MsgBox "Timeout waiting for host readiness.", vbExclamation, SCRIPT_TITLE
     Else
-        Debug.Print "WaitUntilReady_Manual: OIA XStatus is 0."
+        ' Debug.Print "WaitUntilReady_V1: OIA XStatus is 0."
     End If
 
 
     ' ** Check for Security Reminder *after* OIA is ready (XStatus is 0) **
     ' Handles the case where the reminder pops up exactly when the previous command finishes.
-    Debug.Print "WaitUntilReady_Manual: Checking for Security Reminder after OIA is 0..."
-    CheckForAndHandleSecurityReminder_Manual ' CORRECTED: Removed parentheses
+    ' Debug.Print "WaitUntilReady_V1: Checking for Security Reminder after OIA is 0..."
+    CheckForAndHandleSecurityReminder_V1 ' Call Sub without parentheses
 
     ' Add a small final settle time after OIA is ready and Security handled
     ' This allows screen contents to finish drawing / stabilizing.
-    ' Use App.Wait here too for consistency
-    Debug.Print "WaitUntilReady_Manual: Doing final settle (200ms)..."
-     If Not objReflectionApp Is Nothing Then
-        objReflectionApp.Wait 200 ' Final settle wait
-    End If
+    objReflectionApp.Wait 200 ' Final settle wait
 
-
-    Debug.Print "WaitUntilReady_Manual: Host is ready (XStatus=" & objScreen.OIA.XStatus & " and settled)."
+    ' Debug.Print "WaitUntilReady_V1: Host is ready (XStatus=" & objScreen.OIA.XStatus & " and settled)."
 End Sub
 
 ' Checks for the Security Reminder screen and handles it by sending 'Y' and Transmit.
-' This helper is designed to be called from within WaitUntilReady_Manual's loop.
-' It does NOT recursively call WaitUntilReady_Manual.
+' This helper is designed to be called from within WaitUntilReady_V1's loop or after it.
+' It does NOT recursively call WaitUntilReady_V1.
 ' Returns True if the reminder was detected and handled, False otherwise.
-Private Function CheckForAndHandleSecurityReminder_Manual() As Boolean
-    CheckForAndHandleSecurityReminder_Manual = False ' Assume reminder is not present initially
-    If objScreen Is Nothing Then
-        Debug.Print "CheckForAndHandleSecurityReminder_Manual: objScreen is Nothing."
+Private Function CheckForAndHandleSecurityReminder_V1() As Boolean
+    CheckForAndHandleSecurityReminder_V1 = False ' Assume reminder is not present initially
+    If objScreen Is Nothing Or objReflectionApp Is Nothing Then
+        ' Debug.Print "CheckForAndHandleSecurityReminder_V1: objScreen or objReflectionApp is Nothing."
         Exit Function
     End If
 
     ' Check for the SECURITY REMINDER screen title at its known location (R1, C29, L20)
-    ' Use a very short settle time before checking, as this is called repeatedly
-    If ScreenContainsText_ManualWait(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then
-        Debug.Print "CheckForAndHandleSecurityReminder_Manual: Detected Security Reminder."
+    If ScreenContainsText_V1(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then
+        ' Debug.Print "CheckForAndHandleSecurityReminder_V1: Detected Security Reminder."
 
         ' Send 'Y' to the input field (R22, C11 - based on original code)
         objScreen.PutText2 "Y", SECURITY_REMINDER_INPUT_ROW, SECURITY_REMINDER_INPUT_COL
-        Debug.Print "CheckForAndHandleSecurityReminder_Manual: Sent 'Y' to R" & SECURITY_REMINDER_INPUT_ROW & "C" & SECURITY_REMINDER_INPUT_COL & "."
+        ' Debug.Print "CheckForAndHandleSecurityReminder_V1: Sent 'Y' to R" & SECURITY_REMINDER_INPUT_ROW & "C" & SECURITY_REMINDER_INPUT_COL & "."
 
         ' Send Transmit key
         objScreen.SendControlKey ControlKeyCode_Transmit
-        Debug.Print "CheckForAndHandleSecurityReminder_Manual: Sent Transmit key."
+        ' Debug.Print "CheckForAndHandleSecurityReminder_V1: Sent Transmit key."
 
-        CheckForAndHandleSecurityReminder_Manual = True ' Indicate that the reminder was handled
+        CheckForAndHandleSecurityReminder_V1 = True ' Indicate that the reminder was handled
 
         ' After sending Transmit, the OIA XStatus will become busy again.
-        ' The outer WaitUntilReady_Manual loop will continue and wait for the host to settle on the *next* screen.
+        ' The outer WaitUntilReady_V1 (or the code after it) will handle waiting for the next state.
         ' No further waiting needed *within* this function.
     End If
-     ' Debug.Print "CheckForAndHandleSecurityReminder_Manual: Detection check finished. Handled: " & CheckForAndHandleSecurityReminder_Manual
+     ' Debug.Print "CheckForAndHandleSecurityReminder_V1: Detection check finished. Handled: " & CheckForAndHandleSecurityReminder_V1
 End Function
 
 ' Helper function to check for text at specific coordinates on the screen.
 ' Provides a minimal settle time before checking. Designed for checks inside wait loops.
 ' Returns True if text is found, False otherwise.
-Private Function ScreenContainsText_ManualWait(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean
-    If objScreen Is Nothing Then ScreenContainsText_ManualWait = False: Exit Function
+Private Function ScreenContainsText_V1(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean
+    If objScreen Is Nothing Or objReflectionApp Is Nothing Then ScreenContainsText_V1 = False: Exit Function
 
     ' Wait briefly for potential screen updates to start settling, but not a full Wait
-    If Not objReflectionApp Is Nothing Then
-        objReflectionApp.Wait minSettleTimeMs ' Use App.Wait for minimal settle
-    End If
+    objReflectionApp.Wait minSettleTimeMs ' Use App.Wait for minimal settle
 
     ' If length is not specified, use the length of the expected text
     If length = 0 Then length = Len(expectedText)
@@ -320,137 +299,40 @@ Private Function ScreenContainsText_ManualWait(expectedText As String, rowNum As
     On Error GoTo 0
 
     ' Compare expected text (case-insensitive)
-    ScreenContainsText_ManualWait = (UCase(actualText) = UCase(expectedText))
+    ScreenContainsText_V1 = (UCase(actualText) = UCase(expectedText))
 
     ' Optional: Debug print only if it matches, to reduce noise
-    ' If ScreenContainsText_ManualWait Then Debug.Print "ScreenContainsText_ManualWait: Found '" & expectedText & "' at R" & rowNum & "C" & colNum
+    ' If ScreenContainsText_V1 Then Debug.Print "ScreenContainsText_V1: Found '" & expectedText & "' at R" & rowNum & "C" & colNum
 End Function
 
 
 ' Sends data to a specific field on the screen and automatically sends Transmit.
-' Uses WaitUntilReady_Manual internally before and after sending input.
-Private Sub SendText_ManualWait(data As String, rowNum As Long, colNum As Long)
+' Uses WaitUntilReady_V1 internally before and after sending input.
+Private Sub SendText_V1(data As String, rowNum As Long, colNum As Long)
     If objScreen Is Nothing Then
-        Debug.Print "SendText_ManualWait: objScreen is Nothing. Cannot send text."
+        Debug.Print "SendText_V1: objScreen is Nothing. Cannot send text."
         Exit Sub
     End If
 
-    Debug.Print "SendText_ManualWait: Waiting for host before sending text."
-    Call WaitUntilReady_Manual() ' Wait for the screen to be ready before attempting input
-    Debug.Print "SendText_ManualWait: Host ready. Sending text."
+    ' Debug.Print "SendText_V1: Waiting for host before sending text."
+    Call WaitUntilReady_V1() ' Wait for the screen to be ready before attempting input
+    ' Debug.Print "SendText_V1: Host ready. Sending text."
 
 
-    Debug.Print "SendText_ManualWait: Putting data '" & data & "' at R" & rowNum & "C" & colNum & "."
+    ' Debug.Print "SendText_V1: Putting data '" & data & "' at R" & rowNum & "C" & colNum & "."
     objScreen.PutText2 data, rowNum, colNum ' Put the text onto the screen
 
-    Debug.Print "SendText_ManualWait: Sending Transmit key."
+    ' Debug.Print "SendText_V1: Sending Transmit key."
     objScreen.SendControlKey ControlKeyCode_Transmit ' Send the Enter key (Transmit)
 
-    Debug.Print "SendText_ManualWait: Waiting for host after sending text."
-    Call WaitUntilReady_Manual(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit)
-    Debug.Print "SendText_ManualWait: Wait after sending text complete."
+    ' Debug.Print "SendText_V1: Waiting for host after sending text."
+    Call WaitUntilReady_V1(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit)
+    ' Debug.Print "SendText_V1: Wait after sending text complete."
 End Sub
 
-' --- Other Helper Functions (Included but not used in Main_SendTermAll_Step1_ManualWait) ---
-
-' Helper Function: Navigates to screen using a control key (Manual Wait Version)
-' Not needed for Step 1 (assuming we start on the Application Menu), but kept for future steps.
-Private Function NavigateToScreen_ManualWait(ByVal targetScreenText As String, _
-                                  ByVal targetRow As Long, ByVal targetCol As Long, ByVal targetLength As Long, _
-                                  ByVal navigationKey As Long, ByVal maxAttempts As Integer) As Boolean
-    On Error Resume Next ' Allow errors within the navigation attempt loop
-    NavigateToScreen_ManualWait = False
-    If objScreen Is Nothing Then
-        Debug.Print "NavigateToScreen_ManualWait: objScreen is Nothing. Cannot navigate."
-        Exit Function
-    End If
-
-    Debug.Print "NavigateToScreen_ManualWait: Attempting to navigate to '" & targetScreenText & "' using key " & navigationKey & " (Max attempts: " & maxAttempts & ")..."
-
-    Dim attempts As Integer
-    For attempts = 1 To maxAttempts
-        Debug.Print "NavigateToScreen_ManualWait: Attempt " & attempts & ". Waiting for host."
-        Call WaitUntilReady_Manual(2000) ' Wait for the screen to settle before checking or sending key
-
-        ' Check if we have reached the target screen
-        Debug.Print "NavigateToScreen_ManualWait: Checking screen text at R" & targetRow & "C" & colNum & "..." ' Corrected colNum here
-        If ScreenContainsText_ManualWait(targetScreenText, targetRow, targetCol, targetLength, 100) Then
-            Debug.Print "NavigateToScreen_ManualWait: Successfully reached '" & targetScreenText & "' on attempt " & attempts & "."
-            NavigateToScreen_ManualWait = True ' Indicate success
-            Exit Function ' Exit the function
-        End If
-        Debug.Print "NavigateToScreen_ManualWait: Target screen not found."
-
-        ' If not on the target screen and not on the last attempt, send the navigation key
-        If attempts < maxAttempts Then
-            Debug.Print "NavigateToScreen_ManualWait: Sending key code: " & navigationKey & "."
-            objScreen.SendControlKey navigationKey
-            ' WaitUntilReady_Manual is called after sending the key within the loop itself
-        Else
-            Debug.Print "NavigateToScreen_ManualWait: Max attempts (" & maxAttempts & ") reached without reaching '" & targetScreenText & "'."
-        End If
-    Next attempts
-
-    ' If the loop finishes without success
-    Debug.Print "NavigateToScreen_ManualWait: Failed to reach '" & targetScreenText & "' after all attempts."
-    ' NavigateToScreen_ManualWait is already False
-
-End Function
-
-' Helper Function: Checks for text on screen (more robust check than ScreenContainsText_ManualWait)
-' Similar to Validate_Screen from your original code, uses WaitUntilReady_Manual.
-' Returns True if text is found, False otherwise.
-Private Function VerifyScreen_ManualWait(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    If objScreen Is Nothing Then VerifyScreen_ManualWait = False: Exit Function
-
-    Debug.Print "VerifyScreen_ManualWait: Checking for '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ". Waiting for host first."
-    Call WaitUntilReady_Manual(1000) ' Wait for screen to settle before checking content
-    Debug.Print "VerifyScreen_ManualWait: Host ready. Checking text."
-
-
-    ' If length is not specified, use the length of the expected text
-    If length = 0 Then length = Len(expectedText)
-
-    Dim actualText As String: actualText = ""
-    On Error Resume Next ' GetText might error if coords are invalid
-    actualText = Trim(objScreen.GetText(rowNum, colNum, length))
-    On Error GoTo 0
-
-    ' Compare expected text (case-insensitive)
-    If UCase(actualText) = UCase(expectedText) Then
-        VerifyScreen_ManualWait = True
-        Debug.Print "VerifyScreen_ManualWait: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "."
-    Else
-        VerifyScreen_ManualWait = False
-        Debug.Print "VerifyScreen_ManualWait FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'."
-    End If
-End Function
-
-' Helper Function: Navigates back to Master Index using PF2
-' Not needed for Step 1, but kept for future steps.
-' Private Function BackToMasterIndex_ManualWait()
-'     ' Logic based on your original BackToMasterIndex, using ManualWait helpers
-'     Dim iCount As Integer
-'     iCount = 0
-'     Const MAX_PF2_ATTEMPTS As Integer = 15 ' Safeguard
-'
-'     Debug.Print "BackToMasterIndex_ManualWait: Attempting to navigate back to MASTER INDEX."
-'     Call WaitUntilReady_Manual
-'
-'     ' Check for MASTER INDEX screen (R1, C28, L12 based on constants in previous turn)
-'     Do While Trim(objScreen.GetText(1, 28, 12)) <> "MASTER INDEX" And iCount < MAX_PF2_ATTEMPTS
-'         Debug.Print "BackToMasterIndex_ManualWait: Not yet on MASTER INDEX. Sending PF2. Attempt " & iCount + 1 & "."
-'         objScreen.SendControlKey ControlKeyCode_F2
-'         Call WaitUntilReady_Manual ' Wait after sending key
-'         iCount = iCount + 1
-'     Loop
-'
-'     If Trim(objScreen.GetText(1, 28, 12)) <> "MASTER INDEX" Then
-'         Debug.Print "BackToMasterIndex_ManualWait: Failed to reach MASTER INDEX after " & MAX_PF2_ATTEMPTS & " attempts."
-'         MsgBox "Failed to navigate back to Master Index!", vbCritical, SCRIPT_TITLE
-'         ' Decide if you want to End execution here or handle failure differently
-'         ' End ' Example: Force exit on critical navigation failure
-'     Else
-'         Debug.Print "BackToMasterIndex_ManualWait: Successfully reached MASTER INDEX."
-'     End If
-' End Function
+' --- Unused/Removed Helper Functions from previous versions ---
+' The following functions from previous versions are removed for simplification
+' as they are not required for this specific first step (Send TERM ALL).
+' - NavigateToScreen_ManualWait / NavigateToScreen_RevisedV9 / NavigateToScreen_V9
+' - VerifyScreen_ManualWait / VerifyScreen_RevisedV9 / VerifyScreen_V9
+' - BackToMasterIndex_ManualWait
