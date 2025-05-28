@@ -1,4 +1,4 @@
-Attribute VB_Name = "mod_InterestAmend_FocusCore"
+' Attribute VB_Name = "mod_InterestAmend_FocusCore"
 Option Explicit
 
 ' --- Reflection COM Objects ---
@@ -9,19 +9,18 @@ Dim RTerminal As Object
 Dim RScreen As Object
 
 ' --- Key Screen Title Constants ---
-Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU" ' R1, C28, L30
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"           ' R1, C28, L30 (from source)
 Private Const SCREEN_OPT_HANDLER_MAIN As String = "OPTION HANDLER FUNCTION SCREEN" ' R1, C26, L35 (from source)
-Private Const SCREEN_OPT_HANDLER_SUB As String = "SP2001" ' R2 (from source, additional check)
-Private Const SCREEN_CMD_NOT_RECOGNIZED As String = "Command not recognized" ' R20, C36, L22
-Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM" ' R1, C7, L20 (from source)
-Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX" ' R1, C28, L12 (from source)
-Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX" ' R1, C21, L30 (source used L40, 30 is more accurate text length)
-Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TXNS" ' R1, C19 (from target, needs coordinate verification)
-Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS" ' R1, C30 (estimate from target)
-Private Const SCREEN_INTEREST_DETAILS_SUB As String = "INTEREST DETAILS" ' R2, C30 (estimate from target, fallback)
-Private Const SCREEN_RBS_HEADER As String = "ROYAL BANK OF SCOTLAND" ' R1, C1, L24 (from source)
-Private Const SCREEN_SECURITY_REMINDER As String = "SECURITY REMINDER" ' R1, C29, L20 (from source)
-
+Private Const SCREEN_OPT_HANDLER_SUB As String = "SP2001"                       ' R2 (from source, additional check)
+Private Const SCREEN_CMD_NOT_RECOGNIZED As String = "Command not recognized"      ' R20, C36, L22
+Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM"                 ' R1, C7, L20 (from source)
+Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"                   ' R1, C28, L12 (from source)
+Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"  ' R1, C21, L30 (used L30 based on text, source used L40)
+Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TXNS"                  ' R1, C19 (observed/target)
+Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"      ' R1, C30 (observed/target estimate)
+Private Const SCREEN_INTEREST_DETAILS_SUB As String = "INTEREST DETAILS"        ' R2, C30 (observed/target fallback)
+Private Const SCREEN_RBS_HEADER As String = "ROYAL BANK OF SCOTLAND"            ' R1, C1, L24 (from source)
+Private Const SCREEN_SECURITY_REMINDER As String = "SECURITY REMINDER"          ' R1, C29, L20 (from source)
 
 ' --- Script Title for MsgBoxes ---
 Private Const SCRIPT_TITLE As String = "Focused Interest Amendment"
@@ -36,14 +35,17 @@ Sub ProcessSingleAmendment_Focus()
     Dim cellValueSortCode As Variant ' Use Variant to check for Empty more easily
 
     ' !!!!! DEFINE YOUR DATA SHEET NAME AND TEST ROW HERE !!!!!
-    dataSheetName = "Sheet1"  ' <<<< CONFIRM "Sheet1" IS THE ACTUAL NAME OF YOUR DATA SHEET TAB
-    testRow = 2               ' <<<< This should be the first row with data (e.g., 524131)
+    ' <<<< CONFIRM "Sheet1" IS THE ACTUAL NAME OF YOUR DATA SHEET TAB
+    dataSheetName = "Sheet1"
+    ' <<<< This should be the first row with data you want to test (e.g., row with 524131)
+    testRow = 2
     ' !!!!! --------------------------------------------- !!!!!
 
     ' 1. Connect to Reflection
     ' IMPORTANT: "NTS Back Office - Prod.rd3x" must be OPEN in Reflection BEFORE running this macro.
+    ' This function looks for the session file name within the window title.
     If Not ConnectAndSetScreen("NTS Back Office - Prod.rd3x") Then
-        MsgBox "Failed to connect to Reflection. Ensure 'NTS Back Office - Prod.rd3x' is open.", vbCritical, SCRIPT_TITLE
+        MsgBox "Failed to connect to Reflection. Ensure 'NTS Back Office - Prod.rd3x' is open and Automation is enabled.", vbCritical, SCRIPT_TITLE
         Exit Sub
     End If
     Debug.Print "ProcessSingle: Successfully connected and RScreen is set."
@@ -78,6 +80,7 @@ Sub ProcessSingleAmendment_Focus()
     Debug.Print "Does cell A" & testRow & " contain just spaces? " & (Trim(CStr(cellValueSortCode)) = "")
     ' --- END DEBUG ---
 
+    ' Check if Sort Code cell is empty or only contains spaces
     If IsEmpty(ws.Cells(testRow, "A").Value) Or Trim(CStr(ws.Cells(testRow, "A").Value)) = "" Then
         MsgBox "No data found in test row " & testRow & ", Column A on sheet '" & dataSheetName & "'." & vbCrLf & _
                "Value appears empty or contains only spaces. Please check your test data and the 'testRow' variable in the VBA code.", vbExclamation, SCRIPT_TITLE
@@ -85,8 +88,7 @@ Sub ProcessSingleAmendment_Focus()
         Exit Sub
     End If
 
-    ' IMPORTANT: Using Column A, B, C as defined in THIS module's ProcessSingleAmendment_Focus
-    ' The source code used different columns (C, D, B) but we need to stick to the A,B,C pattern here.
+    ' Extract data - Ensure these columns match your data layout
     sortCode = Trim(CStr(ws.Cells(testRow, "A").Value))
     accountNumber = Trim(CStr(ws.Cells(testRow, "B").Value))
     brand = UCase(Trim(CStr(ws.Cells(testRow, "C").Value)))
@@ -94,49 +96,50 @@ Sub ProcessSingleAmendment_Focus()
     Debug.Print "-----------------------------------------------------"
     Debug.Print "Processing Excel Row: " & testRow & " | S/C: [" & sortCode & "] | Acc: [" & accountNumber & "] | Brand: [" & brand & "]"
 
-    ' Basic data validation before attempting navigation
+    ' Basic data validation for required fields
     If sortCode = "" Or accountNumber = "" Or brand = "" Then
         Debug.Print "Skipped row " & testRow & " - Missing S/C, Account, or Brand after trimming."
-        ws.Cells(testRow, "H").Value = "Skipped - Missing Data" ' Status in Col H
+        ws.Cells(testRow, "H").Value = "Skipped - Missing Data" ' Status in Col H (adjust column if needed)
         CleanUpReflectionObjects_Focus
         Exit Sub
     End If
 
-    ' 3. Perform navigation
-    ' The NavigateToTargetScreen_Focus function now incorporates more robust error handling and screen checks
+    ' 3. Perform navigation to the target screen
     success = NavigateToTargetScreen_Focus(sortCode, accountNumber, brand)
 
     If success Then
         Debug.Print "Successfully navigated to the target screen for row " & testRow
-        ws.Cells(testRow, "H").Value = "Navigated - OK"
+        ws.Cells(testRow, "H").Value = "Navigated - OK" ' Status in Col H (adjust column if needed)
         MsgBox "PAUSED: On the target screen (Interest Amendments or similar) for S/C: " & sortCode & ", A/N: " & accountNumber & "." & vbCrLf & _
-               "You can now manually verify/perform the amendment and then click OK to clean up.", vbInformation, SCRIPT_TITLE
-        ' Placeholder for actual amendment logic
-        ' *** YOUR AMENDMENT CODE GOES HERE ***
-        ' Remember to handle navigating back to the main menu or logging out if needed after the amendment.
-        ' For this single row test, we just pause and then clean up.
-        
+               "You can now manually verify/perform the amendment and then click OK to allow the macro to clean up.", vbInformation, SCRIPT_TITLE
+        ' --- YOUR AMENDMENT LOGIC GOES HERE ---
+        ' If you had code to perform the amendment steps, you would place it here.
+        ' For this single row test, we stop and allow manual action.
+        ' --------------------------------------
+
     Else
         Debug.Print "Navigation FAILED for row " & testRow
-        ws.Cells(testRow, "H").Value = "Navigation Failed"
+        ws.Cells(testRow, "H").Value = "Navigation Failed" ' Status in Col H (adjust column if needed)
         MsgBox "Navigation failed for S/C: " & sortCode & ", A/N: " & accountNumber & "." & vbCritical, SCRIPT_TITLE
     End If
 
+    ' 4. Clean up and finish
     CleanUpReflectionObjects_Focus
     MsgBox "Finished processing test row " & testRow, vbInformation, SCRIPT_TITLE
 End Sub
 
-' --- PROVEN Connection Logic (based on V8/V9 successful debug) ---
+' --- Connection Logic ---
+' Connects to an existing Reflection Workspace and finds the specified session by partial title match.
 Private Function ConnectAndSetScreen(ByVal targetSessionFilePart As String) As Boolean
     On Error GoTo ErrorHandler
-    ConnectAndSetScreen = False
+    ConnectAndSetScreen = False ' Default to failure
 
     Debug.Print "ConnectFocus: Attempting GetObject(""Reflection Workspace"")"
     On Error Resume Next ' Allow GetObject to fail if Reflection not running
     Set RApp = GetObject("Reflection Workspace")
     If Err.Number <> 0 Or RApp Is Nothing Then
         Err.Clear
-        Debug.Print "ConnectFocus: GetObject(""Reflection Workspace"") FAILED. Ensure Reflection is running and automation is enabled."
+        Debug.Print "ConnectFocus: GetObject(""Reflection Workspace"") FAILED. Ensure Reflection is running."
         MsgBox "Could not connect to Reflection Workspace." & vbCrLf & _
                "Please ensure Reflection is running and that 'Enable Reflection Automation' is checked in the Reflection Workspace settings.", vbCritical, SCRIPT_TITLE
         Exit Function
@@ -148,43 +151,39 @@ Private Function ConnectAndSetScreen(ByVal targetSessionFilePart As String) As B
     If RFrame Is Nothing Then Debug.Print "ConnectFocus: RFrame is Nothing.": Exit Function
     Debug.Print "ConnectFocus: RFrame obtained. TypeName: " & TypeName(RFrame)
 
+    ' Ensure the frame is visible and brought to front
     If Not RFrame.Visible Then RFrame.Visible = True
-    ' RFrame.Activate ' Removed as it caused issues previously, GetView should activate it implicitly if needed.
+    RFrame.Activate ' Brings the main Reflection Workspace window to front
 
-    Debug.Print "ConnectFocus: Attempting RFrame.GetViewByTitleText(""" & targetSessionFilePart & """)..."
-    On Error Resume Next ' For GetViewByTitleText
-    ' Search for the session by matching the *end* of the title text
-    ' This is more robust if the full path is sometimes included in the title bar
+    Debug.Print "ConnectFocus: Searching for view matching """ & targetSessionFilePart & """ in title..."
     Dim viewFound As Boolean: viewFound = False
     Dim view As Object
-    For Each view In RFrame.Views
-        ' Check if the view title ends with the target session file part
-        If InStr(1, view.TitleText, targetSessionFilePart, vbTextCompare) > 0 Then ' Using InStr allows partial match, could use Right() for exact end match
+    For Each view In RFrame.Views ' Iterate through all open session views
+        ' Check if the view title contains the target session file part (case-insensitive)
+        If InStr(1, view.TitleText, targetSessionFilePart, vbTextCompare) > 0 Then
              Set RView = view
              viewFound = True
-             Exit For
+             Exit For ' Found the session, exit loop
         End If
     Next view
 
     If Not viewFound Or RView Is Nothing Then
-        Err.Clear
         Debug.Print "ConnectFocus: RFrame.GetViewByTitleText FAILED. Could not find view matching '" & targetSessionFilePart & "'."
         MsgBox "Could not find a Reflection session with '" & targetSessionFilePart & "' in its title." & vbCrLf & _
                "Please ensure the correct session file is open in Reflection.", vbCritical, SCRIPT_TITLE
         Exit Function
     End If
     Debug.Print "ConnectFocus: RView obtained. Title: '" & RView.TitleText & "'. TypeName: " & TypeName(RView)
-    On Error GoTo ErrorHandler
 
-    ' Try activating the view explicitly now that we have it, if needed
+    ' Try activating the found view to bring it to focus, ignore error if it fails
     On Error Resume Next
     RView.Activate
     If Err.Number <> 0 Then Debug.Print "ConnectFocus: Info - Error RView.Activate: " & Err.Description: Err.Clear
-    On Error GoTo ErrorHandler
+    On Error GoTo ErrorHandler ' Restore main error handler
 
 
     Debug.Print "ConnectFocus: Attempting Set RTerminal = RView.Control..."
-    On Error Resume Next ' For RView.Control
+    On Error Resume Next ' For RView.Control property
     Set RTerminal = RView.Control
     If Err.Number <> 0 Or RTerminal Is Nothing Then
         Debug.Print "ConnectFocus: Error on Set RTerminal = RView.Control. Error " & Err.Number & ": " & Err.Description
@@ -195,9 +194,9 @@ Private Function ConnectAndSetScreen(ByVal targetSessionFilePart As String) As B
     On Error GoTo ErrorHandler
 
     Debug.Print "ConnectFocus: Attempting Set RScreen = RTerminal.Screen..."
-    On Error Resume Next ' For RTerminal.Screen
+    On Error Resume Next ' For RTerminal.Screen property
     Set RScreen = RTerminal.Screen
-    If Err.Number <> 0 Or RScreen Is Nothing Then
+    If RScreen Is Nothing Then
         Debug.Print "ConnectFocus: Error on Set RScreen = RTerminal.Screen. Error " & Err.Number & ": " & Err.Description
         Err.Clear
         Exit Function
@@ -207,106 +206,132 @@ Private Function ConnectAndSetScreen(ByVal targetSessionFilePart As String) As B
 
     ' Optional settings - allow them to fail gracefully
     On Error Resume Next
-    RTerminal.DisableKeystrokeProductivity = True
+    RTerminal.DisableKeystrokeProductivity = True ' Disable type-ahead, etc.
     If Err.Number <> 0 Then Debug.Print "ConnectFocus: Info - Error DisableKeystrokeProductivity: " & Err.Description: Err.Clear
-    RTerminal.DisableScreenHistory = True
+    RTerminal.DisableScreenHistory = True ' Disable screen history if not needed
     If Err.Number <> 0 Then Debug.Print "ConnectFocus: Info - Error DisableScreenHistory: " & Err.Description: Err.Clear
     On Error GoTo ErrorHandler
 
-    ConnectAndSetScreen = True
+    ConnectAndSetScreen = True ' Connection successful
     Debug.Print "ConnectFocus: All core Reflection objects (RApp, RFrame, RView, RTerminal, RScreen) set successfully."
     Exit Function
+
 ErrorHandler:
     Debug.Print "ConnectAndSetScreen Error " & Err.Number & ": " & Err.Description
     ConnectAndSetScreen = False
 End Function
 
+' Releases the Reflection COM objects to free up resources.
 Private Sub CleanUpReflectionObjects_Focus()
-    ' Release objects in reverse order
+    On Error Resume Next ' Ignore errors during cleanup
+
     Set RScreen = Nothing
     Set RTerminal = Nothing
     Set RView = Nothing
     Set RFrame = Nothing
     Set RApp = Nothing
+
+    On Error GoTo 0
     Debug.Print "Focused Reflection objects released."
 End Sub
 
-' --- Screen Interaction Helpers (renamed with _Focus suffix) ---
-
-' Modified to include Security Screen check
+' --- Screen Interaction Helpers ---
+' Waits for the host OIA area to indicate readiness and then for screen content to settle.
+' Includes a check for the Security Reminder screen.
 Private Sub WaitReady_Focus(Optional settleTimeMs As Long = 200, Optional timeoutMs As Long = 10000)
     If RScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
+
+    ' Wait for OIA XStatus to become 0 (indicating command processing is done)
     Do While RScreen.OIA.XStatus <> 0
         If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
             Debug.Print "WaitReady_Focus: Timeout waiting for XStatus=0."
-            Exit Do
+            Exit Do ' Exit loop on timeout
         End If
-        ' Use smaller increments for OIA wait
-        RScreen.WaitForHostSettle 50, 20: DoEvents ' Use the source code's pattern here
+        ' Use smaller increments for OIA wait, similar to original source
+        RScreen.WaitForHostSettle 50, 20: DoEvents
     Loop
 
-    ' ** ADD SECURITY SCREEN CHECK HERE **
-    ' It's common for the security reminder to pop up *after* a screen is ready
-    ' but before the next input. Checking it here handles it proactively.
+    ' Check for and handle the Security Reminder screen after OIA is ready
     Check_SecurityScreen_Focus
 
-    ' Wait for the screen contents to settle after OIA is ready
+    ' Wait for the screen contents to settle after OIA is ready and Security handled
     RScreen.WaitForHostSettle settleTimeMs, timeoutMs
 End Sub
 
-' New function based on source code's Check_SecurityScreen
+' Checks for the Security Reminder screen and handles it by sending 'Y'.
 Private Function Check_SecurityScreen_Focus() As Boolean
     Check_SecurityScreen_Focus = False
     If RScreen Is Nothing Then Exit Function
 
-    ' Check for the SECURITY REMINDER screen
+    ' Check for the SECURITY REMINDER screen title at its known location
     If VerifyScreen_Focus(SCREEN_SECURITY_REMINDER, 1, 29, 20) Then
         Debug.Print "Check_SecurityScreen_Focus: Detected Security Reminder. Sending 'Y'."
-        Call SendData_Focus("Y", 22, 11, True) ' Send Y and transmit
+        ' Send Y and Transmit to dismiss the reminder. WaitReady_Focus is called internally.
+        Call SendData_Focus("Y", 22, 11, True)
         Debug.Print "Check_SecurityScreen_Focus: Handled Security Reminder."
         Check_SecurityScreen_Focus = True
     End If
 End Function
 
 
+' Verifies if the expected text is present at a specific location on the screen.
+' Uses WaitReady_Focus internally.
 Private Function VerifyScreen_Focus(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
     If RScreen Is Nothing Then VerifyScreen_Focus = False: Exit Function
-    Call WaitReady_Focus(100) ' Wait for ready before checking screen content
+    Call WaitReady_Focus(100) ' Wait for screen to settle before checking content
+
+    ' If length is not specified, use the length of the expected text
     If length = 0 Then length = Len(expectedText)
+
     Dim actualText As String: actualText = Trim(RScreen.GetText(rowNum, colNum, length))
+
+    ' Compare expected text (case-insensitive)
     If UCase(actualText) = UCase(expectedText) Then
         VerifyScreen_Focus = True
     Else
         VerifyScreen_Focus = False
+        ' Log failure details to the Immediate window
         Debug.Print "VerifyScreen_Focus FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'"
     End If
 End Function
 
+' Sends data to a specific field on the screen.
+' Uses WaitReady_Focus internally. Can optionally send Transmit after putting text.
 Private Sub SendData_Focus(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True)
     If RScreen Is Nothing Then Exit Sub
-    Call WaitReady_Focus(100) ' Wait for ready before sending input
+    Call WaitReady_Focus(100) ' Wait for screen to settle before sending input
+
+    ' Put the text onto the screen
     RScreen.PutText2 data, rowNum, colNum
     Debug.Print "Sent data '" & data & "' to R" & rowNum & "C" & colNum & ". Transmit=" & sendTransmit
+
+    ' Send Transmit if requested
     If sendTransmit Then
         RScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitReady_Focus(500) ' Increased default wait after transmit, includes Security check
+        Call WaitReady_Focus(500) ' Wait after sending Transmit key (WaitReady includes Security check)
     End If
 End Sub
 
+' Sends a control key code (e.g., Transmit, PF keys) to the screen.
+' Uses WaitReady_Focus internally.
 Private Sub SendKey_Focus(keyCode As Long, Optional waitAfterMs As Long = 500)
     If RScreen Is Nothing Then Exit Sub
-    Call WaitReady_Focus(100) ' Wait for ready before sending key
-    Debug.Print "Sending ControlKey: " & keyCode
+    Call WaitReady_Focus(100) ' Wait for screen to settle before sending key
+
+    Debug.Print "Sending ControlKey: " & keyCode ' Log the key being sent
     RScreen.SendControlKey keyCode
-    Call WaitReady_Focus(waitAfterMs) ' Includes Security check
+
+    Call WaitReady_Focus(waitAfterMs) ' Wait after sending key (WaitReady includes Security check)
 End Sub
 
-' --- Navigation Logic (Updated) ---
+' --- Navigation Logic ---
+' Navigates the host system from the Application Selection Menu to the Interest Amendments screen
+' for the specified Sort Code and Account Number, using the Brand to determine the confirm code.
 Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean
     Dim confirmCode As String
     Dim starLoopCount As Long
-    Dim maxStarLoops As Long: maxStarLoops = 15 ' Prevent infinite loop
+    Const maxStarLoops As Long = 15 ' Maximum attempts for the STAR loop to prevent infinite loops
 
     NavigateToTargetScreen_Focus = False ' Default to failure
 
@@ -324,7 +349,7 @@ Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As 
         Case Else
             Debug.Print "NavigateFocus: Invalid Brand '" & brnd & "'. Cannot proceed."
             MsgBox "Invalid Brand specified: '" & brnd & "'. Navigation aborted.", vbExclamation, SCRIPT_TITLE
-            Exit Function
+            Exit Function ' Exit function immediately on invalid brand
     End Select
     Debug.Print "NavigateFocus: Using confirm code: " & confirmCode & " for Brand: " & brnd
 
@@ -333,85 +358,84 @@ Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As 
     If Not VerifyScreen_Focus(SCREEN_APP_MENU, 1, 28, 30) Then
          Debug.Print "NavigateFocus: Not starting on " & SCREEN_APP_MENU & "."
          MsgBox "Macro must start on '" & SCREEN_APP_MENU & "'. Please manually navigate and restart.", vbExclamation, SCRIPT_TITLE
-         Exit Function
+         Exit Function ' Exit function if not on the expected starting screen
     End If
-    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_APP_MENU
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_APP_MENU & "."
 
     ' --- Step 2: TERM ALL ---
     Debug.Print "NavigateFocus: Sending TERM ALL..."
+    ' SendData_Focus handles the initial WaitReady and the wait after Transmit
     Call SendData_Focus("TERM ALL", 21, 13, True)
     Debug.Print "NavigateFocus: Sent TERM ALL."
-    ' After TERM ALL, wait implicitly via SendData_Focus's internal WaitReady_Focus
+    ' The system should now be ready for the next command, waited for by SendData_Focus
 
-    ' --- Step 3: Brand Code ---
+    ' --- Step 3: Send Brand Code (e.g., PRCIR#T#) ---
     Debug.Print "NavigateFocus: Sending Brand code '" & confirmCode & "'..."
     Call SendData_Focus(confirmCode, 21, 13, True)
     Debug.Print "NavigateFocus: Sent Brand code."
     ' Wait implicitly via SendData_Focus's internal WaitReady_Focus
 
     ' --- Step 3a/b: Handle potential intermediate screens (Command not recognized, RBS Header, Blank) ---
-    ' Check for "Command not recognized" (R20, C36, L22)
+    ' Check for "Command not recognized" immediately after sending brand code
     Debug.Print "NavigateFocus: Checking for Command not recognized..."
     If VerifyScreen_Focus(SCREEN_CMD_NOT_RECOGNIZED, 20, 36, 22) Then
         Debug.Print "NavigateFocus: Brand code '" & confirmCode & "' not recognized. Navigation failed."
         MsgBox "Brand code '" & confirmCode & "' not recognized on the host system. Navigation aborted.", vbCritical, SCRIPT_TITLE
-        Exit Function
+        Exit Function ' Exit function on command error
     End If
     Debug.Print "NavigateFocus: Command not recognized screen NOT found."
 
-    ' Check for "ROYAL BANK OF SCOTLAND" header or blank screen, loop with STAR if needed
+    ' Check for Option Handler screen, or handle intermediate screens with STAR loop
     Debug.Print "NavigateFocus: Checking for Option Handler or intermediate screens..."
     starLoopCount = 0
-    ' Expected: OPT_HANDLER (R1, C26, L35)
+    ' Loop until Option Handler is reached or max attempts are exceeded
     Do While Not VerifyScreen_Focus(SCREEN_OPT_HANDLER_MAIN, 1, 26, 35) And starLoopCount < maxStarLoops
 
-        ' Check if RBS Header is present (happens on some logins/configurations)
+        ' Check if RBS Header is present (common on some logins/configurations)
         If VerifyScreen_Focus(SCREEN_RBS_HEADER, 1, 1, 24) Then
              Debug.Print "NavigateFocus: Detected " & SCREEN_RBS_HEADER & ". Sending Transmit."
-             Call SendKey_Focus(ControlKeyCode_Transmit, 500)
+             Call SendKey_Focus(ControlKeyCode_Transmit, 500) ' Send Transmit, wait (includes Security check)
              Debug.Print "NavigateFocus: Sent Transmit after " & SCREEN_RBS_HEADER
-             ' WaitReady_Focus is called by SendKey_Focus, handles Security Reminder implicitly.
-             ' After Transmit from RBS Header, screen *should* go towards Option Handler.
+             ' After Transmit from RBS Header, screen *should* progress.
+        ' Check if screen is effectively blank on the first line
         ElseIf Trim(RScreen.GetText(1, 1, 80)) = "" Then
              Debug.Print "NavigateFocus: Detected blank screen. Sending STAR."
-             Call SendData_Focus("STAR", 1, 1, True)
+             Call SendData_Focus("STAR", 1, 1, True) ' Send STAR and Transmit, wait (includes Security check)
              Debug.Print "NavigateFocus: Sent STAR to blank screen."
-             ' WaitReady_Focus is called by SendData_Focus, handles Security Reminder implicitly.
-             ' After STAR, screen *should* go towards Option Handler.
+             ' After STAR, screen *should* progress.
         Else
-             ' Unexpected screen. Print details and potentially exit loop early?
-             ' For robustness, let's just increment the counter and hope the STAR or Transmit eventually works or the loop times out.
-             ' A more complex script might try PF3 or other recovery steps here.
-             Debug.Print "NavigateFocus: On unexpected screen while waiting for " & SCREEN_OPT_HANDLER_MAIN & ". Title attempt R1C1L80: '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
+             ' Log unexpected screen content but continue looping up to max attempts
+             Debug.Print "NavigateFocus: On unexpected screen while waiting for " & SCREEN_OPT_HANDLER_MAIN & ". Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
         End If
 
         starLoopCount = starLoopCount + 1
-        Call WaitReady_Focus(500) ' Add a small pause inside the loop before re-checking
+        ' A brief pause before the next screen check is included within SendData_Focus or SendKey_Focus via WaitReady_Focus
 
+        ' Re-check if Option Handler is reached after attempting recovery
         If VerifyScreen_Focus(SCREEN_OPT_HANDLER_MAIN, 1, 26, 35) Then
             Debug.Print "NavigateFocus: Reached " & SCREEN_OPT_HANDLER_MAIN & " after " & starLoopCount & " attempts."
-            Exit Do ' Successfully reached Option Handler
+            Exit Do ' Successfully reached Option Handler, exit STAR loop
         End If
 
     Loop
 
-    ' Final check after the loop
+    ' Final verification after the loop
     If Not VerifyScreen_Focus(SCREEN_OPT_HANDLER_MAIN, 1, 26, 35) Then
-         ' Optionally check for the SP2001 subtitle as source code did
+         ' Optionally check for the SP2001 subtitle as source code did, combined with main title check
          If Not (InStr(1, UCase(Trim(RScreen.GetText(2, 1, 80))), UCase(SCREEN_OPT_HANDLER_SUB)) > 0 _
                 And VerifyScreen_Focus(SCREEN_OPT_HANDLER_MAIN, 1, 26, 35)) Then ' Re-verify main title with subtitle
               Debug.Print "NavigateFocus: Did not reach " & SCREEN_OPT_HANDLER_MAIN & " after maximum attempts (" & maxStarLoops & "). Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
               MsgBox "Failed to navigate to Option Handler screen. Navigation aborted.", vbCritical, SCRIPT_TITLE
-              Exit Function
+              Exit Function ' Exit function if navigation failed after loop
          Else
               Debug.Print "NavigateFocus: Reached " & SCREEN_OPT_HANDLER_MAIN & " (verified with " & SCREEN_OPT_HANDLER_SUB & " subtitle)."
          End If
     Else
-        Debug.Print "NavigateFocus: Confirmed on " & SCREEN_OPT_HANDLER_MAIN
+        Debug.Print "NavigateFocus: Confirmed on " & SCREEN_OPT_HANDLER_MAIN & "."
     End If
 
 
-    ' --- Step 4: Option 19 ---
+    ' --- Step 4: Option 19 (Back Office System) ---
     Debug.Print "NavigateFocus: Sending 19..."
     Call SendData_Focus("19", 21, 16, True)
     Debug.Print "NavigateFocus: Sent 19."
@@ -419,12 +443,12 @@ Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As 
     Debug.Print "NavigateFocus: Verifying screen: " & SCREEN_BO_SYSTEM
     If Not VerifyScreen_Focus(SCREEN_BO_SYSTEM, 1, 7, 20) Then
         Debug.Print "NavigateFocus: Did not reach " & SCREEN_BO_SYSTEM & ". Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
-        MsgBox "Failed to navigate to Back Office System menu. Navigation aborted.", vbCritical, SCRIPT_TITLE
-        Exit Function
+         MsgBox "Failed to navigate to Back Office System menu. Navigation aborted.", vbCritical, SCRIPT_TITLE
+        Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_BO_SYSTEM
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_BO_SYSTEM & "."
 
-    ' --- Step 5: Option 01 ---
+    ' --- Step 5: Option 01 (Master Index) ---
     Debug.Print "NavigateFocus: Sending 01..."
     Call SendData_Focus("01", 22, 16, True)
     Debug.Print "NavigateFocus: Sent 01."
@@ -433,79 +457,78 @@ Private Function NavigateToTargetScreen_Focus(ByVal sc As String, ByVal acct As 
     If Not VerifyScreen_Focus(SCREEN_MASTER_INDEX, 1, 28, 12) Then
         Debug.Print "NavigateFocus: Did not reach " & SCREEN_MASTER_INDEX & ". Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
          MsgBox "Failed to navigate to Master Index. Navigation aborted.", vbCritical, SCRIPT_TITLE
-        Exit Function
+        Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_MASTER_INDEX
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_MASTER_INDEX & "."
 
-    ' --- Step 6: Master Index - Action 20, Sort Code ---
-    ' Using Format to ensure correct zero-padding as per source code logic example
+    ' --- Step 6: Master Index - Action 20 (File Maintenance Input Index), Enter Sort Code ---
+    ' Use Format to ensure correct zero-padding (e.g., "000000")
     Dim formattedSC As String: formattedSC = Format(sc, "000000")
     Debug.Print "NavigateFocus: Sending 20 + S/C " & formattedSC & "..."
     Call WaitReady_Focus(100) ' Settle before multi-part input
-    RScreen.PutText2 "20", 22, 8
-    RScreen.PutText2 formattedSC, 22, 74
-    Call SendKey_Focus(ControlKeyCode_Transmit, 1000) ' Send Transmit, wait 1s
+    RScreen.PutText2 "20", 22, 8 ' Action field
+    RScreen.PutText2 formattedSC, 22, 74 ' Sort Code field
+    Call SendKey_Focus(ControlKeyCode_Transmit, 1000) ' Send Transmit, wait 1s (WaitReady includes Security check)
     Debug.Print "NavigateFocus: Sent 20 + S/C."
     ' Expected: FILE_MAINT_IDX (R1,C21, L30)
     Debug.Print "NavigateFocus: Verifying screen: " & SCREEN_FILE_MAINT_IDX
     If Not VerifyScreen_Focus(SCREEN_FILE_MAINT_IDX, 1, 21, 30) Then
         Debug.Print "NavigateFocus: Did not reach " & SCREEN_FILE_MAINT_IDX & ". Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
          MsgBox "Failed to navigate to File Maintenance Index. Navigation aborted.", vbCritical, SCRIPT_TITLE
-        Exit Function
+        Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_FILE_MAINT_IDX
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_FILE_MAINT_IDX & "."
 
-    ' --- Step 7: File Maint Idx - Action 20, Account Number ---
-    ' Using Format to ensure correct zero-padding as per source code logic example
-    ' NOTE: Keeping Action 20 here as per target code flow, leads to INTERNAL TXNS,
-    ' unlike source code's Action 01 leading to CUSTOMER INFO INDEX.
+    ' --- Step 7: File Maint Idx - Action 20 (Internal Txns), Enter Account Number ---
+    ' Use Format to ensure correct zero-padding (e.g., "00000000")
     Dim formattedAcct As String: formattedAcct = Format(acct, "00000000")
     Debug.Print "NavigateFocus: Sending 20 + A/N " & formattedAcct & "..."
     Call WaitReady_Focus(100)
-    RScreen.PutText2 "20", 22, 8
-    RScreen.PutText2 formattedAcct, 22, 21
+    RScreen.PutText2 "20", 22, 8 ' Action field
+    RScreen.PutText2 formattedAcct, 22, 21 ' Account Number field
     Call SendKey_Focus(ControlKeyCode_Transmit, 1000)
     Debug.Print "NavigateFocus: Sent 20 + A/N."
-    ' Expected: INTERNAL_TXNS (R1,C19)
+    ' Expected: INTERNAL_TXNS (R1,C19) - Note: This is the screen reached via Action 20
     Debug.Print "NavigateFocus: Verifying screen: " & SCREEN_INTERNAL_TXNS
-    If Not VerifyScreen_Focus(SCREEN_INTERNAL_TXNS, 1, 19, Len(SCREEN_INTERNAL_TXNS)) Then ' Added length based on constant
+    If Not VerifyScreen_Focus(SCREEN_INTERNAL_TXNS, 1, 19, Len(SCREEN_INTERNAL_TXNS)) Then ' Use Length based on constant
         Debug.Print "NavigateFocus: Did not reach " & SCREEN_INTERNAL_TXNS & ". Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
          MsgBox "Failed to navigate to Internal Transactions screen. Navigation aborted.", vbCritical, SCRIPT_TITLE
-        Exit Function
+        Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_INTERNAL_TXNS
+    Debug.Print "NavigateFocus: Confirmed on " & SCREEN_INTERNAL_TXNS & "."
 
-    ' --- Step 8: Internal Txns - Action 04 ---
-    ' This should lead to the INTEREST AMENDMENTS screen
+    ' --- Step 8: Internal Txns - Action 04 (Interest Amendments) ---
     Debug.Print "NavigateFocus: Sending 04..."
     Call SendData_Focus("04", 22, 8, True)
     Debug.Print "NavigateFocus: Sent 04."
 
-    ' Target screen: INTEREST_AMENDMENTS (R1, C30 estimate - VERIFY THIS)
-    Debug.Print "NavigateFocus: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS
+    ' --- Step 9: Verify arrival at the target screen (Interest Amendments) ---
+    Debug.Print "NavigateFocus: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS & " or fallback " & SCREEN_INTEREST_DETAILS_SUB
+    ' Check for the primary target screen title (Interest Amendments)
     If VerifyScreen_Focus(SCREEN_INTEREST_AMENDMENTS, 1, 30, Len(SCREEN_INTEREST_AMENDMENTS)) Then
-        Debug.Print "NavigateFocus: Successfully reached " & SCREEN_INTEREST_AMENDMENTS & "."
+        Debug.Print "NavigateFocus: Successfully reached primary target: " & SCREEN_INTEREST_AMENDMENTS & "."
         NavigateToTargetScreen_Focus = True ' Navigation Success!
     Else
-        ' Fallback: Check for "INTEREST DETAILS" on Line 2 (R2, C30 estimate)
-        Debug.Print "NavigateFocus: " & SCREEN_INTEREST_AMENDMENTS & " not found. Checking for fallback screen: " & SCREEN_INTEREST_DETAILS_SUB
+        ' If primary not found, check for the fallback screen title (Interest Details)
+        Debug.Print "NavigateFocus: Primary target '" & SCREEN_INTEREST_AMENDMENTS & "' not found. Checking for fallback screen: '" & SCREEN_INTEREST_DETAILS_SUB & "'."
         If VerifyScreen_Focus(SCREEN_INTEREST_DETAILS_SUB, 2, 30, Len(SCREEN_INTEREST_DETAILS_SUB)) Then
              Debug.Print "NavigateFocus: Successfully reached fallback screen: " & SCREEN_INTEREST_DETAILS_SUB & "."
-             ' If reaching the details screen is acceptable as the target, set to True
+             ' Reaching the Details screen is considered a success for getting to interest info
              NavigateToTargetScreen_Focus = True
-             ' OR, if only the Amendment screen is acceptable, keep NavigateToTargetScreen_Focus = False and exit.
-             ' Assuming reaching the Details screen is a valid stop point for checking, let's set it to True.
         Else
+            ' Neither target nor fallback screen was reached
             Debug.Print "NavigateFocus: Did not reach " & SCREEN_INTEREST_AMENDMENTS & " or " & SCREEN_INTEREST_DETAILS_SUB & "."
             Debug.Print "NavigateFocus: Last screen title (R1C1L80): '" & Trim(RScreen.GetText(1, 1, 80)) & "'"
             MsgBox "Failed to navigate to the expected Interest screen. Navigation aborted.", vbCritical, SCRIPT_TITLE
-            NavigateToTargetScreen_Focus = False ' Still a navigation failure
+            NavigateToTargetScreen_Focus = False ' Navigation failed
         End If
     End If
 
-    ' The function returns NavigateToTargetScreen_Focus (True/False)
+    ' The function returns NavigateToTargetScreen_Focus (True/False) indicating success or failure.
 End Function
 
-' Note: BackToMasterIndex from the source code is not included here
-' as this module's navigation function is only responsible for getting *to* the target screen.
-' You can add a separate sub like GoBackToMainMenu_Focus if needed for post-amendment cleanup.
+' Note: Functions from the source code related to database access, user login, date formatting,
+' and the actual Interest/Charges checking logic (which occurs *after* navigation)
+' are not included here as they are outside the scope of this navigation module.
+' You would typically call this navigation function from a main loop and then
+' add your specific interest/charges checking or amendment logic *after* a successful navigation.
