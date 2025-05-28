@@ -392,32 +392,48 @@ End Function
 ' Supporting Attachmate Interaction Functions (from your provided code)
 '===============================================================================
 Sub ConnectExtra()
-On Error GoTo MyHandler
+    Dim edpPathFromSheet As String
+    Dim sheetExists As Boolean
+    Dim controlExists As Boolean
+    Dim ws As Worksheet
+    Dim currentAction As String ' For debugging
 
-    ' --- IMPORTANT: Ensure Sheet4.txtEDPPath.text is valid or modify this section ---
-    ' For example, to always ask the user if Sheet4 is not set up:
-    ' If ThisWorkbook.Sheets("Sheet4").txtEDPPath.Text = "" Then
-    '     stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
-    ' Else
-    '     stEDPFile = ThisWorkbook.Sheets("Sheet4").txtEDPPath.Text
-    ' End If
-    
-    ' Assuming Sheet4 and txtEDPPath exist as per original code.
-    ' If you don't have Sheet4 or want a different method, adjust this part.
-    If IsObject(Application.Evaluate("Sheet4.txtEDPPath")) Then ' Basic check
-        If Sheet4.txtEDPPath.Text = "" Then
-             stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
-        Else
-            stEDPFile = Sheet4.txtEDPPath.Text
+    On Error GoTo MyHandler ' General error handler for the sub
+
+    currentAction = "Initializing ConnectExtra"
+
+    ' --- Attempt to get path from Sheet4.txtEDPPath ---
+    edpPathFromSheet = ""
+    sheetExists = False
+    controlExists = False
+
+    currentAction = "Checking Sheet4 and txtEDPPath"
+    On Error Resume Next ' Temporarily ignore error if Sheet4 doesn't exist
+    Set ws = Sheet4
+    If Err.Number = 0 Then
+        sheetExists = True
+        Dim OleObj As OLEObject
+        Set OleObj = Nothing
+        Set OleObj = ws.OLEObjects("txtEDPPath")
+        If Err.Number = 0 Then
+            If TypeOf OleObj.Object Is MSForms.TextBox Then
+                controlExists = True
+                edpPathFromSheet = OleObj.Object.Text
+            End If
         End If
-    Else ' Fallback if Sheet4 or txtEDPPath doesn't exist
-        stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice (Sheet4 not found)", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+    End If
+    On Error GoTo MyHandler ' Restore general error handling
+
+    If sheetExists And controlExists And edpPathFromSheet <> "" Then
+        stEDPFile = edpPathFromSheet
+    Else
+        ' ... (messaging for user to select file - this part seems to work as you got the dialog) ...
+        stEDPFile = Application.GetOpenFilename(title:="Please choose a Reflection Session : Backoffice", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
-
-    If stEDPFile = "False" Or stEDPFile = "" Then ' User cancelled or no file chosen
+    If stEDPFile = "False" Or stEDPFile = "" Then
         MsgBox "No session file selected. Exiting.", vbCritical, sPrj_Name
-        Set obScreen = Nothing ' Ensure obScreen is Nothing so main sub can exit
+        Set obScreen = Nothing
         Exit Sub
     End If
     
@@ -428,87 +444,85 @@ On Error GoTo MyHandler
     Mysession = Split(strBoPath, "\")
     sessionName = Mysession(UBound(Mysession))
     
-    ' Try to get an existing instance or create a new one
-    On Error Resume Next ' To handle GetObject failing if not running
+    currentAction = "Getting/Creating Reflection Application Object"
+    On Error Resume Next ' Temporarily allow GetObject to fail
     Set app = GetObject("Reflection Workspace")
     If Err.Number <> 0 Then
         Err.Clear
-        Set app = CreateObject("Reflection Workspace") ' Or "Attachmate.Reflection.Workspace"
-        If app Is Nothing Then
-            MsgBox "Could not create Reflection Workspace object.", vbCritical, sPrj_Name
-            Exit Sub
+        Set app = CreateObject("Reflection Workspace")
+        If app Is Nothing Then ' This check is if CreateObject itself fails
+            MsgBox "Could not GetObject or CreateObject 'Reflection Workspace'. Ensure Reflection is installed and libraries are referenced.", vbCritical, sPrj_Name
+            GoTo MyHandler ' Jump to handler to set obScreen = Nothing
         End If
     End If
-    On Error GoTo MyHandler ' Restore error handling
+    On Error GoTo MyHandler ' Restore general error handling for subsequent operations
 
-    With app
-         Do While .IsInitialized = False
-           .Wait 200 ' Wait method might differ based on exact Reflection version
-         Loop
-         Set ThisFrame = .GetObject("Frame") ' GetObject might need specific syntax
-         If ThisFrame Is Nothing Then ' If no frame, try creating one
-             Set ThisFrame = app.CreateFrame
-         End If
-         ThisFrame.Visible = True
-    End With
-    
-    ' Attempt to find the session if already open, or open it
+    If app Is Nothing Then ' Should have been caught above, but as a safeguard
+        MsgBox "Reflection Application object ('app') is Nothing after Get/Create.", vbCritical, sPrj_Name
+        GoTo MyHandler
+    End If
+
+    Debug.Print "TypeName of app object: " & TypeName(app) ' Check what object type we got
+
+    currentAction = "Waiting for app initialization"
+    ' --- Modification: Some versions might not support IsInitialized or Wait well ---
+    ' --- Let's try to proceed carefully or with a simple delay ---
+    ' Do While app.IsInitialized = False  ' <<< Potential failure point
+    '   app.Wait 200                     ' <<< Potential failure point
+    ' Loop
+    Application.Wait (Now + TimeValue("0:00:02")) ' Simple 2-second pause instead
+
+    currentAction = "Getting/Creating Frame"
+    Set ThisFrame = app.Frame ' Simpler way to get the frame if available
+    If ThisFrame Is Nothing Then
+        Set ThisFrame = app.GetObject("Frame") ' Try original way
+        If ThisFrame Is Nothing Then
+            Set ThisFrame = app.CreateFrame ' Try creating if still nothing
+             If ThisFrame Is Nothing Then
+                MsgBox "Could not Get or Create Reflection Frame object.", vbCritical, sPrj_Name
+                GoTo MyHandler
+             End If
+        End If
+    End If
+    ThisFrame.Visible = True
+
+    currentAction = "Finding or Creating View for session: " & sessionName
     Dim sessionIsOpen As Boolean
     sessionIsOpen = False
-    For Each osView In ThisFrame.Views
-        If InStr(1, osView.TitleText, sessionName, vbTextCompare) > 0 Then
-            sessionIsOpen = True
-            Exit For
-        End If
-    Next osView
+    Dim tempView As Object
+    
+    If ThisFrame.Views.Count > 0 Then ' Check if Views collection exists and has items
+        For Each tempView In ThisFrame.Views
+            If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
+                Set osView = tempView
+                sessionIsOpen = True
+                Exit For
+            End If
+        Next tempView
+    End If
 
     If Not sessionIsOpen Then
-        Set osView = ThisFrame.CreateView(strBoPath) ' Open the session
+        Set osView = ThisFrame.CreateView(strBoPath)
         If osView Is Nothing Then
-            MsgBox "Could not open session: " & strBoPath, vbCritical, sPrj_Name
-            Exit Sub
+            MsgBox "Could not open or create view for session: " & strBoPath, vbCritical, sPrj_Name
+            GoTo MyHandler
         End If
     End If
     
+    currentAction = "Getting Terminal Control and Screen"
     Set ibmTerminal = osView.Control
     Set obScreen = ibmTerminal.Screen
     
+    currentAction = "Setting Terminal Properties"
     ibmTerminal.DisableKeystrokeProductivity = True
     ibmTerminal.DisableScreenHistory = True
     
-    Exit Sub
+    currentAction = "ConnectExtra Successful"
+    Exit Sub ' Successful exit
                          
 MyHandler:
-    MsgBox "Session connection error: " & Err.Description & vbNewLine & vbNewLine & "You may need to open: " & sessionName & " manually or check session path.", vbCritical, sPrj_Name
-    Set obScreen = Nothing ' Ensure obScreen is Nothing so main sub can exit
+    MsgBox "Session connection error during: '" & currentAction & "'" & vbNewLine & _
+           "Error: " & Err.Description & " (Error No. " & Err.Number & ")" & vbNewLine & vbNewLine & _
+           "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
+    Set obScreen = Nothing
 End Sub
-
-Function Validate_Screen(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
-    If obScreen Is Nothing Then Validate_Screen = False: Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    
-    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
-        Validate_Screen = True
-    Else
-        Validate_Screen = False
-    End If
-End Function
-
-Function WaitForScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    Do While obScreen.OIA.XStatus <> 0
-        obScreen.WaitForHostSettle 50, 20
-    Loop
-    Call Check_SecurityScreen
-End Function
-
-Function Check_SecurityScreen()
-    If obScreen Is Nothing Then Exit Function ' Safety check
-    If Validate_Screen("SECURITY REMINDER", 1, 29, 20) = True Then
-        obScreen.PutText2 "Y", 22, 11
-        obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitForScreen
-    End If
-End Function
