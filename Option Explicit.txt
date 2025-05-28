@@ -145,11 +145,22 @@ Sub ProcessAccounts_V3()
     On Error GoTo 0
     Debug.Print SCRIPT_TITLE & ": Successfully got worksheet '" & DATA_SHEET_NAME & "'."
 
-    ' 3. Find the last row with data in Column A
+        ' 3. Find the last row with data in Column A
     Dim lastRow As Long
-    lastRow = ws.Cells(Rows.Count, COL_SORT_CODE).End(xlUp).Row
+
+    ' Ensure ws object is valid before using it
+    If ws Is Nothing Then
+         Debug.Print SCRIPT_TITLE & ": Error - ws object is Nothing before finding last row."
+         MsgBox "Internal Error: Worksheet object is not set.", vbCritical, SCRIPT_TITLE
+         GoTo CleanupAndExit
+    End If
+
+    ' Calculate last row in Column A
+    lastRow = ws.Cells(ws.Rows.Count, COL_SORT_CODE).End(xlUp).Row
+    Debug.Print SCRIPT_TITLE & ": lastRow calculated as: " & lastRow & " in column " & COL_SORT_CODE
 
     If lastRow < FIRST_DATA_ROW Then
+        Debug.Print SCRIPT_TITLE & ": Calculated lastRow (" & lastRow & ") is less than FIRST_DATA_ROW (" & FIRST_DATA_ROW & ")."
         MsgBox "No data found in column A starting from row " & FIRST_DATA_ROW & ".", vbInformation, SCRIPT_TITLE
         GoTo CleanupAndExit
     End If
