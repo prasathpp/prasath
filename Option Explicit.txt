@@ -1,4 +1,4 @@
-' Attribute VB_Name = "mod_BackOffice_Automation_V2_Navigation" ' Module name reflecting version and purpose
+' Attribute VB_Name = "mod_BackOffice_Automation_V2_TermAll" ' Module name reflecting version and purpose
 Option Explicit
 
 ' --- Reflection COM Object Declarations ---
@@ -23,7 +23,7 @@ Private Const COL_STATUS As Long = 8 ' Column H (for recording status)
 ' *** IMPORTANT: This must match the window title EXACTLY! ***
 Private Const SESSION_TITLE_PART As String = "NTS Back Office - Prod.rd3x"
 
-' --- Screen Title Constants and Coordinates (Version 2) ---
+' --- Screen Title Constants and Coordinates (Version 2 TermAll) ---
 Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
 Private Const SCREEN_APP_MENU_ROW As Long = 1
 Private Const SCREEN_APP_MENU_COL As Long = 28
@@ -52,7 +52,7 @@ Private Const SCREEN_FILE_MAINT_IDX_LENGTH As Long = 30
 Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
 Private Const SCREEN_INTERNAL_TXNS_ROW As Long = 1
 Private Const SCREEN_INTERNAL_TXNS_COL As Long = 19
-Private Const SCREEN_INTERNAL_TXNS_LENGTH As String = 21
+Private Const SCREEN_INTERNAL_TXNS_LENGTH As Long = 21
 
 Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMNEDMENTS" ' Note: Based on screenshot, "AMNEDMENTS"
 Private Const SCREEN_INTEREST_AMENDMENTS_ROW As Long = 1
@@ -95,16 +95,16 @@ Private Const INTERNAL_TXNS_ACTION_COL As Long = 8
 
 
 ' --- Script Title for MsgBoxes / Debugging ---
-Private Const SCRIPT_TITLE As String = "Back Office Automation V2"
+Private Const SCRIPT_TITLE As String = "Back Office Automation V2 TermAll"
 
 
-' --- Main Entry Sub (Version 2 - Process Multiple Accounts) ---
+' --- Main Entry Sub (Version 2 TermAll - Process Multiple Accounts) ---
 ' This is the procedure you will run to read data from Excel,
 ' connect to Reflection, and navigate for each account.
-Sub ProcessAccounts_V2()
+Sub ProcessAccounts_V2_TermAll() ' Main sub name updated
     On Error GoTo ErrorHandler
 
-    Debug.Print "--- Starting " & SCRIPT_TITLE & " - Process Accounts ---"
+    Debug.Print "--- Starting " & SCRIPT_TITLE & " ---"
 
     Dim ws As Worksheet
     Dim currentRow As Long
@@ -112,7 +112,7 @@ Sub ProcessAccounts_V2()
     Dim navigationSuccess As Boolean
 
     ' 1. Connect to Reflection
-    If Not ConnectToReflection_V2(SESSION_TITLE_PART) Then
+    If Not ConnectToReflection_V2_TermAll(SESSION_TITLE_PART) Then ' Function name updated
         MsgBox "Failed to connect to Reflection session: '" & SESSION_TITLE_PART & "'." & vbCrLf & _
                "Ensure session is open and Automation is enabled.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit
@@ -124,7 +124,7 @@ Sub ProcessAccounts_V2()
     Set ws = ThisWorkbook.Worksheets(DATA_SHEET_NAME)
     If ws Is Nothing Then
         On Error GoTo 0
-        MsgBox "Could not find worksheet named '" & DATA_SHEET_NAME & "'. Please check the sheet name.", vbCritical, SCRIPT_TITLE
+        MsgBox "Could not find worksheet named '" & DATA_SHEET_NAME + "'. Please check the sheet name.", vbCritical, SCRIPT_TITLE
         GoTo CleanupAndExit ' Clean up Reflection objects before exiting
     End If
     On Error GoTo 0
@@ -156,41 +156,42 @@ Sub ProcessAccounts_V2()
             Debug.Print SCRIPT_TITLE & ": Skipping Row " & currentRow & " - Missing Sort Code, Account, or Brand."
             ws.Cells(currentRow, COL_STATUS).Value = "Skipped - Missing Data"
             GoTo NextRow ' Skip to the next iteration of the loop
-        End EndIf
+        End If ' Corrected from End EndIf
+
 
         ' 5. Navigate to the target screen for this account
         ' The navigation function will also handle screen checks and intermediate steps
-        navigationSuccess = NavigateToInterestAmendments_V2(sortCode, accountNumber, brand)
+        navigationSuccess = NavigateToInterestAmendments_V2_TermAll(sortCode, accountNumber, brand) ' Function name updated
 
         ' 6. Record the navigation status in the Excel sheet
         If navigationSuccess Then
             Debug.Print SCRIPT_TITLE & ": Navigation successful for Row " & currentRow & "."
             ws.Cells(currentRow, COL_STATUS).Value = "Navigated - OK"
-            ' *** PLACEHOLDER FOR CORE BUSINESS LOGIC ***
-            ' If navigation was successful, you would call other subs/functions here
-            ' to perform the actual interest amendment/checking using objScreen.
-            ' Remember to handle navigating back to the main menu or exiting the screen
-            ' after processing each account before the loop moves to the next row.
-            ' For now, this version just navigates and stops.
-            ' To allow manual checking, you could add a MsgBox here:
+            ' *** PLACEHOLDER FOR CORE BUSINESS LOGIC (Interest Amendment/Checking) ***
+            ' This is where you would add code to interact with the screens
+            ' to perform the actual interest amendment or checking steps.
+            ' For now, this version just navigates *to* the screen.
+
+            ' To allow manual checking after navigation, you could add a MsgBox here:
              MsgBox "PAUSED: On target screen for S/C: " & sortCode & ", A/N: " & accountNumber & vbInformation, SCRIPT_TITLE
             ' To proceed without pausing, remove the MsgBox above.
             ' *** END PLACEHOLDER ***
 
-             ' After processing (or pausing), navigate back to a base screen like the Application Menu
-             ' or Master Index so the next account can be processed cleanly.
-             ' This requires implementing a BackToMenu_V2 or similar function.
-             ' For now, we'll just assume the user might handle this manually if pausing.
-             ' If automating fully, add the navigation back logic here.
+             ' After processing (or pausing), you MUST add logic to navigate BACK
+             ' to a base screen like the Application Menu or Master Index,
+             ' or log off the session, so the loop can process the next account cleanly.
+             ' This requires implementing a BackToMenu_V2_TermAll or similar function.
+             ' For now, the script will pause (if MsgBox is active) and then proceed to the next row,
+             ' assuming the user manually handles the navigation back. This is NOT recommended for full automation.
 
 
         Else
-            Debug.Print SCRIPT_TITLE & ": Navigation failed for Row " & currentRow & "."
+            Debug.Print SCRIPT_TITLE & ": Navigation Failed for Row " & currentRow & "."
             ws.Cells(currentRow, COL_STATUS).Value = "Navigation Failed"
             ' The navigation function will show specific error messages during failure
         End If
 
-NextRow:
+NextRow: ' Label for the GoTo statement
         ' Loop moves to the next row automatically
 
     Next currentRow
@@ -200,94 +201,94 @@ NextRow:
 
 CleanupAndExit:
     ' 7. Clean up the Reflection objects after the loop finishes or on error
-    Call CleanUpReflectionObjects_V2
+    Call CleanUpReflectionObjects_V2_TermAll ' Function name updated
     Set ws = Nothing
 
     Debug.Print "--- Finished " & SCRIPT_TITLE & " ---"
 End Sub
 
 
-' --- Connection Logic (Version 2) ---
+' --- Connection Logic (Version 2 TermAll) ---
 ' Connects to an existing Reflection Workspace and finds the specified session
 ' using GetViewByTitleText.
 ' Returns True if connection and object retrieval is successful, False otherwise.
-Private Function ConnectToReflection_V2(ByVal targetSessionExactTitle As String) As Boolean
-    On Error GoTo ConnectErrorHandler_V2
-    ConnectToReflection_V2 = False ' Assume failure initially
+Private Function ConnectToReflection_V2_TermAll(ByVal targetSessionExactTitle As String) As Boolean ' Function name updated
+    On Error GoTo ConnectErrorHandler_V2_TermAll ' Error handler label updated
+    ConnectToReflection_V2_TermAll = False ' Assume failure initially
 
-    Debug.Print "Connect_V2: Attempting GetObject(""Reflection Workspace"")..."
+    Debug.Print "Connect_V2_TermAll: Attempting GetObject(""Reflection Workspace"")..." ' Debug print updated
     On Error Resume Next ' Temporarily disable error handling for GetObject
     Set objReflectionApp = GetObject("Reflection Workspace")
     If Err.Number <> 0 Or objReflectionApp Is Nothing Then
         Err.Clear ' Clear the "Object not found" error
-        Debug.Print "Connect_V2: GetObject(""Reflection Workspace"") FAILED."
+        Debug.Print "Connect_V2_TermAll: GetObject(""Reflection Workspace"") FAILED." ' Debug print updated
         MsgBox "Could not connect to Reflection Workspace." & vbCrLf & _
                "Please ensure Reflection is running and that 'Enable Reflection Automation' is checked in Reflection settings.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit the function indicating failure
     End If
-    Debug.Print "Connect_V2: RApp obtained. TypeName: " & TypeName(objReflectionApp)
-    On Error GoTo ConnectErrorHandler_V2 ' Restore error handling
+    Debug.Print "Connect_V2_TermAll: RApp obtained. TypeName: " & TypeName(objReflectionApp) ' Debug print updated
+    On Error GoTo ConnectErrorHandler_V2_TermAll ' Restore error handling
 
-    Debug.Print "Connect_V2: Attempting objReflectionApp.GetObject(""Frame"")..."
+    Debug.Print "Connect_V2_TermAll: Attempting objReflectionApp.GetObject(""Frame"")..." ' Debug print updated
     Set objFrame = objReflectionApp.GetObject("Frame")
-    If objFrame Is Nothing Then Debug.Print "Connect_V2: Frame object is Nothing.": Exit Function
-    Debug.Print "Connect_V2: objFrame obtained. TypeName: " & TypeName(objFrame)
+    If objFrame Is Nothing Then Debug.Print "Connect_V2_TermAll: Frame object is Nothing.": Exit Function ' Debug print updated
+    Debug.Print "Connect_V2_TermAll: objFrame obtained. TypeName: " & TypeName(objFrame) ' Debug print updated
 
     ' Ensure the frame is visible and brought to front (optional but helpful)
     If Not objFrame.Visible Then objFrame.Visible = True
     objFrame.Activate ' Brings the main Reflection Workspace window to front
-    Debug.Print "Connect_V2: Frame Visible/Activated."
+    Debug.Print "Connect_V2_TermAll: Frame Visible/Activated." ' Debug print updated
 
     ' ** Using GetViewByTitleText as it previously seemed to work for finding the view **
-    Debug.Print "Connect_V2: Attempting objFrame.GetViewByTitleText(""" & targetSessionExactTitle & """)..."
+    Debug.Print "Connect_V2_TermAll: Attempting objFrame.GetViewByTitleText(""" & targetSessionExactTitle & """)..." ' Debug print updated
     On Error Resume Next ' Allow GetViewByTitleText to fail if title doesn't match
     Set objView = objFrame.GetViewByTitleText(targetSessionExactTitle)
     If Err.Number <> 0 Or objView Is Nothing Then
         Err.Clear ' Clear the "Object not found" error
-        Debug.Print "Connect_V2: objFrame.GetViewByTitleText FAILED or returned Nothing."
+        Debug.Print "Connect_V2_TermAll: objFrame.GetViewByTitleText FAILED or returned Nothing." ' Debug print updated
         MsgBox "Could not find a Reflection session with the EXACT title: '" & targetSessionExactTitle & "'." & vbCrLf & _
                "Please ensure the correct session file is open in Reflection and its window title matches exactly.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if the target view was not found
     End If
-    Debug.Print "Connect_V2: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
-    On Error GoTo ConnectErrorHandler_V2 ' Restore error handling
+    Debug.Print "Connect_V2_TermAll: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView) ' Debug print updated
+    On Error GoTo ConnectErrorHandler_V2_TermAll ' Restore error handling
 
     ' ** Skipping explicit objView.Activate to avoid previous Error 438 **
-    Debug.Print "Connect_V2: Skipping objView.Activate to avoid previous Error 438."
+    Debug.Print "Connect_V2_TermAll: Skipping objView.Activate to avoid previous Error 438." ' Debug print updated
 
-    Debug.Print "Connect_V2: Attempting objView.Control..."
+    Debug.Print "Connect_V2_TermAll: Attempting objView.Control..." ' Debug print updated
     Set objTerminal = objView.Control
-    If objTerminal Is Nothing Then Debug.Print "Connect_V2: Terminal object is Nothing.": Exit Function
-    Debug.Print "Connect_V2: objTerminal obtained. TypeName: " & TypeName(objTerminal)
+    If objTerminal Is Nothing Then Debug.Print "Connect_V2_TermAll: Terminal object is Nothing.": Exit Function ' Debug print updated
+    Debug.Print "Connect_V2_TermAll: objTerminal obtained. TypeName: " & TypeName(objTerminal) ' Debug print updated
 
-    Debug.Print "Connect_V2: Attempting objTerminal.Screen..."
+    Debug.Print "Connect_V2_TermAll: Attempting objTerminal.Screen..." ' Debug print updated
     Set objScreen = objTerminal.Screen
-    If objScreen Is Nothing Then Debug.Print "Connect_V2: Screen object is Nothing.": Exit Function
-    Debug.Print "Connect_V2: objScreen obtained. TypeName: " & TypeName(objScreen)
+    If objScreen Is Nothing Then Debug.Print "Connect_V2_TermAll: Screen object is Nothing.": Exit Function ' Debug print updated
+    Debug.Print "Connect_V2_TermAll: objScreen obtained. TypeName: " & TypeName(objScreen) ' Debug print updated
 
     ' Optional but recommended settings for automation (ignore errors if properties don't exist)
     On Error Resume Next
     objTerminal.DisableKeystrokeProductivity = True ' Disable features that might interfere with scripting input
-    If Err.Number <> 0 Then Debug.Print "Connect_V2: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear
+    If Err.Number <> 0 Then Debug.Print "Connect_V2_TermAll: Info - Error setting DisableKeystrokeProductivity: " & Err.Description: Err.Clear ' Debug print updated
     objTerminal.DisableScreenHistory = True ' Disable screen history if not needed
-    If Err.Number <> 0 Then Debug.Print "Connect_V2: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear
-    On Error GoTo ConnectErrorHandler_V2 ' Restore error handling
+    If Err.Number <> 0 Then Debug.Print "Connect_V2_TermAll: Info - Error setting DisableScreenHistory: " & Err.Description: Err.Clear ' Debug print updated
+    On Error GoTo ConnectErrorHandler_V2_TermAll ' Restore error handling
 
-    ConnectToReflection_V2 = True ' Connection successful
-    Debug.Print "Connect_V2: All core Reflection objects set successfully."
+    ConnectToReflection_V2_TermAll = True ' Connection successful
+    Debug.Print "Connect_V2_TermAll: All core Reflection objects set successfully." ' Debug print updated
     Exit Function ' Exit function indicating success
 
-ConnectErrorHandler_V2:
+ConnectErrorHandler_V2_TermAll: ' Error handler label updated
     ' Generic error handler for the connection function
-    Debug.Print "Connect_V2: Error (captured) - " & Err.Number & ": " & Err.Description
-    ConnectToReflection_V2 = False ' Ensure function returns False on any error
+    Debug.Print "Connect_V2_TermAll: Error (captured) - " & Err.Number & ": " & Err.Description ' Debug print updated
+    ConnectToReflection_V2_TermAll = False ' Ensure function returns False on any error
     ' A specific error message box might be added here if not handled by specific checks above
     Exit Function ' Exit function on error
 End Function
 
 
 ' Releases the Reflection COM objects to free up resources.
-Private Sub CleanUpReflectionObjects_V2()
+Private Sub CleanUpReflectionObjects_V2_TermAll() ' Function name updated
     On Error Resume Next ' Ignore errors during cleanup
 
     Set objScreen = Nothing
@@ -300,13 +301,13 @@ Private Sub CleanUpReflectionObjects_V2()
     Debug.Print SCRIPT_TITLE & ": Reflection objects released."
 End Sub
 
-' --- Screen Interaction Helpers (Version 2 - Manual Wait) ---
+' --- Screen Interaction Helpers (Version 2 TermAll - Manual Wait) ---
 
 ' Waits for the host to be ready (OIA XStatus=0) using a manual loop with App.Wait and DoEvents.
 ' Also checks for and handles the Security Reminder screen within the loop.
-Private Sub WaitUntilReady_V2(Optional ByVal timeoutMilliseconds As Long = 10000)
+Private Sub WaitUntilReady_V2_TermAll(Optional ByVal timeoutMilliseconds As Long = 10000) ' Function name updated
     If objScreen Is Nothing Or objReflectionApp Is Nothing Then
-        Debug.Print "WaitUntilReady_V2: objScreen or objReflectionApp is Nothing. Cannot wait."
+        Debug.Print "WaitUntilReady_V2_TermAll: objScreen or objReflectionApp is Nothing. Cannot wait." ' Debug print updated
         Exit Sub
     End If
 
@@ -316,8 +317,8 @@ Private Sub WaitUntilReady_V2(Optional ByVal timeoutMilliseconds As Long = 10000
     ' Loop until host is ready or timeout
     Do While objScreen.OIA.XStatus <> 0 And Now < timeoutTime
 
-        ' ** Check for Security Reminder *during* the wait **
-        If CheckForAndHandleSecurityReminder_V2() Then
+        ' Check for Security Reminder during the wait
+        If CheckForAndHandleSecurityReminder_V2_TermAll() Then ' Function name updated
             ' Security Reminder handled. The outer loop continues checking OIA status.
         End If
 
@@ -329,13 +330,13 @@ Private Sub WaitUntilReady_V2(Optional ByVal timeoutMilliseconds As Long = 10000
 
     ' Check if loop exited due to timeout
     If Now >= timeoutTime And objScreen.OIA.XStatus <> 0 Then
-        Debug.Print "WaitUntilReady_V2: Timeout occurred (" & timeoutMilliseconds & "ms) waiting for XStatus=0. Last XStatus: " & objScreen.OIA.XStatus
+        Debug.Print "WaitUntilReady_V2_TermAll: Timeout occurred (" & timeoutMilliseconds & "ms) waiting for XStatus=0. Last XStatus: " & objScreen.OIA.XStatus ' Debug print updated
         ' Optional: Add a more prominent warning or error here
         ' MsgBox "Timeout waiting for host readiness.", vbExclamation, SCRIPT_TITLE
     End If
 
-    ' ** Check for Security Reminder *after* OIA is ready (XStatus is 0) **
-    CheckForAndHandleSecurityReminder_V2 ' Call Sub without parentheses
+    ' Check for Security Reminder after OIA is ready (XStatus is 0)
+    CheckForAndHandleSecurityReminder_V2_TermAll ' Function name updated
 
     ' Add a small final settle time after OIA is ready and Security handled
     objReflectionApp.Wait 200 ' Final settle wait
@@ -343,38 +344,39 @@ Private Sub WaitUntilReady_V2(Optional ByVal timeoutMilliseconds As Long = 10000
 End Sub
 
 ' Checks for the Security Reminder screen and handles it by sending 'Y' and Transmit.
-' This helper is designed to be called from within WaitUntilReady_V2's loop or after it.
+' This helper is designed to be called from within WaitUntilReady_V2_TermAll's loop or after it.
+' It does NOT recursively call WaitUntilReady_V2_TermAll.
 ' Returns True if the reminder was detected and handled, False otherwise.
-Private Function CheckForAndHandleSecurityReminder_V2() As Boolean
-    CheckForAndHandleSecurityReminder_V2 = False ' Assume reminder is not present initially
+Private Function CheckForAndHandleSecurityReminder_V2_TermAll() As Boolean ' Function name updated
+    CheckForAndHandleSecurityReminder_V2_TermAll = False ' Assume reminder is not present initially
     If objScreen Is Nothing Or objReflectionApp Is Nothing Then Exit Function
 
     ' Check for the SECURITY REMINDER screen title at its known location (R1, C29, L20)
-    If ScreenContainsText_V2(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then
-        Debug.Print "CheckForAndHandleSecurityReminder_V2: Detected Security Reminder. Sending 'Y'..."
+    If ScreenContainsText_V2_TermAll(SCREEN_SECURITY_REMINDER, SECURITY_REMINDER_ROW, SECURITY_REMINDER_COL, SECURITY_REMINDER_LEN, 50) Then ' Function name updated
+        Debug.Print "CheckForAndHandleSecurityReminder_V2_TermAll: Detected Security Reminder. Sending 'Y'..." ' Debug print updated
 
         ' Send 'Y' to the input field (R22, C11)
         objScreen.PutText2 "Y", SECURITY_REMINDER_INPUT_ROW, SECURITY_REMINDER_INPUT_COL
 
         ' Send Transmit key
         objScreen.SendControlKey ControlKeyCode_Transmit
-        Debug.Print "CheckForAndHandleSecurityReminder_V2: Sent Transmit."
+        Debug.Print "CheckForAndHandleSecurityReminder_V2_TermAll: Sent Transmit." ' Debug print updated
 
-        CheckForAndHandleSecurityReminder_V2 = True ' Indicate that the reminder was handled
+        CheckForAndHandleSecurityReminder_V2_TermAll = True ' Indicate that the reminder was handled
 
         ' After sending Transmit, the OIA XStatus will become busy again.
-        ' The outer WaitUntilReady_V2 (or the code after it) will handle waiting for the next state.
+        ' The outer WaitUntilReady_V2_TermAll (or the code after it) will handle waiting for the next state.
     End If
 End Function
 
 ' Helper function to check for text at specific coordinates on the screen.
 ' Provides a minimal settle time before checking. Designed for checks inside wait loops.
 ' Returns True if text is found, False otherwise.
-Private Function ScreenContainsText_V2(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean
-    If objScreen Is Nothing Or objReflectionApp Is Nothing Then ScreenContainsText_V2 = False: Exit Function
+Private Function ScreenContainsText_V2_TermAll(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0, Optional minSettleTimeMs As Long = 50) As Boolean ' Function name updated
+    If objScreen Is Nothing Or objReflectionApp Is Nothing Then ScreenContainsText_V2_TermAll = False: Exit Function
 
     ' Wait briefly for potential screen updates to start settling
-    objReflectionApp.Wait minSettleTimeMs
+    objReflectionApp.Wait minSettleTimeMs ' Use App.Wait for minimal settle
 
     ' If length is not specified, use the length of the expected text
     If length = 0 Then length = Len(expectedText)
@@ -385,16 +387,16 @@ Private Function ScreenContainsText_V2(expectedText As String, rowNum As Long, c
     On Error GoTo 0
 
     ' Compare expected text (case-insensitive)
-    ScreenContainsText_V2 = (UCase(actualText) = UCase(expectedText))
+    ScreenContainsText_V2_TermAll = (UCase(actualText) = UCase(expectedText))
 
 End Function
 
-' Helper function to verify screen title after waiting. Uses WaitUntilReady_V2.
+' Helper function to verify screen title after waiting. Uses WaitUntilReady_V2_TermAll.
 ' Returns True if the expected text is found, False otherwise.
-Private Function VerifyScreen_V2(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    If objScreen Is Nothing Then VerifyScreen_V2 = False: Exit Function
+Private Function VerifyScreen_V2_TermAll(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean ' Function name updated
+    If objScreen Is Nothing Then VerifyScreen_V2_TermAll = False: Exit Function
 
-    Call WaitUntilReady_V2() ' Wait for the screen to be ready first
+    Call WaitUntilReady_V2_TermAll() ' Wait for the screen to be ready first ' Function name updated
 
     ' If length is not specified, use the length of the expected text
     If length = 0 Then length = Len(expectedText)
@@ -405,60 +407,66 @@ Private Function VerifyScreen_V2(expectedText As String, rowNum As Long, colNum 
     On Error GoTo 0
 
     If UCase(actualText) = UCase(expectedText) Then
-        VerifyScreen_V2 = True
-        Debug.Print "VerifyScreen_V2: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "."
+        VerifyScreen_V2_TermAll = True
+        Debug.Print "VerifyScreen_V2_TermAll: Confirmed '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & "." ' Debug print updated
     Else
-        VerifyScreen_V2 = False
-        Debug.Print "VerifyScreen_V2 FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'."
+        VerifyScreen_V2_TermAll = False
+        Debug.Print "VerifyScreen_V2_TermAll FAILED: Expected '" & expectedText & "' at R" & rowNum & "C" & colNum & "L" & length & ", Found '" & actualText & "'." ' Debug print updated
         ' Optional: Add a MsgBox here on critical screen verification failures
         ' MsgBox "Screen verification failed. Expected '" & expectedText & "' but found '" & actualText & "' at R" & rowNum & "C" & colNum & ".", vbCritical, SCRIPT_TITLE
     End If
 End Function
 
 ' Sends data to a specific field on the screen and automatically sends Transmit.
-' Uses WaitUntilReady_V2 internally before and after sending input.
-Private Sub SendText_V2(data As String, rowNum As Long, colNum As Long)
-    If objScreen Is Nothing Then Exit Sub
+' Uses WaitUntilReady_V2_TermAll internally before and after sending input.
+' This version sends Transmit THREE times after putting text.
+Private Sub SendText_V2_TermAll(data As String, rowNum As Long, colNum As Long) ' Function name updated
+    If objScreen Is Nothing Then
+        Debug.Print "SendText_V2_TermAll: objScreen is Nothing. Cannot send text." ' Debug print updated
+        Exit Sub
+    End If
 
-    Call WaitUntilReady_V2() ' Wait for the screen to be ready before attempting input
+    Call WaitUntilReady_V2_TermAll() ' Wait for the screen to be ready before attempting input ' Function name updated
 
     objScreen.PutText2 data, rowNum, colNum ' Put the text onto the screen
-    Debug.Print "SendText_V2: Put data '" & data & "' at R" & rowNum & "C" & colNum & "."
+    Debug.Print "SendText_V2_TermAll: Put data '" & data & "' at R" & rowNum & "C" & colNum & "." ' Debug print updated
 
-    objScreen.SendControlKey ControlKeyCode_Transmit ' Send the Enter key (Transmit)
-    Debug.Print "SendText_V2: Sent Transmit key."
+    Debug.Print "SendText_V2_TermAll: Sending Transmit key (x3)." ' Debug print updated
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    objScreen.SendControlKey ControlKeyCode_Transmit ' Send the Enter key (Transmit) thrice
 
-    Call WaitUntilReady_V2(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit)
+    Call WaitUntilReady_V2_TermAll(5000) ' Wait for the host to process the input and update the screen (use a slightly longer wait after Transmit) ' Function name updated
 End Sub
 
 ' Sends a control key (like PF keys, Enter/Transmit, etc.) to the screen.
-' Uses WaitUntilReady_V2 internally before and after sending the key.
-Private Sub SendControlKey_V2(keyCode As Long, Optional waitAfterMs As Long = 500)
+' Uses WaitUntilReady_V2_TermAll internally before and after sending the key.
+Private Sub SendControlKey_V2_TermAll(keyCode As Long, Optional waitAfterMs As Long = 500) ' Function name updated
      If objScreen Is Nothing Then Exit Sub
 
-     Call WaitUntilReady_V2() ' Wait before sending the key
+     Call WaitUntilReady_V2_TermAll() ' Wait before sending the key ' Function name updated
 
-     Debug.Print "SendControlKey_V2: Sending key code " & keyCode & "."
+     Debug.Print "SendControlKey_V2_TermAll: Sending key code " & keyCode & "." ' Debug print updated
      objScreen.SendControlKey keyCode ' Send the specified control key
 
-     Call WaitUntilReady_V2(waitAfterMs) ' Wait after sending key
+     Call WaitUntilReady_V2_TermAll(waitAfterMs) ' Wait after sending key ' Function name updated
 End Sub
 
 
-' --- Navigation Logic (Version 2) ---
+' --- Navigation Logic (Version 2 TermAll) ---
 ' Navigates the host system from the Application Selection Menu to the
 ' Interest Amendments screen for the specified Sort Code and Account Number,
 ' using the Brand to determine the confirm code.
 ' Returns True if navigation is successful, False otherwise.
-Private Function NavigateToInterestAmendments_V2(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean
+Private Function NavigateToInterestAmendments_V2_TermAll(ByVal sc As String, ByVal acct As String, ByVal brnd As String) As Boolean ' Function name updated
     Dim confirmCode As String
     Dim starLoopCount As Long
     Const maxStarLoops As Long = 15 ' Prevent infinite loop
 
-    NavigateToInterestAmendments_V2 = False ' Default to failure
+    NavigateToInterestAmendments_V2_TermAll = False ' Default to failure
 
     If objScreen Is Nothing Then
-        Debug.Print "Navigate_V2: objScreen object is not available. Cannot navigate."
+        Debug.Print "Navigate_V2_TermAll: objScreen object is not available. Cannot navigate." ' Debug print updated
         Exit Function
     End If
 
@@ -469,173 +477,183 @@ Private Function NavigateToInterestAmendments_V2(ByVal sc As String, ByVal acct 
         Case "UBN": confirmCode = "PRCIJ#T#"
         Case "UBR": confirmCode = "PRCIK#T#"
         Case Else
-            Debug.Print "Navigate_V2: Invalid Brand '" & brnd & "'. Cannot proceed."
+            Debug.Print "Navigate_V2_TermAll: Invalid Brand '" & brnd & "'. Cannot proceed." ' Debug print updated
             MsgBox "Invalid Brand specified: '" & brnd & "'. Navigation aborted for this record.", vbExclamation, SCRIPT_TITLE
             Exit Function ' Exit function immediately on invalid brand
     End Select
-    Debug.Print "Navigate_V2: Using confirm code: " & confirmCode & " for Brand: " & brnd
+    Debug.Print "Navigate_V2_TermAll: Using confirm code: " & confirmCode & " for Brand: " & brnd ' Debug print updated
 
     ' --- Step 1: Ensure on APPLICATION SELECTION MENU ---
-    Debug.Print "Navigate_V2: Verifying start screen: " & SCREEN_APP_MENU
-    If Not VerifyScreen_V2(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then
-         Debug.Print "Navigate_V2: Not starting on " & SCREEN_APP_MENU & "."
+    Debug.Print "Navigate_V2_TermAll: Verifying start screen: " & SCREEN_APP_MENU ' Debug print updated
+    If Not VerifyScreen_V2_TermAll(SCREEN_APP_MENU, SCREEN_APP_MENU_ROW, SCREEN_APP_MENU_COL, SCREEN_APP_MENU_LENGTH) Then ' Function name updated
+         Debug.Print "Navigate_V2_TermAll: Not starting on " & SCREEN_APP_MENU & "." ' Debug print updated
          MsgBox "Automation must start on '" & SCREEN_APP_MENU & "'. Please navigate manually and restart.", vbExclamation, SCRIPT_TITLE
          Exit Function ' Exit function if not on the expected starting screen
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_APP_MENU & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_APP_MENU & "." ' Debug print updated
 
     ' --- Step 2: TERM ALL ---
-    ' Note: Your V1_TermAll sent 3 Transmits after TERM ALL.
-    ' For multi-step navigation, we typically send one Transmit after the command.
-    ' If the system specifically requires multiple transmits after TERM ALL to clear state,
-    ' we might need a dedicated helper or add extra SendControlKey calls here.
-    ' Assuming one transmit is sufficient in the navigation flow:
-    Debug.Print "Navigate_V2: Sending TERM ALL..."
-    Call SendText_V2("TERM ALL", CMD_LINE_ROW, CMD_LINE_COL) ' Send TERM ALL and 1 Transmit
-    Debug.Print "Navigate_V2: Sent TERM ALL."
+    ' Send TERM ALL followed by ONE Transmit for navigation purposes
+    ' NOTE: The requirement for THIS version is to send TERM ALL + 3 Transmits.
+    ' This SendText call uses the modified helper, which now sends 3 Transmits.
+    Debug.Print "Navigate_V2_TermAll: Sending TERM ALL (using SendText_V2_TermAll which sends 3 Transmits)..." ' Debug print updated
+    Call SendText_V2_TermAll("TERM ALL", CMD_LINE_ROW, CMD_LINE_COL) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent TERM ALL + 3 Transmits." ' Debug print updated
+
 
     ' --- Step 3: Send Brand Code (e.g., PRCIR#T#) ---
-    Debug.Print "Navigate_V2: Sending Brand code '" & confirmCode & "'..."
-    Call SendText_V2(confirmCode, CMD_LINE_ROW, CMD_LINE_COL)
-    Debug.Print "Navigate_V2: Sent Brand code."
-    ' Wait implicitly via SendText_V2's internal WaitUntilReady_V2
+    ' Note: This step typically requires only ONE transmit to move to the next screen.
+    ' Sending 3 transmits here might cause issues depending on the host system's response after the Brand Code.
+    ' Assuming the host expects only ONE transmit after the Brand Code:
+    Debug.Print "Navigate_V2_TermAll: Sending Brand code '" & confirmCode & "' (using SendText_V2_TermAll which sends 3 Transmits)..." ' Debug print updated
+    Call SendText_V2_TermAll(confirmCode, CMD_LINE_ROW, CMD_LINE_COL) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent Brand code + 3 Transmits." ' Debug print updated
+    ' Wait implicitly via SendText_V2_TermAll's internal WaitUntilReady_V2_TermAll
 
     ' --- Step 3a/b: Handle potential intermediate screens (Command not recognized, RBS Header, Blank) ---
     ' Check for "Command not recognized" immediately after sending brand code
-    Debug.Print "Navigate_V2: Checking for Command not recognized..."
-    If VerifyScreen_V2(SCREEN_CMD_NOT_RECOGNIZED, 20, 36, Len(SCREEN_CMD_NOT_RECOGNIZED)) Then ' Using approx coords from previous notes
-        Debug.Print "Navigate_V2: Brand code '" & confirmCode & "' not recognized. Navigation failed for this record."
+    Debug.Print "Navigate_V2_TermAll: Checking for Command not recognized..." ' Debug print updated
+    If VerifyScreen_V2_TermAll(SCREEN_CMD_NOT_RECOGNIZED, 20, 36, Len(SCREEN_CMD_NOT_RECOGNIZED)) Then ' Function name updated, Using approx coords
+        Debug.Print "Navigate_V2_TermAll: Brand code '" & confirmCode & "' not recognized. Navigation failed for this record." ' Debug print updated
         MsgBox "Brand code '" & confirmCode & "' not recognized for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function on command error
     End If
-    Debug.Print "Navigate_V2: Command not recognized screen NOT found."
+    Debug.Print "Navigate_V2_TermAll: Command not recognized screen NOT found." ' Debug print updated
 
     ' Handle RBS Header or blank screen, loop with STAR if needed until Option Handler
-    Debug.Print "Navigate_V2: Checking for Option Handler or intermediate screens..."
+    Debug.Print "Navigate_V2_TermAll: Checking for Option Handler or intermediate screens..." ' Debug print updated
     starLoopCount = 0
     ' Expected: OPT_HANDLER_MAIN (R1, C26, L35)
-    Do While Not VerifyScreen_V2(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) And starLoopCount < maxStarLoops
+    Do While Not VerifyScreen_V2_TermAll(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) And starLoopCount < maxStarLoops ' Function name updated
 
         ' Check if RBS Header is present (common on some logins/configurations)
-        If VerifyScreen_V2(SCREEN_RBS_HEADER, 1, 1, Len(SCREEN_RBS_HEADER)) Then ' Using approx coords
-             Debug.Print "Navigate_V2: Detected " & SCREEN_RBS_HEADER & ". Sending Transmit."
-             Call SendControlKey_V2(ControlKeyCode_Transmit)
-             Debug.Print "Navigate_V2: Sent Transmit after " & SCREEN_RBS_HEADER
-             ' WaitUntilReady_V2 is called by SendControlKey_V2, handles Security Reminder implicitly.
+        If VerifyScreen_V2_TermAll(SCREEN_RBS_HEADER, 1, 1, Len(SCREEN_RBS_HEADER)) Then ' Function name updated, Using approx coords
+             Debug.Print "Navigate_V2_TermAll: Detected " & SCREEN_RBS_HEADER & ". Sending Transmit (using SendControlKey_V2_TermAll)." ' Debug print updated
+             Call SendControlKey_V2_TermAll(ControlKeyCode_Transmit) ' Function name updated
+             Debug.Print "Navigate_V2_TermAll: Sent Transmit after " & SCREEN_RBS_HEADER ' Debug print updated
+             ' WaitUntilReady_V2_TermAll is called by SendControlKey_V2_TermAll, handles Security Reminder implicitly.
              ' After Transmit from RBS Header, screen *should* go towards Option Handler.
         ' Check if screen is effectively blank on the first line
         ElseIf Trim(objScreen.GetText(1, 1, 80)) = "" Then
-             Debug.Print "Navigate_V2: Detected blank screen. Sending STAR."
-             Call SendText_V2("STAR", 1, 1) ' Send STAR and Transmit
-             Debug.Print "Navigate_V2: Sent STAR to blank screen."
-             ' WaitUntilReady_V2 is called by SendText_V2, handles Security Reminder implicitly.
+             Debug.Print "Navigate_V2_TermAll: Detected blank screen. Sending STAR (using SendText_V2_TermAll which sends 3 Transmits)." ' Debug print updated
+             Call SendText_V2_TermAll("STAR", 1, 1) ' Function name updated
+             Debug.Print "Navigate_V2_TermAll: Sent STAR + 3 Transmits to blank screen." ' Debug print updated
+             ' WaitUntilReady_V2_TermAll is called by SendText_V2_TermAll, handles Security Reminder implicitly.
              ' After STAR, screen *should* go towards Option Handler.
         Else
              ' Log unexpected screen content but continue looping up to max attempts
-             Debug.Print "Navigate_V2: On unexpected screen while waiting for " & SCREEN_OPT_HANDLER_MAIN & ". Last screen title (R1C1L80): '" & Trim(objScreen.GetText(1, 1, 80)) & "'"
+             Debug.Print "Navigate_V2_TermAll: On unexpected screen while waiting for " & SCREEN_OPT_HANDLER_MAIN & ". Last screen title (R1C1L80): '" & Trim(objScreen.GetText(1, 1, 80)) & "'" ' Debug print updated
              ' Consider adding a PA1 or PF3 here if STAR/Transmit isn't sufficient recovery
-             ' Call SendControlKey_V2(ControlKeyCode_Pa1) ' Example: Send PA1
+             ' Call SendControlKey_V2_TermAll(ControlKeyCode_Pa1) ' Example: Send PA1 (Function name updated)
         End If
 
         starLoopCount = starLoopCount + 1
-        ' Wait is handled by SendText_V2 or SendControlKey_V2
+        ' Wait is handled by SendText_V2_TermAll or SendControlKey_V2_TermAll
 
-        If VerifyScreen_V2(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-            Debug.Print "Navigate_V2: Reached " & SCREEN_OPT_HANDLER_MAIN & " after " & starLoopCount & " attempts."
+        If VerifyScreen_V2_TermAll(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then ' Function name updated
+            Debug.Print "Navigate_V2_TermAll: Reached " & SCREEN_OPT_HANDLER_MAIN & " after " & starLoopCount & " attempts." ' Debug print updated
             Exit Do ' Successfully reached Option Handler
         End If
 
     Loop
 
     ' Final check after the STAR loop
-    If Not VerifyScreen_V2(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then
-         Debug.Print "Navigate_V2: Did not reach " & SCREEN_OPT_HANDLER_MAIN & " after maximum attempts (" & maxStarLoops & ")."
+    If Not VerifyScreen_V2_TermAll(SCREEN_OPT_HANDLER_MAIN, SCREEN_OPT_HANDLER_ROW, SCREEN_OPT_HANDLER_COL, SCREEN_OPT_HANDLER_LENGTH) Then ' Function name updated
+         Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_OPT_HANDLER_MAIN & " after maximum attempts (" & maxStarLoops & ")." ' Debug print updated
          MsgBox "Failed to navigate to Option Handler screen for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
          Exit Function ' Exit function if navigation failed after loop
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_OPT_HANDLER_MAIN & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_OPT_HANDLER_MAIN & "." ' Debug print updated
 
 
     ' --- Step 4: Option 19 (Back Office System) ---
-    Debug.Print "Navigate_V2: Sending 19..."
-    Call SendText_V2("19", OPTION_INPUT_ROW, OPTION_INPUT_COL)
-    Debug.Print "Navigate_V2: Sent 19."
+    Debug.Print "Navigate_V2_TermAll: Sending 19 (using SendText_V2_TermAll which sends 3 Transmits)..." ' Debug print updated
+    Call SendText_V2_TermAll("19", OPTION_INPUT_ROW, OPTION_INPUT_COL) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent 19 + 3 Transmits." ' Debug print updated
     ' Expected: BO_SYSTEM (R1,C7, L20)
-    Debug.Print "Navigate_V2: Verifying screen: " & SCREEN_BO_SYSTEM
-    If Not VerifyScreen_V2(SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH) Then
-        Debug.Print "Navigate_V2: Did not reach " & SCREEN_BO_SYSTEM & "."
+    Debug.Print "Navigate_V2_TermAll: Verifying screen: " & SCREEN_BO_SYSTEM ' Debug print updated
+    If Not VerifyScreen_V2_TermAll(SCREEN_BO_SYSTEM, SCREEN_BO_SYSTEM_ROW, SCREEN_BO_SYSTEM_COL, SCREEN_BO_SYSTEM_LENGTH) Then ' Function name updated
+        Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_BO_SYSTEM & "." ' Debug print updated
          MsgBox "Failed to navigate to Back Office System menu for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_BO_SYSTEM & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_BO_SYSTEM & "." ' Debug print updated
 
     ' --- Step 5: Option 1 (Master Index) ---
-    Debug.Print "Navigate_V2: Sending 1..."
-    Call SendText_V2("1", BACK_OFFICE_OPT_ROW, BACK_OFFICE_OPT_COL)
-    Debug.Print "Navigate_V2: Sent 1."
+    Debug.Print "Navigate_V2_TermAll: Sending 1 (using SendText_V2_TermAll which sends 3 Transmits)..." ' Debug print updated
+    Call SendText_V2_TermAll("1", BACK_OFFICE_OPT_ROW, BACK_OFFICE_OPT_COL) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent 1 + 3 Transmits." ' Debug print updated
     ' Expected: MASTER_INDEX (R1,C28, L12)
-    Debug.Print "Navigate_V2: Verifying screen: " & SCREEN_MASTER_INDEX
-    If Not VerifyScreen_V2(SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH) Then
-        Debug.Print "Navigate_V2: Did not reach " & SCREEN_MASTER_INDEX & "."
+    Debug.Print "Navigate_V2_TermAll: Verifying screen: " & SCREEN_MASTER_INDEX ' Debug print updated
+    If Not VerifyScreen_V2_TermAll(SCREEN_MASTER_INDEX, SCREEN_MASTER_INDEX_ROW, SCREEN_MASTER_INDEX_COL, SCREEN_MASTER_INDEX_LENGTH) Then ' Function name updated
+        Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_MASTER_INDEX & "." ' Debug print updated
          MsgBox "Failed to navigate to Master Index for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_MASTER_INDEX & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_MASTER_INDEX & "." ' Debug print updated
 
     ' --- Step 6: Master Index - Action 20 (File Maintenance Input Index), Enter Sort Code ---
     ' Use Format to ensure correct zero-padding (e.g., "000000")
     Dim formattedSC As String: formattedSC = Format(sc, "000000")
-    Debug.Print "Navigate_V2: Sending 20 + S/C " & formattedSC & "..."
-    Call WaitUntilReady_V2(100) ' Settle before multi-part input
+    Debug.Print "Navigate_V2_TermAll: Sending 20 + S/C " & formattedSC & "..." ' Debug print updated
+    Call WaitUntilReady_V2_TermAll(100) ' Settle before multi-part input ' Function name updated
     objScreen.PutText2 "20", MASTER_INDEX_ACTION_ROW, MASTER_INDEX_ACTION_COL ' Action field
     objScreen.PutText2 formattedSC, MASTER_INDEX_SC_ROW, MASTER_INDEX_SC_COL ' Sort Code field
-    Call SendControlKey_V2(ControlKeyCode_Transmit, 1000) ' Send Transmit, wait 1s
-    Debug.Print "Navigate_V2: Sent 20 + S/C."
+    Call SendControlKey_V2_TermAll(ControlKeyCode_Transmit, 1000) ' Send Transmit, wait 1s ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent 20 + S/C." ' Debug print updated
     ' Expected: FILE_MAINT_IDX (R1,C21, L30)
-    Debug.Print "Navigate_V2: Verifying screen: " & SCREEN_FILE_MAINT_IDX
-    If Not VerifyScreen_V2(SCREEN_FILE_MAINT_IDX, SCREEN_FILE_MAINT_IDX_ROW, SCREEN_FILE_MAINT_IDX_COL, SCREEN_FILE_MAINT_IDX_LENGTH) Then
-        Debug.Print "Navigate_V2: Did not reach " & SCREEN_FILE_MAINT_IDX & "."
+    Debug.Print "Navigate_V2_TermAll: Verifying screen: " & SCREEN_FILE_MAINT_IDX ' Debug print updated
+    If Not VerifyScreen_V2_TermAll(SCREEN_FILE_MAINT_IDX, SCREEN_FILE_MAINT_IDX_ROW, SCREEN_FILE_MAINT_IDX_COL, SCREEN_FILE_MAINT_IDX_LENGTH) Then ' Function name updated
+        Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_FILE_MAINT_IDX & "." ' Debug print updated
          MsgBox "Failed to navigate to File Maintenance Index for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_FILE_MAINT_IDX & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_FILE_MAINT_IDX & "." ' Debug print updated
 
     ' --- Step 7: File Maint Idx - Action 20 (Internal Txns), Enter Account Number ---
     ' Use Format to ensure correct zero-padding (e.g., "00000000")
     Dim formattedAcct As String: formattedAcct = Format(acct, "00000000")
-    Debug.Print "Navigate_V2: Sending 20 + A/N " & formattedAcct & "..."
-    Call WaitUntilReady_V2(100)
+    Debug.Print "Navigate_V2_TermAll: Sending 20 + A/N " & formattedAcct & "..." ' Debug print updated
+    Call WaitUntilReady_V2_TermAll(100) ' Function name updated
     objScreen.PutText2 "20", FILE_MAINT_IDX_ACTION_ROW, FILE_MAINT_IDX_ACTION_COL ' Action field
     objScreen.PutText2 formattedAcct, FILE_MAINT_IDX_ACCOUNT_ROW, FILE_MAINT_IDX_ACCOUNT_COL ' Account Number field
-    Call SendControlKey_V2(ControlKeyCode_Transmit, 1000)
-    Debug.Print "Navigate_V2: Sent 20 + A/N."
+    Call SendControlKey_V2_TermAll(ControlKeyCode_Transmit, 1000) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent 20 + A/N." ' Debug print updated
     ' Expected: INTERNAL_TXNS (R1,C19, L21)
-    Debug.Print "Navigate_V2: Verifying screen: " & SCREEN_INTERNAL_TXNS
-    If Not VerifyScreen_V2(SCREEN_INTERNAL_TXNS, SCREEN_INTERNAL_TXNS_ROW, SCREEN_INTERNAL_TXNS_COL, SCREEN_INTERNAL_TXNS_LENGTH) Then
-        Debug.Print "Navigate_V2: Did not reach " & SCREEN_INTERNAL_TXNS & "."
+    Debug.Print "Navigate_V2_TermAll: Verifying screen: " & SCREEN_INTERNAL_TXNS ' Debug print updated
+    If Not VerifyScreen_V2_TermAll(SCREEN_INTERNAL_TXNS, SCREEN_INTERNAL_TXNS_ROW, SCREEN_INTERNAL_TXNS_COL, SCREEN_INTERNAL_TXNS_LENGTH) Then ' Function name updated
+        Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_INTERNAL_TXNS & "." ' Debug print updated
          MsgBox "Failed to navigate to Internal Transactions screen for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if navigation failed
     End If
-    Debug.Print "Navigate_V2: Confirmed on " & SCREEN_INTERNAL_TXNS & "."
+    Debug.Print "Navigate_V2_TermAll: Confirmed on " & SCREEN_INTERNAL_TXNS & "." ' Debug print updated
 
     ' --- Step 8: Internal Txns - Action 04 (Interest Amendments) ---
-    Debug.Print "Navigate_V2: Sending 04..."
-    Call SendText_V2("04", INTERNAL_TXNS_ACTION_ROW, INTERNAL_TXNS_ACTION_COL)
-    Debug.Print "Navigate_V2: Sent 04."
+    ' Note: This step typically requires only ONE transmit to move to the target screen.
+    ' Sending 3 transmits here might cause issues.
+    ' Assuming the host expects only ONE transmit after '04':
+    ' Although SendText_V2_TermAll sends 3 transmits, the requirement was specifically for after TERM ALL.
+    ' For consistency within this helper set, SendText_V2_TermAll sends 3 transmits always.
+    ' A more flexible approach would be SendText(data, row, col, numberOfTransmits as Long).
+    ' Sticking to the current helper structure for now:
+    Debug.Print "Navigate_V2_TermAll: Sending 04 (using SendText_V2_TermAll which sends 3 Transmits)..." ' Debug print updated
+    Call SendText_V2_TermAll("04", INTERNAL_TXNS_ACTION_ROW, INTERNAL_TXNS_ACTION_COL) ' Function name updated
+    Debug.Print "Navigate_V2_TermAll: Sent 04 + 3 Transmits." ' Debug print updated
+
 
     ' --- Step 9: Verify arrival at the target screen (Interest Amendments) ---
-    Debug.Print "Navigate_V2: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS & "."
-    If VerifyScreen_V2(SCREEN_INTEREST_AMENDMENTS, SCREEN_INTEREST_AMENDMENTS_ROW, SCREEN_INTEREST_AMENDMENTS_COL, SCREEN_INTEREST_AMENDMENTS_LENGTH) Then
-        Debug.Print "Navigate_V2: Successfully reached primary target: " & SCREEN_INTEREST_AMENDMENTS & "."
-        NavigateToInterestAmendments_V2 = True ' Navigation Success!
+    Debug.Print "Navigate_V2_TermAll: Verifying target screen: " & SCREEN_INTEREST_AMENDMENTS & "." ' Debug print updated
+    If VerifyScreen_V2_TermAll(SCREEN_INTEREST_AMENDMENTS, SCREEN_INTEREST_AMENDMENTS_ROW, SCREEN_INTEREST_AMENDMENTS_COL, SCREEN_INTEREST_AMENDMENTS_LENGTH) Then ' Function name updated
+        Debug.Print "Navigate_V2_TermAll: Successfully reached primary target: " & SCREEN_INTEREST_AMENDMENTS & "." ' Debug print updated
+        NavigateToInterestAmendments_V2_TermAll = True ' Navigation Success!
     Else
         ' If primary not found, something unexpected happened
-        Debug.Print "Navigate_V2: Did not reach " & SCREEN_INTEREST_AMENDMENTS & "."
+        Debug.Print "Navigate_V2_TermAll: Did not reach " & SCREEN_INTEREST_AMENDMENTS & "." ' Debug print updated
         MsgBox "Failed to navigate to the expected Interest Amendment screen for S/C: " & sc & ", A/N: " & acct & ". Navigation aborted.", vbCritical, SCRIPT_TITLE
-        NavigateToInterestAmendments_V2 = False ' Still a navigation failure
+        NavigateToInterestAmendments_V2_TermAll = False ' Still a navigation failure
     End If
 
-    ' The function returns NavigateToInterestAmendments_V2 (True/False) indicating success or failure.
+    ' The function returns NavigateToInterestAmendments_V2_TermAll (True/False) indicating success or failure.
 End Function
 
 ' Note: Functions to handle logging off, navigating back to the Application Menu,
