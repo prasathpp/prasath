@@ -61,7 +61,7 @@ Sub Main_SendTermAll_V1()
         Debug.Print SCRIPT_TITLE & ": '" & CMD_TERM_ALL & "' sent. First step complete."
 
         ' Confirmation message box (Corrected syntax)
-        MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line.", vbInformation, SCRIPT_TITLE
+        ' MsgBox "'" & CMD_TERM_ALL & "' entered successfully on the command line.", vbInformation, SCRIPT_TITLE
 
 
     Else
@@ -131,7 +131,7 @@ Private Function ConnectToReflection_V1(ByVal targetSessionExactTitle As String)
                "Please ensure the correct session file is open in Reflection and its window title matches exactly.", vbCritical, SCRIPT_TITLE
         Exit Function ' Exit function if the target view was not found
     End If
-    Debug.Print "Connect_V1: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.TitleText & "'. TypeName(objView): " & TypeName(objView)
+    Debug.Print "Connect_V1: objFrame.GetViewByTitleText SUCCEEDED. View Title: '" & objView.titleText & "'. TypeName(objView): " & TypeName(objView)
     On Error GoTo ConnectErrorHandler_V1 ' Restore error handling
 
     ' ** Skipping explicit objView.Activate to avoid previous Error 438 **
@@ -147,7 +147,7 @@ Private Function ConnectToReflection_V1(ByVal targetSessionExactTitle As String)
     Debug.Print "Connect_V1: objTerminal obtained. TypeName: " & TypeName(objTerminal)
 
     Debug.Print "Connect_V1: Attempting objTerminal.Screen..."
-    Set objScreen = objTerminal.Screen
+    Set objScreen = objTerminal.screen
     If objScreen Is Nothing Then
         Debug.Print "Connect_V1: Screen object is Nothing."
         MsgBox "Could not get the Reflection Screen object from the terminal control.", vbCritical, SCRIPT_TITLE
@@ -315,7 +315,7 @@ Private Sub SendText_V1(data As String, rowNum As Long, colNum As Long)
     End If
 
     ' Debug.Print "SendText_V1: Waiting for host before sending text."
-    Call WaitUntilReady_V1() ' Wait for the screen to be ready before attempting input
+    Call WaitUntilReady_V1   ' Wait for the screen to be ready before attempting input
     ' Debug.Print "SendText_V1: Host ready. Sending text."
 
 
@@ -323,6 +323,8 @@ Private Sub SendText_V1(data As String, rowNum As Long, colNum As Long)
     objScreen.PutText2 data, rowNum, colNum ' Put the text onto the screen
 
     ' Debug.Print "SendText_V1: Sending Transmit key."
+    objScreen.SendControlKey ControlKeyCode_Transmit
+    objScreen.SendControlKey ControlKeyCode_Transmit
     objScreen.SendControlKey ControlKeyCode_Transmit ' Send the Enter key (Transmit)
 
     ' Debug.Print "SendText_V1: Waiting for host after sending text."
@@ -336,3 +338,4 @@ End Sub
 ' - NavigateToScreen_ManualWait / NavigateToScreen_RevisedV9 / NavigateToScreen_V9
 ' - VerifyScreen_ManualWait / VerifyScreen_RevisedV9 / VerifyScreen_V9
 ' - BackToMasterIndex_ManualWait
+
