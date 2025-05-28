@@ -24,8 +24,8 @@ Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
 Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
 Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
 Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
-' Ensure ControlKeyCode_Transmit is available from library reference or define it:
-' Public Const ControlKeyCode_Transmit As Long = 14 ' If using Attachmate libs, this should be defined
+' Ensure ControlKeyCode_Transmit is available from library reference
+' If not, define: Public Const ControlKeyCode_Transmit As Long = 14
 
 
 '===============================================================================
@@ -54,7 +54,6 @@ Sub ProcessInterestAdjustments_Main()
         MsgBox "Failed to connect to Reflection. Exiting.", vbCritical, SCRIPT_TITLE
         Exit Sub
     End If
-    ' Initial WaitForScreen is in ConnectExtra or implicitly handled by first WaitReady
 
     For i = START_ROW To lastRow
         Ws_Data.Range("H" & i & ":J" & i).ClearContents
@@ -76,7 +75,7 @@ MainErrorHandler:
 End Sub
 
 '===============================================================================
-' PROCESS SINGLE ADJUSTMENT
+' PROCESS SINGLE ADJUSTMENT - WITH CORRECTED IF BLOCKS
 '===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
@@ -115,45 +114,53 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
-    Call WaitReady(200, 5000) ' Ensure screen is initially ready
+    Call WaitReady(200, 5000)
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
          Ws_Data.Range("H" & iRow).Value = "Not on App Menu. Found: " & obScreen.GetText(1, 28, Len(SCREEN_APP_MENU))
          GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
 
-    Call SendData("TERM ALL", 21, 13, True, 1000) ' SendData includes WaitReady after Transmit
+    Call SendData("TERM ALL", 21, 13, True, 1000)
     Debug.Print "ProcessSingle: Sent TERM ALL"
-    obScreen.WaitForHostSettle 500, 2000 ' Added explicit settle
+    obScreen.WaitForHostSettle 500, 2000
 
     Call SendData(confirmCode, 21, 13, True, 1000)
     Debug.Print "ProcessSingle: Sent " & confirmCode
-    obScreen.WaitForHostSettle 500, 2000 ' Added explicit settle
+    obScreen.WaitForHostSettle 500, 2000
     If VerifyScreen("Command not recognized", 20, 36, 22) Then
         Ws_Data.Range("H" & iRow).Value = "Brand cmd not recognized"
         GoTo NextCase_Adjustment
     End If
     
+    ' --- CORRECTED ROYAL BANK OF SCOTLAND BLOCK ---
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
-        Call SendKey(ControlKeyCode_Transmit, 1000)
+        Call SendKey(ControlKeyCode_Transmit, 1000) ' Wait after sending key
         obScreen.WaitForHostSettle 500, 2000
-        If VerifyScreen("", 1, 1, 80) Then
+
+        If VerifyScreen("", 1, 1, 80) Then ' Check for blank screen after Enter
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
-                If VerifyScreen("", 1, 1, 80) Then Call SendData("STAR", 1, 1, True, 1000)
-                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then Call SendKey(ControlKeyCode_Transmit, 1000)
+                If VerifyScreen("", 1, 1, 80) Then
+                    Call SendData("STAR", 1, 1, True, 1000) ' SendData includes WaitReady
+                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
+                    Call SendKey(ControlKeyCode_Transmit, 1000) ' Resend Enter if RBS screen reappears
                 End If
-                obScreen.WaitForHostSettle 300, 1000
+                obScreen.WaitForHostSettle 300, 1000 ' Settle within loop
                 loopCounter = loopCounter + 1
             Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10
+            
             If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
                  Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
             End If
+        ' Else: Not a blank screen, proceed to check Option Handler
         End If
     End If
-    obScreen.WaitForHostSettle 300, 1000
+    ' --- END CORRECTED RBS BLOCK ---
+
+    obScreen.WaitForHostSettle 300, 1000 ' Ensure settled before next check
     If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
         Ws_Data.Range("H" & iRow).Value = "Not on Opt Handler. Found: " & obScreen.GetText(1, 26, Len(SCREEN_OPT_HANDLER))
         GoTo NextCase_Adjustment
@@ -187,13 +194,12 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Call SendData("04", 22, 8, True, 1000)
     obScreen.WaitForHostSettle 500, 2000
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then ' Fallback check
             Ws_Data.Range("H" & iRow).Value = "Not on Int Amend scrn": GoTo NextCase_Adjustment
         End If
     End If
     Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
 
-    ' --- CHECKPOINT ---
     Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
     If obScreen Is Nothing Then
         Debug.Print "ProcessSingle: obScreen IS NOTHING before data entry!"
@@ -203,13 +209,20 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Debug.Print "ProcessSingle: obScreen is VALID. Row " & iRow
     End If
     Debug.Print "ProcessSingle: excel_D_Accrued: " & excel_D_Accrued
-    ' ------------------
-
+    
+    ' --- CORRECTED SCREEN TYPE DETERMINATION ---
     screenType = "Unknown"
-    tempStr = Trim(obScreen.GetText(3, 42, 16))
-    If tempStr = "BUSINESS CURRENT" Then screenType = "BC"
-    Else tempStr = Trim(obScreen.GetText(3, 42, 14)): If tempStr = "SELECT ACCOUNT" Then screenType = "Normal"
+    tempStr = Trim(obScreen.GetText(3, 42, 16)) ' Read for "BUSINESS CURRENT"
+    If tempStr = "BUSINESS CURRENT" Then
+        screenType = "BC"
+    Else 
+        tempStr = Trim(obScreen.GetText(3, 42, 14)) ' Read for "SELECT ACCOUNT"
+        If tempStr = "SELECT ACCOUNT" Then
+            screenType = "Normal"
+        End If
     End If
+    ' --- END CORRECTED SCREEN TYPE ---
+
     If screenType = "Unknown" Then
         Ws_Data.Range("H" & iRow).Value = "Unknown Amend Scrn Type: " & obScreen.GetText(3, 42, 16)
         GoTo NextCase_Adjustment
@@ -271,13 +284,12 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Data entry potentially complete for row " & iRow
 
-    For k = 1 To 3
-        Call SendKey(ControlKeyCode_Transmit, 500) ' Increased wait slightly
+    For k = 1 To 3 Call SendKey(ControlKeyCode_Transmit, 500)
     Next k
     Debug.Print "ProcessSingle: Sent Enter x3"
 
     obScreen.SendKeys "<S_ESC>"
-    Call WaitReady(1500) ' Increased wait after Shift+Esc
+    Call WaitReady(1500)
     Debug.Print "ProcessSingle: Sent Shift+Esc"
 
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
@@ -301,8 +313,9 @@ ErrorHandler_Adjustment:
     ProcessSingleAdjustment = False
 End Function
 
+
 '===============================================================================
-' CONNECTION SUB
+' CONNECTION SUB (Same as previous successful version)
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
@@ -364,13 +377,13 @@ Sub ConnectExtra()
         Err.Clear: Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
         Debug.Print "Iterating views for: " & sessionName
         sessionIsOpen = False
-        If ThisFrame.Views.Count > 0 Then
+        If ThisFrame.Views.Count > 0 Then ' This line was problematic, assuming it now works or GetViewByTitleText works
              For Each tempView In ThisFrame.Views
                 If InStr(1, tempView.TitleText, sessionName, vbTextCompare) > 0 Then
                     Set osView = tempView: sessionIsOpen = True: Debug.Print "Found view by iteration: " & osView.TitleText: Exit For
                 End If
             Next tempView
-        Else Debug.Print "ThisFrame.Views.Count is 0 or error."
+        Else Debug.Print "ThisFrame.Views.Count is 0 or error accessing Views collection."
         End If
         If Not sessionIsOpen Then
             Debug.Print "View not found. Attempting CreateView: " & strBoPath
@@ -409,7 +422,7 @@ End Sub
 '===============================================================================
 ' HELPER FUNCTIONS
 '===============================================================================
-Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As Long = 10000) ' Increased default settle
+Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As Long = 10000)
     If obScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
     On Error Resume Next
@@ -425,7 +438,7 @@ End Sub
 
 Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
     If obScreen Is Nothing Then VerifyScreen = False: Exit Function
-    Call WaitReady(100) ' Settle before read
+    Call WaitReady(100)
     If length = 0 Then length = Len(expectedText)
     Dim actualText As String
     On Error Resume Next
@@ -437,14 +450,14 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     End If
 End Function
 
-Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 750) ' Increased default wait
+Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 750)
     If obScreen Is Nothing Then Exit Sub
     Call WaitReady(100)
     obScreen.PutText2 data, rowNum, colNum
     If sendTransmit Then obScreen.SendControlKey ControlKeyCode_Transmit: Call WaitReady(waitAfterMs)
 End Sub
 
-Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 750) ' Increased default wait
+Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 750)
     If obScreen Is Nothing Then Exit Sub
     Call WaitReady(100)
     obScreen.SendControlKey keyCode
