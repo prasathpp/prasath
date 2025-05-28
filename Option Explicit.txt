@@ -611,3 +611,42 @@ MyHandler:
            "You may need to open: " & sessionName & " manually or check session path/Reflection version/References.", vbCritical, sPrj_Name
     Set obScreen = Nothing
 End Sub
+
+
+Sub ConnectExtra_Test_ActiveSession()
+    Dim currentAction As String
+    On Error GoTo MyHandler
+    
+    currentAction = "Creating Attachmate.Reflection.Application"
+    Set app = CreateObject("Attachmate.Reflection.Application")
+    If app Is Nothing Then GoTo MyHandler
+    Debug.Print "TypeName of app: " & TypeName(app)
+
+    currentAction = "Trying app.ActiveSession"
+    Dim activeSess As Object
+    Set activeSess = app.ActiveSession ' <<< TEST THIS LINE
+    
+    If activeSess Is Nothing Then
+        MsgBox "app.ActiveSession did not return an object.", vbInformation, sPrj_Name
+        GoTo MyHandler
+    End If
+    
+    Debug.Print "TypeName of activeSess: " & TypeName(activeSess)
+    
+    currentAction = "Getting Screen from ActiveSession"
+    Set obScreen = activeSess.Screen ' Common way to get screen from a session obj
+    If obScreen Is Nothing Then
+        MsgBox "Could not get .Screen from activeSess.", vbInformation, sPrj_Name
+        GoTo MyHandler
+    End If
+    
+    MsgBox "Successfully got obScreen via app.ActiveSession.Screen! Screen Title: " & obScreen.GetText(1,1,20), vbInformation, sPrj_Name
+    ' If this works, we need to get ibmTerminal as well for properties
+    ' Set ibmTerminal = activeSess.Control ' if activeSess is a View-like object
+    ' Or Set ibmTerminal = activeSess ' if activeSess is the Terminal object itself
+    Exit Sub
+
+MyHandler:
+    MsgBox "Error during: '" & currentAction & "'" & vbNewLine & Err.Description, vbCritical
+    Set obScreen = Nothing
+End Sub
