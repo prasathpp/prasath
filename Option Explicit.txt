@@ -75,7 +75,7 @@ MainErrorHandler:
 End Sub
 
 '===============================================================================
-' PROCESS SINGLE ADJUSTMENT - WITH CORRECTED IF BLOCKS
+' PROCESS SINGLE ADJUSTMENT - CORRECTED FOR LOOP
 '===============================================================================
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
@@ -133,34 +133,29 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         GoTo NextCase_Adjustment
     End If
     
-    ' --- CORRECTED ROYAL BANK OF SCOTLAND BLOCK ---
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
-        Call SendKey(ControlKeyCode_Transmit, 1000) ' Wait after sending key
+        Call SendKey(ControlKeyCode_Transmit, 1000)
         obScreen.WaitForHostSettle 500, 2000
-
-        If VerifyScreen("", 1, 1, 80) Then ' Check for blank screen after Enter
+        If VerifyScreen("", 1, 1, 80) Then
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
                 If VerifyScreen("", 1, 1, 80) Then
-                    Call SendData("STAR", 1, 1, True, 1000) ' SendData includes WaitReady
+                    Call SendData("STAR", 1, 1, True, 1000)
                 ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
-                    Call SendKey(ControlKeyCode_Transmit, 1000) ' Resend Enter if RBS screen reappears
+                    Call SendKey(ControlKeyCode_Transmit, 1000)
                 End If
-                obScreen.WaitForHostSettle 300, 1000 ' Settle within loop
+                obScreen.WaitForHostSettle 300, 1000
                 loopCounter = loopCounter + 1
             Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10
-            
             If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
                  Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
             End If
-        ' Else: Not a blank screen, proceed to check Option Handler
         End If
     End If
-    ' --- END CORRECTED RBS BLOCK ---
 
-    obScreen.WaitForHostSettle 300, 1000 ' Ensure settled before next check
+    obScreen.WaitForHostSettle 300, 1000
     If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
         Ws_Data.Range("H" & iRow).Value = "Not on Opt Handler. Found: " & obScreen.GetText(1, 26, Len(SCREEN_OPT_HANDLER))
         GoTo NextCase_Adjustment
@@ -194,7 +189,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Call SendData("04", 22, 8, True, 1000)
     obScreen.WaitForHostSettle 500, 2000
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then ' Fallback check
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
             Ws_Data.Range("H" & iRow).Value = "Not on Int Amend scrn": GoTo NextCase_Adjustment
         End If
     End If
@@ -210,18 +205,16 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: excel_D_Accrued: " & excel_D_Accrued
     
-    ' --- CORRECTED SCREEN TYPE DETERMINATION ---
     screenType = "Unknown"
-    tempStr = Trim(obScreen.GetText(3, 42, 16)) ' Read for "BUSINESS CURRENT"
+    tempStr = Trim(obScreen.GetText(3, 42, 16))
     If tempStr = "BUSINESS CURRENT" Then
         screenType = "BC"
     Else 
-        tempStr = Trim(obScreen.GetText(3, 42, 14)) ' Read for "SELECT ACCOUNT"
+        tempStr = Trim(obScreen.GetText(3, 42, 14))
         If tempStr = "SELECT ACCOUNT" Then
             screenType = "Normal"
         End If
     End If
-    ' --- END CORRECTED SCREEN TYPE ---
 
     If screenType = "Unknown" Then
         Ws_Data.Range("H" & iRow).Value = "Unknown Amend Scrn Type: " & obScreen.GetText(3, 42, 16)
@@ -284,8 +277,11 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Data entry potentially complete for row " & iRow
 
-    For k = 1 To 3 Call SendKey(ControlKeyCode_Transmit, 500)
+    ' --- CORRECTED For Loop ---
+    For k = 1 To 3
+        Call SendKey(ControlKeyCode_Transmit, 500) 
     Next k
+    ' --- END CORRECTION ---
     Debug.Print "ProcessSingle: Sent Enter x3"
 
     obScreen.SendKeys "<S_ESC>"
@@ -483,16 +479,38 @@ Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As
 End Sub
 
 Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    If obScreen Is Nothing Then VerifyScreen = False: Exit Function
-    Call WaitReady(100)
-    If length = 0 Then length = Len(expectedText)
+    If obScreen Is Nothing Then
+        VerifyScreen = False
+        Exit Function
+    End If
+    
+    Call WaitReady(100) ' Settle before read
+    If length = 0 Then
+        If expectedText = "" Then ' Handle case where we are verifying a blank string
+            length = 80 ' Or some other reasonable default length for checking blank
+        Else
+            length = Len(expectedText)
+        End If
+    End If
+    
     Dim actualText As String
     On Error Resume Next
-    actualText = Trim(obScreen.GetText(rowNum, colNum, length))
-    If Err.Number <> 0 Then Debug.Print "VerifyScreen FAIL GetText R" & rowNum & "C" & colNum & ": " & Err.Description: VerifyScreen = False: Exit Function
+    actualText = obScreen.GetText(rowNum, colNum, length) ' Removed Trim here to match exact length
+    If Err.Number <> 0 Then
+        Debug.Print "VerifyScreen FAIL GetText R" & rowNum & "C" & colNum & ": " & Err.Description
+        VerifyScreen = False
+        Exit Function
+    End If
     On Error GoTo 0
-    If UCase(actualText) = UCase(expectedText) Then VerifyScreen = True
-    Else Debug.Print "VerifyScreen FAIL: Exp '" & expectedText & "',Found '" & actualText & "'@R" & rowNum & "C" & colNum & "L" & length: VerifyScreen = False
+    
+    ' Compare UCase(Trim(actualText)) if you want to ignore leading/trailing spaces from screen
+    ' For an exact match of what's on screen for the given length, just UCase(actualText)
+    If UCase(Trim(actualText)) = UCase(expectedText) Then ' Using Trim here for flexibility
+        VerifyScreen = True
+    Else
+        ' This is now a multi-line Else block
+        Debug.Print "VerifyScreen FAIL: Exp '" & expectedText & "',Found '" & Trim(actualText) & "'@R" & rowNum & "C" & colNum & "L" & length
+        VerifyScreen = False
     End If
 End Function
 
