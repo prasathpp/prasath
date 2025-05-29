@@ -1,200 +1,864 @@
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 23
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 5. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 6
-ProcessSingle: Row 6, S/C: 523056, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 23
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 6. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 7
-ProcessSingle: Row 7, S/C: 543016, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found ''@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 7. Status: Exception - Screen already accepted
-CleanUpReflectionObjects: Releasing...
-CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 14:23:40
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 14:24:43
-ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 36
-ProcessInterestAdjustments_Main: Calling ConnectExtra...
-Initializing ConnectExtra
-GetObject(, "Reflection Workspace")
-GetObject FAILED. Attempting CreateObject...
-App Object obtained. TypeName: ApplicationObject
-app.GetObject("Frame")
-Frame Object obtained. TypeName: Frame
-Frame Visible/Activated.
-ThisFrame.GetViewByTitleText("Back Office - Prod.rd3x")
-View obtained. Title: 'Back Office - Prod.rd3x'. TypeName: View
-osView.Control
-Terminal Object. TypeName: IbmTerminal
-ibmTerminal.Screen
-Screen Object. TypeName: IbmScreen
-ConnectExtra: Success.
-ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set.
-ProcessInterestAdjustments_Main: Starting loop from row 2 to 36
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 2
-ProcessSingle: Row 2, S/C: 010527, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): ATTN attempts failed. Trying PF3.
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): PF3 attempts failed. Attempting TERM ALL sequence.
-ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): TERM ALL failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Trying one more ATTN key as last resort.
-ProcessSingle (PageDownExit): Returned to App Menu via final ATTN.
-ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 3
-ProcessSingle: Row 3, S/C: 543035, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 3. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 4
-ProcessSingle: Row 4, S/C: 523050, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 4. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 5
-ProcessSingle: Row 5, S/C: 543036, Confirm: PRCIN#T#
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (Initial Nav): Not initially on App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (Initial Nav): Trying ATTN key.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (Initial Nav): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (Initial Nav): Trying PF3 key.
-ProcessSingle (Initial Nav): Reached App Menu after recovery attempts.
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found ''@R1C28L26
----!!! VBA Error in ProcessSingleAdjustment for row 5: Specified argument was out of the range of valid values.
-Parameter name: row (Line: 0) !!!---
-ProcessInterestAdjustments_Main: Finished row 5. Status: VBA Error: Specified argument was out of the range of valid values.
-Parameter name: row (Line: 0)
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 6
-ProcessSingle: Row 6, S/C: 523056, Confirm: PRCIN#T#
-VerifyScreen FAIL GetText R1C28: Specified argument was out of the range of valid values.
-Parameter name: row
----!!! VBA Error in ProcessSingleAdjustment for row 6: Object variable or With block variable not set (Line: 0) !!!---
-CleanUpReflectionObjects: Releasing...
-CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 14:24:57
+Option Explicit
 
+' --- Global/Module-Level Reflection Object Variables ---
+Public app As Object
+Public ThisFrame As Object
+Public osView As Object
+Public ibmTerminal As Object
+Public obScreen As Object
+
+' --- Other Global/Module-Level Variables ---
+Public sessionName As String
+Public strBoPath As String
+Public stEDPFile As String
+
+'Global Project Name Constant
+Public Const SCRIPT_TITLE As String = "Interest Adjustment Automation"
+Public Const sPrj_Name As String = SCRIPT_TITLE
+
+' --- Key Screen Title Constants ---
+Private Const SCREEN_APP_MENU As String = "APPLICATION SELECTION MENU"
+Private Const SCREEN_OPT_HANDLER As String = "OPTION HANDLER FUNCTION SCREEN"
+Private Const SCREEN_BO_SYSTEM As String = "BACK OFFICE SYSTEM"
+Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
+Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
+Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
+Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
+
+' --- Reflection Key Codes (ensure your library reference provides these) ---
+Public Const ControlKeyCode_Transmit As Long = 14 ' Example for Enter
+Public Const ControlKeyCode_PF2 As Long = 38      ' !!! EXAMPLE PF2 - VERIFY THIS CODE !!!
+Public Const ControlKeyCode_PF3 As Long = 39      ' !!! EXAMPLE PF3 - VERIFY THIS CODE !!!
+Public Const ControlKeyCode_Attention As Long = 35 ' !!! EXAMPLE ATTN/PA1 - VERIFY THIS CODE !!!
+Public Const ControlKeyCode_Clear As Long = 70    ' !!! EXAMPLE CLEAR - VERIFY THIS CODE !!!
+
+
+'===============================================================================
+' MAIN PROCESSING SUB (Modified for better session loss handling)
+'===============================================================================
+Sub ProcessInterestAdjustments_Main()
+    Dim Ws_Data As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim processingStatus As String
+    Dim sessionLostMidProcess As Boolean
+
+    Const START_ROW As Long = 2
+    Const DATA_SHEET_NAME As String = "Sheet1" ' !!! UPDATE THIS to your actual sheet name !!!
+
+    On Error GoTo MainErrorHandler
+
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Started at " & Now
+    processingStatus = "Processing started..."
+    i = START_ROW ' Initialize i here
+
+    Set Ws_Data = ThisWorkbook.Worksheets(DATA_SHEET_NAME)
+    lastRow = Ws_Data.Cells(Rows.Count, "A").End(xlUp).Row
+    Debug.Print "ProcessInterestAdjustments_Main: Last row in sheet '" & DATA_SHEET_NAME & "' is " & lastRow
+
+    If lastRow < START_ROW Then
+        processingStatus = "No data found in sheet '" & DATA_SHEET_NAME & "'."
+        MsgBox processingStatus, vbInformation, SCRIPT_TITLE
+        Exit Sub
+    End If
+
+ConnectSequence:
+    sessionLostMidProcess = False ' Reset flag before attempting connection
+    Debug.Print "ProcessInterestAdjustments_Main: Calling ConnectExtra..."
+    Call ConnectExtra
+    
+    If obScreen Is Nothing Then
+        processingStatus = "Failed to connect to Reflection. Automation cannot continue after multiple attempts."
+        MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+        Exit Sub ' Critical failure to connect
+    End If
+    Debug.Print "ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set."
+    
+    Debug.Print "ProcessInterestAdjustments_Main: Starting/Resuming loop from row " & i & " to " & lastRow
+
+    For i = i To lastRow ' Loop from current 'i' to lastRow
+        Debug.Print "-----------------------------------------------------"
+        Debug.Print "ProcessInterestAdjustments_Main: Processing row " & i
+        
+        ' Clear previous status only if we are not retrying due to session loss
+        If Not sessionLostMidProcess Then
+            Ws_Data.Range("H" & i & ":J" & i).ClearContents
+        End If
+        sessionLostMidProcess = False ' Reset for current row processing
+        
+        If obScreen Is Nothing Then 
+            Ws_Data.Range("H" & i).Value = "Session Lost Before Row " & i
+            Debug.Print "ProcessInterestAdjustments_Main: Session lost before processing row " & i & ". Attempting reconnect."
+            sessionLostMidProcess = True ' Set flag
+            Call CleanUpReflectionObjects
+            Application.Wait (Now + TimeValue("00:00:05")) 
+            GoTo ConnectSequence ' Attempt to reconnect; loop will resume from current 'i'
+        End If
+        
+        Call ProcessSingleAdjustment(i, Ws_Data)
+        
+        If obScreen Is Nothing Then 
+             ' ProcessSingleAdjustment should have already set an error, but we ensure a note about session loss
+             If Ws_Data.Range("H" & i).Value = "" Or Not Ws_Data.Range("H" & i).Value Like "*Session Lost*" Then
+                Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " (Session Lost During Row Processing)")
+             End If
+             Debug.Print "ProcessInterestAdjustments_Main: Session detected as lost after processing row " & i & ". Attempting reconnect."
+             sessionLostMidProcess = True ' Set flag
+             Call CleanUpReflectionObjects
+             Application.Wait (Now + TimeValue("00:00:05"))
+             GoTo ConnectSequence ' Attempt to reconnect; loop will resume from current 'i'
+        End If
+        Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
+    Next i
+    
+    ' If loop completes without sessionLostMidProcess being true at the end:
+    If Not sessionLostMidProcess And Not obScreen Is Nothing Then
+      Debug.Print "ProcessInterestAdjustments_Main: Loop finished. Sending final TERM ALL."
+      Call SendData("TERM ALL", 21, 13, True, 3500)
+    Else
+      Debug.Print "ProcessInterestAdjustments_Main: Loop may have been interrupted or session is not available. Skipping final TERM ALL."
+    End If
+    
+    If i > lastRow And Not sessionLostMidProcess Then ' 'i' will be lastRow + 1 if loop completed normally
+        processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
+    ElseIf sessionLostMidProcess Then
+        processingStatus = "Processing interrupted at row " & i & " due to session loss and could not complete. Please review."
+        MsgBox processingStatus, vbExclamation, SCRIPT_TITLE
+    Else
+        processingStatus = "Processing stopped at row " & i & "." ' Should not happen if loop completes
+    End If
+    
+    Call CleanUpReflectionObjects
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Ended at " & Now & ". Status: " & processingStatus
+    Exit Sub
+
+MainErrorHandler:
+    processingStatus = "VBA Error in Main: " & Err.Description & " (ErrNo " & Err.Number & ", Line: " & Erl & ")"
+    Debug.Print "ProcessInterestAdjustments_Main: " & processingStatus
+    MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+    If i >= START_ROW And i <= lastRow And Not Ws_Data Is Nothing Then
+        On Error Resume Next ' Avoid error within error handler
+        If Ws_Data.Range("H" & i).Value = "" Then
+            Ws_Data.Range("H" & i).Value = "Main Sub Error: " & Err.Description
+        Else
+            Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " | Main Sub Error: " & Err.Description)
+        End If
+        On Error GoTo 0
+    End If
+    Call CleanUpReflectionObjects
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Ended with Error at " & Now
+End Sub
+
+'===============================================================================
+' PROCESS SINGLE ADJUSTMENT
+'===============================================================================
+Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
+    On Error GoTo ErrorHandler_Adjustment
+
+    Dim sortCode As String, accountNo As String, iBrand As String, confirmCode As String
+    Dim excel_D_Accrued As Double, excel_E_Cutoff As Double
+    Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
+    Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
+    Dim screenType As String, tempStr As String, loopCounter As Long
+    Dim k As Integer 
+    Dim hostStatusMessage As String
+    Dim formattedAmount As String
+    Dim appMenuReached As Boolean 
+    Dim recoveryAttempts As Integer
+
+    ProcessSingleAdjustment = False
+    Carry_Over_Cutoff_To_Applied_Amount = 0
+    
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
+
+    sortCode = Format(Ws_Data.Range("A" & iRow).Value, "000000")
+    accountNo = Format(Ws_Data.Range("B" & iRow).Value, "00000000")
+    iBrand = UCase(Trim(CStr(Ws_Data.Range("C" & iRow).Value)))
+    excel_D_Accrued = Val(CStr(Ws_Data.Range("D" & iRow).Value))
+    excel_E_Cutoff = Val(CStr(Ws_Data.Range("E" & iRow).Value))
+    excel_F_Applied_Debit = Val(CStr(Ws_Data.Range("F" & iRow).Value))
+    excel_G_Applied_Credit = Val(CStr(Ws_Data.Range("G" & iRow).Value))
+
+    If sortCode = "000000" Or accountNo = "00000000" Or iBrand = "" Then
+        Ws_Data.Range("H" & iRow).Value = "Missing Input Data"
+        GoTo NextCase_Adjustment
+    End If
+    
+    Select Case iBrand
+        Case "RBS", "RBG", "RBI", "VIR": confirmCode = "PRCIR#T#"
+        Case "NWB", "CTS", "NWO", "IOM": confirmCode = "PRCIN#T#"
+        Case "UBN": confirmCode = "PRCIJ#T#"
+        Case "UBR": confirmCode = "PRCIK#T#"
+        Case Else: Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand: GoTo NextCase_Adjustment
+    End Select
+    Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
+
+InitialNavSequence:
+    Call WaitReady(1500, 15000) 
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    
+    If Not appMenuReached Then
+        Debug.Print "ProcessSingle (Initial Nav): Not on App Menu. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        
+        Debug.Print "ProcessSingle (Initial Nav): Trying CLEAR key."
+        Call SendKey(ControlKeyCode_Clear, 3500): Call WaitReady(2500)
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+
+        If Not appMenuReached Then
+            Debug.Print "ProcessSingle (Initial Nav): CLEAR failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (Initial Nav): Trying PF2 key."
+            Call SendKey(ControlKeyCode_PF2, 4000): Call WaitReady(3000)
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        End If
+        
+        If Not appMenuReached Then
+            Debug.Print "ProcessSingle (Initial Nav): PF2 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (Initial Nav): Trying ATTN key."
+            Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(3000)
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        End If
+
+        If Not appMenuReached Then
+            Debug.Print "ProcessSingle (Initial Nav): ATTN failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (Initial Nav): Trying PF3 key."
+            Call SendKey(ControlKeyCode_PF3, 4000): Call WaitReady(3000) 
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        End If
+
+        If Not appMenuReached Then
+            Debug.Print "ProcessSingle (Initial Nav): PF3 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (Initial Nav): Attempting TERM ALL sequence."
+            Call SendData("TERM ALL", 21, 13, True, 4000) : If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Call WaitReady(1500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (Initial Nav): Sending additional Transmit after TERM ALL."
+            obScreen.SendControlKey ControlKeyCode_Transmit
+            Call WaitReady(3000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+
+            If Not appMenuReached Then
+                 Debug.Print "ProcessSingle (Initial Nav): TERM ALL failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+                 Debug.Print "ProcessSingle (Initial Nav): Trying one more ATTN key after TERM ALL."
+                 Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                 appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            End If
+        End If
+            
+        If appMenuReached Then
+            Debug.Print "ProcessSingle (Initial Nav): Reached App Menu after recovery attempts."
+        Else
+            Debug.Print "ProcessSingle (Initial Nav): ALL recovery attempts failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Ws_Data.Range("H" & iRow).Value = "Not on App Menu; Nav failed after all attempts"
+            GoTo NextCase_Adjustment
+        End If
+    End If
+    Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
+    
+    Debug.Print "ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field."
+    Call SendData("TERM ALL", 21, 13, True, 3500) : If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    
+    If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "ProcessSingle: Navigated away from App Menu after TERM ALL. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        Debug.Print "ProcessSingle: Attempting to return to App Menu with ATTN."
+        Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle: Failed to return to App Menu after TERM ALL + ATTN. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Ws_Data.Range("H" & iRow).Value = "Failed App Menu reset before confirmCode"
+            GoTo NextCase_Adjustment
+        End If
+        Debug.Print "ProcessSingle: Recovered to App Menu."
+    End If
+    Debug.Print "ProcessSingle: App Menu cleared and verified, ready for confirmCode."
+
+    Call SendData(confirmCode, 21, 13, True, 5000) : If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 3000, 10000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: Sent " & confirmCode
+    
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then Ws_Data.Range("H" & iRow).Value = "Brand cmd NR": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    
+    If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "ProcessSingle: Handling RBS screen"
+        Call SendKey(ControlKeyCode_Transmit, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        obScreen.WaitForHostSettle 1500, 5000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        If VerifyScreen("", 1, 1, 80) Then
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
+            loopCounter = 1
+            Do
+                If VerifyScreen("", 1, 1, 80) Then Call SendData("STAR", 1, 1, True, 2500)
+                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then Call SendKey(ControlKeyCode_Transmit, 2500)
+                Else Exit Do
+                End If
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                obScreen.WaitForHostSettle 1000, 3000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                loopCounter = loopCounter + 1
+            Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10 And Not obScreen Is Nothing
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        End If
+    End If
+
+    obScreen.WaitForHostSettle 1000, 4000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Not on OptH": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
+    
+    Call SendData("19", 21, 16, True, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then Ws_Data.Range("H" & iRow).Value = "Not on BOSys": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: On " & SCREEN_BO_SYSTEM
+
+    Call SendData("01", 22, 16, True, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then Ws_Data.Range("H" & iRow).Value = "Not on MI": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: On " & SCREEN_MASTER_INDEX
+
+    Call WaitReady(500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.PutText2 "20", 22, 8
+    obScreen.PutText2 Format(sortCode, "000000"), 22, 74
+    Call SendKey(ControlKeyCode_Transmit, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then Ws_Data.Range("H" & iRow).Value = "Not on FMI": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: On " & SCREEN_FILE_MAINT_IDX
+
+    Call WaitReady(500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.PutText2 "20", 22, 8
+    obScreen.PutText2 Format(accountNo, "00000000"), 22, 21
+    Call SendKey(ControlKeyCode_Transmit, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then Ws_Data.Range("H" & iRow).Value = "Not on IT": GoTo NextCase_Adjustment
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Debug.Print "ProcessSingle: On " & SCREEN_INTERNAL_TXNS
+
+    Call SendData("04", 22, 8, True, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then Ws_Data.Range("H" & iRow).Value = "Not on IA scrn": GoTo NextCase_Adjustment
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    End If
+    Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
+
+    Call WaitReady(1000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If Trim(obScreen.GetTextSafe(20, 2, 20)) = "ACCEPTED BY OPERATOR" Then
+        Debug.Print "ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row."
+        Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted"
+        GoTo PageDownAndExit_Adjustment
+    End If
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment ' Check after GetTextSafe
+
+    Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
+    tempStr = Trim(obScreen.GetTextSafe(3, 42, 16))
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If tempStr = "BUSINESS CURRENT" Then screenType = "BC" Else screenType = "Normal"
+    Debug.Print "ProcessSingle: Screen Type: " & screenType
+
+    ' --- Data Entry Logic ---
+    If excel_D_Accrued > 0 Then
+        Debug.Print "Processing Accrued: " & excel_D_Accrued
+        If screenType = "BC" Then
+            obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(excel_D_Accrued, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35: obScreen.PutText2 "01", 8, 47
+        ElseIf screenType = "Normal" Then
+            current_screen_arr_val = Val(Trim(obScreen.GetTextSafe(8, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            current_screen_unar_val = Val(Trim(obScreen.GetTextSafe(9, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            val_to_input_in_arr = 0: val_to_input_in_unar = 0
+            If current_screen_arr_val > 0 Then val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
+            remaining_excel_val_for_unar_accr = excel_D_Accrued - val_to_input_in_arr
+            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            If val_to_input_in_arr > 0 Then
+                obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(val_to_input_in_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35
+                If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then obScreen.PutText2 "01", 9, 47: reasonCodeEntered_AccruedUnar = True
+            End If
+            If val_to_input_in_unar > 0 Then
+                obScreen.PutText2 "dec", 9, 31: formattedAmount = Format(val_to_input_in_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 9, 35
+                If Not reasonCodeEntered_AccruedUnar Then obScreen.PutText2 "01", 9, 47
+            End If
+        End If
+    End If
+    If excel_E_Cutoff > 0 Then
+        Debug.Print "Processing Cutoff: " & excel_E_Cutoff
+        If screenType = "BC" Then
+            obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(excel_E_Cutoff, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35: obScreen.PutText2 "01", 12, 47
+        ElseIf screenType = "Normal" Then
+            current_screen_cutoff_arr_val = Val(Trim(obScreen.GetTextSafe(12, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            current_screen_cutoff_unar_val = Val(Trim(obScreen.GetTextSafe(13, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If current_screen_cutoff_arr_val <= 0 And current_screen_cutoff_unar_val <= 0 Then
+                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff: cutoff_deferred = True: Debug.Print "Cutoff deferred: " & Carry_Over_Cutoff_To_Applied_Amount
+            Else
+                val_to_input_in_cutoff_arr = 0: val_to_input_in_cutoff_unar = 0
+                If current_screen_cutoff_arr_val > 0 Then val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
+                remaining_excel_val_for_cutoff_unar = excel_E_Cutoff - val_to_input_in_cutoff_arr
+                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                If val_to_input_in_cutoff_arr > 0 Then
+                    obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35
+                    If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then obScreen.PutText2 "01", 13, 47: reasonCodeEntered_CutoffUnar = True
+                End If
+                If val_to_input_in_cutoff_unar > 0 Then
+                    obScreen.PutText2 "dec", 13, 31: formattedAmount = Format(val_to_input_in_cutoff_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 13, 35
+                    If Not reasonCodeEntered_CutoffUnar Then obScreen.PutText2 "01", 13, 47
+                End If
+            End If
+        End If
+    End If
+    Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
+    Debug.Print "Applied Debtor: " & Total_Applied_Debtor_Amount & " (F:" & excel_F_Applied_Debit & ",CO:" & Carry_Over_Cutoff_To_Applied_Amount & "). Applied Credit(G):" & excel_G_Applied_Credit
+    If screenType = "BC" Then
+        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(BC):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 14, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 14, 35: obScreen.PutText2 "01", 14, 47
+        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(BC):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 15, 31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
+    ElseIf screenType = "Normal" Then
+        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(Norm):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 15, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
+        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(Norm):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 16, 31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 16, 35: obScreen.PutText2 "01", 16, 47
+    End If
+    Debug.Print "Data entry potentially complete"
+    ' --- End Data Entry Logic ---
+
+    Call WaitReady(500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    obScreen.PutText2 "CHARGEBACK", 18, 2
+    Debug.Print "Input 'CHARGEBACK' at R18,C2"
+    
+    For k = 1 To 3
+        Call SendKey(ControlKeyCode_Transmit, 2000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        If k = 1 Then
+            obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If VerifyScreen("REASON CODE NOT ENTERED", 23, 4, 25) Then
+                Ws_Data.Range("H" & iRow).Value = "HostError: REASON CODE still not accepted"
+                Debug.Print "Host still reports REASON CODE NOT ENTERED after 1st Enter"
+                GoTo PageDownAndExit_Adjustment
+            ElseIf VerifyScreen("AMENDMENT ACCEPTED", 23, 4, 18) Or VerifyScreen("TRANSACTION ACCEPTED", 23, 4, 20) Then
+                Debug.Print "Amendment accepted message after first Enter."
+            Else
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                Dim intermediateMsg As String: intermediateMsg = Left(Trim(obScreen.GetTextSafe(23, 4, 25)), 25)
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                If UCase(intermediateMsg) = "PRESS <ENTER> TO CONFIRM" Then Debug.Print "ProcessSingle: Intermediate 'PRESS <ENTER> TO CONFIRM' found. Continuing."
+                Else Debug.Print "ProcessSingle: No specific error/accepted/confirm message at (23,4) after 1st Enter. Text: '" & intermediateMsg & "'"
+                End If
+            End If
+        End If
+    Next k
+    Debug.Print "ProcessSingle: Sent Enter x3"
+
+    Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    hostStatusMessage = Trim(obScreen.GetTextSafe(20, 2, 20))
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If hostStatusMessage = "ACCEPTED BY OPERATOR" Then
+        Debug.Print "Amendment ACCEPTED BY OPERATOR for row " & iRow
+        Ws_Data.Range("H" & iRow).Value = "Completed": ProcessSingleAdjustment = True
+    Else
+        hostStatusMessage = Trim(obScreen.GetTextSafe(23, 3, 78))
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "Amendment FAILED. Status(20,2):'" & Trim(obScreen.GetTextSafe(20, 2, 20)) & "'. ErrLine(23,3):'" & hostStatusMessage & "'"
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Ws_Data.Range("H" & iRow).Value = "Exception - Not Accepted. HostMsg: " & Left(hostStatusMessage, 50)
+    End If
+    
+PageDownAndExit_Adjustment:
+    Dim returnedToAppMenu As Boolean: returnedToAppMenu = False
+    If obScreen Is Nothing Then
+        Debug.Print "ProcessSingle (PageDownExit): Session lost before attempting to return to App Menu."
+        Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (SessionLostBeforeExitNav)")
+        GoTo FatalExit_Adjustment ' Cannot navigate without a session
+    End If
+
+    Debug.Print "ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+    
+    ' Try CLEAR first
+    Debug.Print "ProcessSingle (PageDownExit): Trying CLEAR key."
+    Call SendKey(ControlKeyCode_Clear, 4000): Call WaitReady(3000)
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via CLEAR"
+
+    ' If CLEAR failed, Try PF2 (up to 2 times)
+    If Not returnedToAppMenu Then
+        Debug.Print "ProcessSingle (PageDownExit): CLEAR failed. Trying PF2."
+        For recoveryAttempts = 1 To 2
+            Call SendKey(ControlKeyCode_PF2, 5000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): Sent PF2 (Attempt " & recoveryAttempts & ")"
+            Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via PF2": Exit For
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): PF2 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        Next recoveryAttempts
+    End If
+
+    ' If PF2 failed, try ATTN (up to 2 times)
+    If Not returnedToAppMenu Then
+        Debug.Print "ProcessSingle (PageDownExit): PF2 failed. Trying ATTN."
+        For recoveryAttempts = 1 To 2
+            Call SendKey(ControlKeyCode_Attention, 5000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): Sent ATTN (Attempt " & recoveryAttempts & ")"
+            Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via ATTN": Exit For
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): ATTN failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        Next recoveryAttempts
+    End If
+
+    ' If ATTN failed, try PF3 (up to 2 times)
+    If Not returnedToAppMenu Then
+        Debug.Print "ProcessSingle (PageDownExit): ATTN failed. Trying PF3."
+        For recoveryAttempts = 1 To 2
+            Call SendKey(ControlKeyCode_PF3, 5000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): Sent PF3 (Attempt " & recoveryAttempts & ")"
+            Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via PF3": Exit For
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): PF3 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        Next recoveryAttempts
+    End If
+
+    ' If PF3 also failed, try TERM ALL sequence as last resort
+    If Not returnedToAppMenu Then
+        Debug.Print "ProcessSingle (PageDownExit): PF3 failed. Attempting TERM ALL sequence."
+        Call SendData("TERM ALL", 21, 13, True, 4000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Call WaitReady(1500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL."
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitReady(3000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via TERM ALL + Enter"
+        Else
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            Debug.Print "ProcessSingle (PageDownExit): TERM ALL failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (PageDownExit): Trying one more ATTN key as final final resort."
+            Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via final ATTN"
+            Else: If obScreen Is Nothing Then GoTo FatalExit_Adjustment: Debug.Print "ProcessSingle (PageDownExit): All recovery attempts failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            End If
+        End If
+    End If
+    
+    If Not returnedToAppMenu Then
+        Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (NavBackFail)")
+    End If
+
+NextCase_Adjustment:
+    If ProcessSingleAdjustment = False And Ws_Data.Range("H" & iRow).Value = "" Then
+        Ws_Data.Range("H" & iRow).Value = "Error or Incomplete"
+    End If
+    Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
+    Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+    Exit Function
+
+FatalExit_Adjustment:
+    Debug.Print "---!!! ProcessSingleAdjustment: FATAL EXIT - obScreen is Nothing for row " & iRow & " !!!---"
+    If Not Ws_Data Is Nothing Then
+      If Ws_Data.Range("H" & iRow).Value = "" Then
+          Ws_Data.Range("H" & iRow).Value = "Session Lost Mid-Row"
+      Else
+          Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (Session Lost Mid-Row)")
+      End If
+      Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
+      Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+    End If
+    ProcessSingleAdjustment = False ' Ensure it returns False
+    ' obScreen is already Nothing, so main loop should handle reconnect
+    Exit Function
+
+ErrorHandler_Adjustment:
+    Ws_Data.Range("H" & iRow).Value = "VBA Error: " & Err.Description & " (Line: " & Erl & ")"
+    Debug.Print "---!!! VBA Error in ProcessSingleAdjustment for row " & iRow & ": " & Err.Description & " (Line: " & Erl & ") !!!---"
+    On Error Resume Next ' Avoid error within error handler
+    If Not Ws_Data Is Nothing Then
+      Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
+      Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+    End If
+    If Err.Number <> 0 And InStr(1, Err.Description, "out of the range of valid values", vbTextCompare) > 0 Then
+        Debug.Print "ErrorHandler_Adjustment: Detected 'out of range' error, likely session loss. Setting obScreen to Nothing."
+        Set obScreen = Nothing ' Explicitly set to Nothing to trigger reconnect in main loop
+    End If
+    On Error GoTo 0
+    ProcessSingleAdjustment = False
+End Function
+
+'===============================================================================
+' CONNECTION SUB (Unchanged from your previous version)
+'===============================================================================
+Sub ConnectExtra()
+    Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
+    Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object
+    Dim sessionIsOpen As Boolean
+
+    On Error GoTo ConnectExtra_ErrorHandler
+    currentAction = "Initializing ConnectExtra"
+    Debug.Print currentAction
+
+    edpPathFromSheet = ""
+    On Error Resume Next
+    Set ws = Sheet4 ' Assuming Sheet4 is the CodeName of the sheet with the EDP Path textbox
+    If Err.Number = 0 Then
+        Set OleObj = Nothing
+        On Error Resume Next ' Trap error if OLEObject doesn't exist
+        Set OleObj = ws.OLEObjects("txtEDPPath")
+        If Err.Number = 0 Then
+            If Not OleObj Is Nothing Then
+                If TypeOf OleObj.Object Is MSForms.TextBox Then
+                    edpPathFromSheet = OleObj.Object.text
+                Else
+                    Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
+                End If
+            Else
+                 Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' was found by name but is Nothing."
+            End If
+        Else
+             Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4. Error: " & Err.Description
+        End If
+        Err.Clear
+    Else
+        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
+    End If
+    Err.Clear
+    On Error GoTo ConnectExtra_ErrorHandler ' Restore original error handler
+
+    If edpPathFromSheet <> "" Then
+        stEDPFile = edpPathFromSheet
+    Else
+        Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not found. Prompting user."
+        stEDPFile = Application.GetOpenFilename(title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+    End If
+
+    If stEDPFile = "False" Or stEDPFile = "" Then
+        MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
+        Set obScreen = Nothing: Set app = Nothing: Exit Sub ' Ensure app is also cleared
+    End If
+    
+    strBoPath = stEDPFile
+    sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
+    targetSessionViewTitle = sessionName
+
+    currentAction = "GetObject(, ""Reflection Workspace"")"
+    Debug.Print currentAction
+    On Error Resume Next
+    Set app = GetObject(, "Reflection Workspace")
+    If Err.Number <> 0 Or app Is Nothing Then
+        Err.Clear: Debug.Print "GetObject FAILED. Attempting CreateObject..."
+        currentAction = "CreateObject(""Reflection Workspace"")"
+        Set app = CreateObject("Reflection Workspace")
+        If Err.Number <> 0 Or app Is Nothing Then
+            Err.Clear: Debug.Print "CreateObject FAILED."
+            On Error GoTo ConnectExtra_ErrorHandler
+            GoTo ConnectExtra_ErrorHandler_FinalMsg
+        End If
+    End If
+    Debug.Print "App Object obtained. TypeName: " & TypeName(app)
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    ' Wait for app to initialize if it's a new instance
+    If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then ' Reflection Workspace object types
+        Do While app.IsInitialized = False
+            app.Wait 200 ' Use app.Wait for Reflection Workspace
+            DoEvents
+        Loop
+    End If
+
+    currentAction = "app.GetObject(""Frame"")"
+    Debug.Print currentAction
+    Set ThisFrame = app.GetObject("Frame")
+    If ThisFrame Is Nothing Then Debug.Print "Frame obj is Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
+
+    If Not ThisFrame.Visible Then ThisFrame.Visible = True
+    ThisFrame.Activate: Debug.Print "Frame Visible/Activated."
+
+    currentAction = "ThisFrame.GetViewByTitleText(""" & targetSessionViewTitle & """)"
+    Debug.Print currentAction
+    On Error Resume Next
+    Set osView = ThisFrame.GetViewByTitleText(targetSessionViewTitle)
+    If Err.Number <> 0 Or osView Is Nothing Then
+        Err.Clear
+        Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
+        Debug.Print "Iterating views for: " & sessionName
+        sessionIsOpen = False
+        Dim viewsCollection As Object, tempView As Object
+        Set viewsCollection = Nothing
+        currentAction = "Accessing ThisFrame.Views for iteration"
+        Set viewsCollection = ThisFrame.Views
+        If Err.Number = 0 And Not viewsCollection Is Nothing Then
+            If viewsCollection.Count > 0 Then
+                 For Each tempView In viewsCollection
+                    If InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then
+                        Set osView = tempView: sessionIsOpen = True
+                        Debug.Print "Found view by iteration: " & osView.titleText: Exit For
+                    End If
+                Next tempView
+            Else Debug.Print "ThisFrame.Views.Count is 0."
+            End If
+        Else Debug.Print "Could not access ThisFrame.Views or it is Nothing. Err: " & Err.Description
+        End If
+        Err.Clear
+        If Not sessionIsOpen Then
+            Debug.Print "View not found. Attempting CreateView: " & strBoPath
+            currentAction = "ThisFrame.CreateView(""" & strBoPath & """)"
+            On Error Resume Next
+            Set osView = ThisFrame.CreateView(strBoPath)
+            If Err.Number <> 0 Or osView Is Nothing Then
+                Dim capErrNo As Long: capErrNo = Err.Number: Dim capErrDesc As String: capErrDesc = Err.Description
+                Err.Clear: Debug.Print "CreateView FAILED. ErrNo: " & capErrNo & " Desc: " & capErrDesc
+                On Error GoTo ConnectExtra_ErrorHandler: GoTo ConnectExtra_ErrorHandler_FinalMsg
+            End If
+        End If
+    End If
+    On Error GoTo ConnectExtra_ErrorHandler
+    If osView Is Nothing Then currentAction = "Final osView Check": Debug.Print "Critical - osView is Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    Debug.Print "View obtained. Title: '" & osView.titleText & "'. TypeName: " & TypeName(osView)
+
+    currentAction = "osView.Control": Debug.Print currentAction
+    Set ibmTerminal = osView.Control
+    If ibmTerminal Is Nothing Then Debug.Print "Terminal obj Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    Debug.Print "Terminal Object. TypeName: " & TypeName(ibmTerminal)
+
+    currentAction = "ibmTerminal.Screen": Debug.Print currentAction
+    Set obScreen = ibmTerminal.screen
+    If obScreen Is Nothing Then Debug.Print "Screen obj Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    Debug.Print "Screen Object. TypeName: " & TypeName(obScreen)
+
+    On Error Resume Next
+    ibmTerminal.DisableKeystrokeProductivity = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableKeystrokeProd: " & Err.Description: Err.Clear
+    ibmTerminal.DisableScreenHistory = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableScreenHist: " & Err.Description: Err.Clear
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    Debug.Print "ConnectExtra: Success."
+    Exit Sub
+
+ConnectExtra_ErrorHandler:
+    If currentAction = "" Then currentAction = "Unknown step in ConnectExtra"
+    MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
+ConnectExtra_ErrorHandler_FinalMsg:
+    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then ' No session file chosen
+    ElseIf obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" Then
+         MsgBox "Critical failure in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
+    End If
+    Call CleanUpReflectionObjects ' Ensure cleanup if error occurs
+End Sub
+
+
+'===============================================================================
+' HELPER FUNCTIONS
+'===============================================================================
+Private Sub WaitReady(Optional settleTimeMs As Long = 800, Optional timeoutMs As Long = 25000)
+    If obScreen Is Nothing Then Exit Sub
+    Dim startTime As Date: startTime = Now
+    On Error Resume Next ' To catch errors if obScreen becomes invalid during loop
+    Do While obScreen.OIA.XStatus <> 0
+        If obScreen Is Nothing Then Exit Sub ' Check inside loop
+        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
+            Debug.Print "WaitReady: Timeout XStatus."
+            Exit Do
+        End If
+        obScreen.WaitForHostSettle 100, 250 ' Increased timeout for inner settle
+        DoEvents
+        If Err.Number <> 0 Then
+            Debug.Print "WaitReady: Error in XStatus loop: " & Err.Description
+            Set obScreen = Nothing 
+            Exit Sub
+        End If
+    Loop
+    If obScreen Is Nothing Then Exit Sub 
+    
+    obScreen.WaitForHostSettle settleTimeMs, timeoutMs
+    If Err.Number <> 0 Then
+        Debug.Print "WaitReady: Error in final WaitForHostSettle: " & Err.Description
+        Set obScreen = Nothing 
+    End If
+    On Error GoTo 0
+End Sub
+
+Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
+    VerifyScreen = False ' Default to False
+    If obScreen Is Nothing Then Exit Function
+    
+    Call WaitReady(400) 
+    If obScreen Is Nothing Then Exit Function
+
+    If length = 0 Then
+        If expectedText = "" Then length = 80 Else length = Len(expectedText)
+    End If
+    
+    Dim actualText As String
+    actualText = obScreen.GetTextSafe(rowNum, colNum, length) ' Use GetTextSafe
+    If obScreen Is Nothing Then Exit Function ' GetTextSafe might set obScreen to Nothing
+
+    If UCase(Trim(actualText)) = UCase(Trim(expectedText)) Then
+        VerifyScreen = True
+    Else
+        Debug.Print "VerifyScreen FAIL: Exp '" & expectedText & "',Found '" & Trim(actualText) & "'@R" & rowNum & "C" & colNum & "L" & length
+        VerifyScreen = False
+    End If
+End Function
+
+' New Safe GetText function
+Private Function GetTextSafe(rowNum As Long, colNum As Long, length As Long) As String
+    GetTextSafe = "" ' Default to empty string
+    If obScreen Is Nothing Then
+        Debug.Print "GetTextSafe: obScreen is Nothing. Cannot get text."
+        Exit Function
+    End If
+
+    On Error Resume Next
+    GetTextSafe = obScreen.GetText(rowNum, colNum, length)
+    If Err.Number <> 0 Then
+        Debug.Print "GetTextSafe: Error getting text R" & rowNum & "C" & colNum & "L" & length & ". Desc: " & Err.Description
+        If InStr(1, Err.Description, "out of the range of valid values", vbTextCompare) > 0 Or _
+           InStr(1, Err.Description, "session", vbTextCompare) > 0 Or _
+           InStr(1, Err.Description, "connection", vbTextCompare) > 0 Then
+            Debug.Print "GetTextSafe: Critical error detected, setting obScreen to Nothing."
+            Set obScreen = Nothing
+        End If
+        GetTextSafe = "" ' Return empty on error
+    End If
+    On Error GoTo 0
+End Function
+
+
+Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 2000)
+    If obScreen Is Nothing Then Exit Sub
+    Call WaitReady(400) 
+    If obScreen Is Nothing Then Exit Sub
+
+    obScreen.PutText2 data, rowNum, colNum
+    If sendTransmit Then
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitReady(waitAfterMs)
+    End If
+End Sub
+
+Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 2000)
+    If obScreen Is Nothing Then Exit Sub
+    Call WaitReady(400) 
+    If obScreen Is Nothing Then Exit Sub
+    
+    obScreen.SendControlKey keyCode
+    Call WaitReady(waitAfterMs)
+End Sub
+
+Private Sub CleanUpReflectionObjects()
+    Debug.Print "CleanUpReflectionObjects: Releasing..."
+    On Error Resume Next ' Ignore errors during cleanup
+    Set obScreen = Nothing
+    Set ibmTerminal = Nothing
+    Set osView = Nothing
+    Set ThisFrame = Nothing
+    ' Only release app if it was created by this instance.
+    ' If GetObject was used, another process might own it.
+    ' However, for simplicity here, we'll try to release it.
+    ' A more robust solution would track if CreateObject was used.
+    Set app = Nothing
+    Debug.Print "CleanUpReflectionObjects: Released."
+    On Error GoTo 0
+End Sub
