@@ -163,20 +163,20 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
     Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
     Dim screenType As String, tempStr As String, loopCounter As Long
-    Dim k As Integer 
+    Dim k As Integer
     Dim hostStatusMessage As String
     Dim formattedAmount As String
-    Dim appMenuReached As Boolean 
+    Dim appMenuReached As Boolean
     Dim recoveryAttempts As Integer
-    Dim reasonCodeEntered_AccruedUnar As Boolean 
-    Dim reasonCodeEntered_CutoffUnar As Boolean  
+    Dim reasonCodeEntered_AccruedUnar As Boolean
+    Dim reasonCodeEntered_CutoffUnar As Boolean
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
-    reasonCodeEntered_AccruedUnar = False 
-    reasonCodeEntered_CutoffUnar = False  
+    reasonCodeEntered_AccruedUnar = False
+    reasonCodeEntered_CutoffUnar = False
     
-    If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
 
     sortCode = Format(Ws_Data.Range("A" & iRow).Value, "000000")
     accountNo = Format(Ws_Data.Range("B" & iRow).Value, "00000000")
@@ -200,7 +200,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
-    Call WaitReady(1500, 15000) 
+    Call WaitReady(1500, 15000)
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
@@ -235,7 +235,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         If Not appMenuReached Then
             Debug.Print "ProcessSingle (Initial Nav): ATTN failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
             Debug.Print "ProcessSingle (Initial Nav): Trying PF3 key."
-            Call SendKey(ControlKeyCode_PF3, 4000): Call WaitReady(3000) 
+            Call SendKey(ControlKeyCode_PF3, 4000): Call WaitReady(3000)
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
@@ -304,6 +304,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
                 If VerifyScreen("", 1, 1, 80) Then Call SendData("STAR", 1, 1, True, 2500)
                 ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then Call SendKey(ControlKeyCode_Transmit, 2500)
                 Else Exit Do
@@ -368,7 +369,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted"
         GoTo PageDownAndExit_Adjustment
     End If
-    If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
 
     Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
     tempStr = Trim(obScreen.GetTextSafe(3, 42, 16))
@@ -376,7 +377,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     If tempStr = "BUSINESS CURRENT" Then screenType = "BC" Else screenType = "Normal"
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
-    ' --- Data Entry Logic ---
+    ' --- Data Entry Logic (Corrected) ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
@@ -384,63 +385,144 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     If excel_D_Accrued > 0 Then
         Debug.Print "Processing Accrued: " & excel_D_Accrued
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(excel_D_Accrued, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35: obScreen.PutText2 "01", 8, 47
+            obScreen.PutText2 "dec", 8, 31
+            formattedAmount = Format(excel_D_Accrued, "0.00000000")
+            obScreen.PutText2 formattedAmount, 8, 35
+            obScreen.PutText2 "01", 8, 47
         ElseIf screenType = "Normal" Then
-            current_screen_arr_val = Val(Trim(obScreen.GetTextSafe(8, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            current_screen_unar_val = Val(Trim(obScreen.GetTextSafe(9, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            val_to_input_in_arr = 0: val_to_input_in_unar = 0
-            If current_screen_arr_val > 0 Then val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
+            current_screen_arr_val = Val(Trim(obScreen.GetTextSafe(8, 21, 6)))
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            current_screen_unar_val = Val(Trim(obScreen.GetTextSafe(9, 21, 6)))
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            
+            val_to_input_in_arr = 0
+            val_to_input_in_unar = 0
+            
+            If current_screen_arr_val > 0 Then
+                val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
+            End If
+            
             remaining_excel_val_for_unar_accr = excel_D_Accrued - val_to_input_in_arr
-            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            
+            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then
+                val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            End If
+            
             If val_to_input_in_arr > 0 Then
-                obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(val_to_input_in_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35
-                If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then obScreen.PutText2 "01", 9, 47: reasonCodeEntered_AccruedUnar = True
+                obScreen.PutText2 "dec", 8, 31
+                formattedAmount = Format(val_to_input_in_arr, "0.00000000")
+                obScreen.PutText2 formattedAmount, 8, 35
+                If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then
+                    obScreen.PutText2 "01", 9, 47
+                    reasonCodeEntered_AccruedUnar = True
+                 End If
             End If
+            
             If val_to_input_in_unar > 0 Then
-                obScreen.PutText2 "dec", 9, 31: formattedAmount = Format(val_to_input_in_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 9, 35
-                If Not reasonCodeEntered_AccruedUnar Then obScreen.PutText2 "01", 9, 47
+                obScreen.PutText2 "dec", 9, 31
+                formattedAmount = Format(val_to_input_in_unar, "0.00000000")
+                obScreen.PutText2 formattedAmount, 9, 35
+                If Not reasonCodeEntered_AccruedUnar Then
+                    obScreen.PutText2 "01", 9, 47
+                End If
             End If
-        End If
-    End If
+        End If 
+    End If 
+
     Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double
     Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double
-    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean: cutoff_deferred = False
+    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean
+    cutoff_deferred = False
+    
     If excel_E_Cutoff > 0 Then
         Debug.Print "Processing Cutoff: " & excel_E_Cutoff
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(excel_E_Cutoff, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35: obScreen.PutText2 "01", 12, 47
+            obScreen.PutText2 "dec", 12, 31
+            formattedAmount = Format(excel_E_Cutoff, "0.00000000")
+            obScreen.PutText2 formattedAmount, 12, 35
+            obScreen.PutText2 "01", 12, 47
         ElseIf screenType = "Normal" Then
-            current_screen_cutoff_arr_val = Val(Trim(obScreen.GetTextSafe(12, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            current_screen_cutoff_unar_val = Val(Trim(obScreen.GetTextSafe(13, 21, 6))): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            current_screen_cutoff_arr_val = Val(Trim(obScreen.GetTextSafe(12, 21, 6)))
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            current_screen_cutoff_unar_val = Val(Trim(obScreen.GetTextSafe(13, 21, 6)))
+            If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+            
             If current_screen_cutoff_arr_val <= 0 And current_screen_cutoff_unar_val <= 0 Then
-                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff: cutoff_deferred = True: Debug.Print "Cutoff deferred: " & Carry_Over_Cutoff_To_Applied_Amount
+                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff
+                cutoff_deferred = True
+                Debug.Print "Cutoff deferred: " & Carry_Over_Cutoff_To_Applied_Amount
             Else
-                val_to_input_in_cutoff_arr = 0: val_to_input_in_cutoff_unar = 0
-                If current_screen_cutoff_arr_val > 0 Then val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
+                val_to_input_in_cutoff_arr = 0
+                val_to_input_in_cutoff_unar = 0
+                
+                If current_screen_cutoff_arr_val > 0 Then
+                    val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
+                End If
+                
                 remaining_excel_val_for_cutoff_unar = excel_E_Cutoff - val_to_input_in_cutoff_arr
-                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                
+                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then
+                    val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                End If
+
                 If val_to_input_in_cutoff_arr > 0 Then
-                    obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35
-                    If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then obScreen.PutText2 "01", 13, 47: reasonCodeEntered_CutoffUnar = True
+                    obScreen.PutText2 "dec", 12, 31
+                    formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000")
+                    obScreen.PutText2 formattedAmount, 12, 35
+                    If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then
+                        obScreen.PutText2 "01", 13, 47
+                        reasonCodeEntered_CutoffUnar = True
+                    End If
                 End If
+                
                 If val_to_input_in_cutoff_unar > 0 Then
-                    obScreen.PutText2 "dec", 13, 31: formattedAmount = Format(val_to_input_in_cutoff_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 13, 35
-                    If Not reasonCodeEntered_CutoffUnar Then obScreen.PutText2 "01", 13, 47
+                    obScreen.PutText2 "dec", 13, 31
+                    formattedAmount = Format(val_to_input_in_cutoff_unar, "0.00000000")
+                    obScreen.PutText2 formattedAmount, 13, 35
+                    If Not reasonCodeEntered_CutoffUnar Then
+                        obScreen.PutText2 "01", 13, 47
+                    End If
                 End If
-            End If
-        End If
-    End If
+            End If 
+        End If 
+    End If 
+
     Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
     Debug.Print "Applied Debtor: " & Total_Applied_Debtor_Amount & " (F:" & excel_F_Applied_Debit & ",CO:" & Carry_Over_Cutoff_To_Applied_Amount & "). Applied Credit(G):" & excel_G_Applied_Credit
     If screenType = "BC" Then
-        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(BC):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 14, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 14, 35: obScreen.PutText2 "01", 14, 47
-        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(BC):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 15, 31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
+        If excel_G_Applied_Credit > 0 Then
+            Debug.Print "Applying Cr(BC):" & excel_G_Applied_Credit
+            obScreen.PutText2 "inc", 14, 31
+            formattedAmount = Format(excel_G_Applied_Credit, "0.00000000")
+            obScreen.PutText2 formattedAmount, 14, 35
+            obScreen.PutText2 "01", 14, 47
+        End If
+        If Total_Applied_Debtor_Amount > 0 Then
+            Debug.Print "Applying Dr(BC):" & Total_Applied_Debtor_Amount
+            obScreen.PutText2 "dec", 15, 31
+            formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000")
+            obScreen.PutText2 formattedAmount, 15, 35
+            obScreen.PutText2 "01", 15, 47
+        End If
     ElseIf screenType = "Normal" Then
-        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(Norm):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 15, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
-        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(Norm):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 16, 31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 16, 35: obScreen.PutText2 "01", 16, 47
-    End If
+        If excel_G_Applied_Credit > 0 Then
+            Debug.Print "Applying Cr(Norm):" & excel_G_Applied_Credit
+            obScreen.PutText2 "inc", 15, 31
+            formattedAmount = Format(excel_G_Applied_Credit, "0.00000000")
+            obScreen.PutText2 formattedAmount, 15, 35
+            obScreen.PutText2 "01", 15, 47
+        End If
+        If Total_Applied_Debtor_Amount > 0 Then
+            Debug.Print "Applying Dr(Norm):" & Total_Applied_Debtor_Amount
+            obScreen.PutText2 "dec", 16, 31
+            formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000")
+            obScreen.PutText2 formattedAmount, 16, 35
+            obScreen.PutText2 "01", 16, 47
+        End If
+    End If 
     Debug.Print "Data entry potentially complete"
     ' --- End Data Entry Logic ---
+
 
     Call WaitReady(500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     obScreen.PutText2 "CHARGEBACK", 18, 2
@@ -478,7 +560,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         hostStatusMessage = Trim(obScreen.GetTextSafe(23, 3, 78))
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
         Dim tempHostMsg As String
-        tempHostMsg = Trim(obScreen.GetTextSafe(20, 2, 20)) 
+        tempHostMsg = Trim(obScreen.GetTextSafe(20, 2, 20))
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
         Debug.Print "Amendment FAILED. Status(20,2):'" & tempHostMsg & "'. ErrLine(23,3):'" & hostStatusMessage & "'"
         Ws_Data.Range("H" & iRow).Value = "Exception - Not Accepted. HostMsg: " & Left(hostStatusMessage, 50)
@@ -491,7 +573,7 @@ PageDownAndExit_Adjustment:
         If Ws_Data.Range("H" & iRow).Value = "" Or Not Ws_Data.Range("H" & iRow).Value Like "*SessionLost*" Then
             Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (SessionLostBeforeExitNav)")
         End If
-        GoTo FatalExit_Adjustment 
+        GoTo FatalExit_Adjustment
     End If
 
     Debug.Print "ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
@@ -561,7 +643,7 @@ PageDownAndExit_Adjustment:
     End If
     
     If Not returnedToAppMenu Then
-        If Not Ws_Data.Range("H" & iRow).Value Like "*(NavBackFail)" Then ' Avoid appending if already present
+        If Not Ws_Data.Range("H" & iRow).Value Like "*(NavBackFail)" Then
              Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (NavBackFail)")
         End If
     End If
@@ -580,13 +662,13 @@ FatalExit_Adjustment:
       If Ws_Data.Range("H" & iRow).Value = "" Or Not Ws_Data.Range("H" & iRow).Value Like "*Session Lost*" Then
           Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (Session Lost Mid-Row)")
       End If
-      On Error Resume Next 
+      On Error Resume Next
       Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
       Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
       On Error GoTo 0
     End If
-    ProcessSingleAdjustment = False 
-    Set obScreen = Nothing 
+    ProcessSingleAdjustment = False
+    Set obScreen = Nothing
     Exit Function
 
 ErrorHandler_Adjustment:
@@ -597,7 +679,7 @@ ErrorHandler_Adjustment:
     Debug.Print "---!!! VBA Error in ProcessSingleAdjustment for row " & iRow & ": " & errDesc & " (ErrNo " & errNumber & ", Line: " & errLine & ") !!!---"
     
     If Not Ws_Data Is Nothing Then
-      On Error Resume Next 
+      On Error Resume Next
       If Ws_Data.Range("H" & iRow).Value = "" Then
           Ws_Data.Range("H" & iRow).Value = "VBA Error: " & errDesc & " (Line: " & errLine & ")"
       ElseIf Not Ws_Data.Range("H" & iRow).Value Like "*VBA Error*" Then
@@ -611,9 +693,9 @@ ErrorHandler_Adjustment:
     If InStr(1, errDesc, "out of the range of valid values", vbTextCompare) > 0 Or _
        InStr(1, errDesc, "session", vbTextCompare) > 0 Or _
        InStr(1, errDesc, "connection", vbTextCompare) > 0 Or _
-       errNumber = 91 Or errNumber = 424 Then 
+       errNumber = 91 Or errNumber = 424 Then
         Debug.Print "ErrorHandler_Adjustment: Critical error detected, likely session loss. Setting obScreen to Nothing."
-        Set obScreen = Nothing 
+        Set obScreen = Nothing
     End If
     ProcessSingleAdjustment = False
 End Function
@@ -630,16 +712,15 @@ Sub ConnectExtra()
     currentAction = "Initializing ConnectExtra"
     Debug.Print currentAction
     
-    ' Ensure Reflection objects are cleared before attempting to connect
-    Call CleanUpReflectionObjects
+    Call CleanUpReflectionObjects ' Ensure clean state before connecting
 
     edpPathFromSheet = ""
-    On Error Resume Next ' Temporarily disable error handling for sheet/object access
-    Set ws = Nothing ' Initialize ws
-    Set ws = Sheet4 ' Assuming Sheet4 is the CodeName of the sheet with the EDP Path textbox
+    On Error Resume Next 
+    Set ws = Nothing 
+    Set ws = Sheet4 
     If Err.Number = 0 And Not ws Is Nothing Then
         Set OleObj = Nothing
-        Set OleObj = ws.OLEObjects("txtEDPPath") ' This can error if object doesn't exist
+        Set OleObj = ws.OLEObjects("txtEDPPath") 
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
@@ -658,7 +739,7 @@ Sub ConnectExtra()
         Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found or is Nothing. Error: " & Err.Description
     End If
     Err.Clear
-    On Error GoTo ConnectExtra_ErrorHandler ' Restore original error handler
+    On Error GoTo ConnectExtra_ErrorHandler 
 
     If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
@@ -669,13 +750,12 @@ Sub ConnectExtra()
 
     If stEDPFile = "False" Or stEDPFile = "" Then
         MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
-        ' Set obScreen = Nothing: Set app = Nothing: ' Already handled by CleanUpReflectionObjects
         Exit Sub 
     End If
     
     strBoPath = stEDPFile
     sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
-    targetSessionViewTitle = sessionName ' Use full filename for title text initially
+    targetSessionViewTitle = sessionName 
 
     currentAction = "GetObject(, ""Reflection Workspace"")"
     Debug.Print currentAction
@@ -696,7 +776,7 @@ Sub ConnectExtra()
 
     If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then
         Dim waitLoops As Integer: waitLoops = 0
-        Do While app.IsInitialized = False And waitLoops < 100 ' Max 20 seconds
+        Do While app.IsInitialized = False And waitLoops < 100 
             app.Wait 200 
             DoEvents
             waitLoops = waitLoops + 1
@@ -724,7 +804,7 @@ Sub ConnectExtra()
     If Err.Number <> 0 Or osView Is Nothing Then
         Err.Clear
         Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
-        Debug.Print "Iterating views for short name: " & Left(sessionName, InStrRev(sessionName, ".") -1) ' Try with short name if full name fails
+        Debug.Print "Iterating views for short name: " & Left(sessionName, InStrRev(sessionName, ".") -1) 
         sessionIsOpen = False
         Dim viewsCollection As Object 
         Set viewsCollection = Nothing
@@ -733,10 +813,10 @@ Sub ConnectExtra()
         If Err.Number = 0 And Not viewsCollection Is Nothing Then
             If viewsCollection.Count > 0 Then
                  For Each tempView In viewsCollection 
-                    If InStr(1, tempView.titleText, Left(sessionName, InStrRev(sessionName, ".") -1), vbTextCompare) > 0 Then ' Compare with name part
+                    If InStr(1, tempView.titleText, Left(sessionName, InStrRev(sessionName, ".") -1), vbTextCompare) > 0 Then 
                         Set osView = tempView: sessionIsOpen = True
                         Debug.Print "Found view by iteration (short name): " & osView.titleText: Exit For
-                    ElseIf InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then ' Fallback to full name
+                    ElseIf InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then 
                         Set osView = tempView: sessionIsOpen = True
                         Debug.Print "Found view by iteration (full name): " & osView.titleText: Exit For
                     End If
@@ -756,7 +836,7 @@ Sub ConnectExtra()
                 Err.Clear: Debug.Print "CreateView FAILED. ErrNo: " & capErrNo & " Desc: " & capErrDesc
                 On Error GoTo ConnectExtra_ErrorHandler: GoTo ConnectExtra_ErrorHandler_FinalMsg
             End If
-             Application.Wait (Now + TimeValue("00:00:05")) ' Give time for new session to settle
+             Application.Wait (Now + TimeValue("00:00:05")) 
         End If
     End If
     On Error GoTo ConnectExtra_ErrorHandler
@@ -857,7 +937,7 @@ Private Function GetTextSafe(rowNum As Long, colNum As Long, length As Long) As 
     On Error Resume Next
     GetTextSafe = obScreen.GetText(rowNum, colNum, length)
     If Err.Number <> 0 Then
-        Dim errDescSafe As String: errDescSafe = Err.Description ' Capture error desc before it's cleared
+        Dim errDescSafe As String: errDescSafe = Err.Description 
         Dim errNumSafe As Long: errNumSafe = Err.Number
         Debug.Print "GetTextSafe: Error getting text R" & rowNum & "C" & colNum & "L" & length & ". Desc: " & errDescSafe
         If InStr(1, errDescSafe, "out of the range of valid values", vbTextCompare) > 0 Or _
