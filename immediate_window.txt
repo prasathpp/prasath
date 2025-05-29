@@ -346,69 +346,138 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
-    ' --- Data Entry Logic (Unchanged from previous version) ---
+    ' --- Data Entry Logic ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
     Dim reasonCodeEntered_AccruedUnar As Boolean: reasonCodeEntered_AccruedUnar = False
     Dim reasonCodeEntered_CutoffUnar As Boolean: reasonCodeEntered_CutoffUnar = False
 
+    ' ACCRUED INTEREST
     If excel_D_Accrued > 0 Then
         Debug.Print "Processing Accrued: " & excel_D_Accrued
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(excel_D_Accrued, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35: obScreen.PutText2 "01", 8, 47
+            obScreen.PutText2 "dec", 8, 31
+            formattedAmount = Format(excel_D_Accrued, "0.00000000")
+            obScreen.PutText2 formattedAmount, 8, 35
+            obScreen.PutText2 "01", 8, 47
         ElseIf screenType = "Normal" Then
-            current_screen_arr_val = Val(Trim(obScreen.GetText(8, 21, 6))): current_screen_unar_val = Val(Trim(obScreen.GetText(9, 21, 6)))
-            val_to_input_in_arr = 0: val_to_input_in_unar = 0
-            If current_screen_arr_val > 0 Then val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
+            current_screen_arr_val = Val(Trim(obScreen.GetText(8, 21, 6)))
+            current_screen_unar_val = Val(Trim(obScreen.GetText(9, 21, 6)))
+            val_to_input_in_arr = 0
+            val_to_input_in_unar = 0
+            If current_screen_arr_val > 0 Then
+                val_to_input_in_arr = Application.WorksheetFunction.Min(excel_D_Accrued, current_screen_arr_val)
+            End If
             remaining_excel_val_for_unar_accr = excel_D_Accrued - val_to_input_in_arr
-            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            If remaining_excel_val_for_unar_accr > 0 And current_screen_unar_val > 0 Then
+                val_to_input_in_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_unar_accr, current_screen_unar_val)
+            End If
+            
             If val_to_input_in_arr > 0 Then
-                obScreen.PutText2 "dec", 8, 31: formattedAmount = Format(val_to_input_in_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 8, 35
-                If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then obScreen.PutText2 "01", 9, 47: reasonCodeEntered_AccruedUnar = True
+                obScreen.PutText2 "dec", 8, 31
+                formattedAmount = Format(val_to_input_in_arr, "0.00000000")
+                obScreen.PutText2 formattedAmount, 8, 35
+                 If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then
+                    obScreen.PutText2 "01", 9, 47
+                    reasonCodeEntered_AccruedUnar = True
+                 End If
             End If
             If val_to_input_in_unar > 0 Then
-                obScreen.PutText2 "dec", 9, 31: formattedAmount = Format(val_to_input_in_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 9, 35
-                If Not reasonCodeEntered_AccruedUnar Then obScreen.PutText2 "01", 9, 47
+                obScreen.PutText2 "dec", 9, 31
+                formattedAmount = Format(val_to_input_in_unar, "0.00000000")
+                obScreen.PutText2 formattedAmount, 9, 35
+                If Not reasonCodeEntered_AccruedUnar Then
+                    obScreen.PutText2 "01", 9, 47
+                End If
             End If
         End If
     End If
+
+    ' CUTOFF INTEREST
     Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double
     Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double
-    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean: cutoff_deferred = False
+    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean
+    cutoff_deferred = False
     If excel_E_Cutoff > 0 Then
         Debug.Print "Processing Cutoff: " & excel_E_Cutoff
         If screenType = "BC" Then
-            obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(excel_E_Cutoff, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35: obScreen.PutText2 "01", 12, 47
+            obScreen.PutText2 "dec", 12, 31
+            formattedAmount = Format(excel_E_Cutoff, "0.00000000")
+            obScreen.PutText2 formattedAmount, 12, 35
+            obScreen.PutText2 "01", 12, 47
         ElseIf screenType = "Normal" Then
-            current_screen_cutoff_arr_val = Val(Trim(obScreen.GetText(12, 21, 6))): current_screen_cutoff_unar_val = Val(Trim(obScreen.GetText(13, 21, 6)))
+            current_screen_cutoff_arr_val = Val(Trim(obScreen.GetText(12, 21, 6)))
+            current_screen_cutoff_unar_val = Val(Trim(obScreen.GetText(13, 21, 6)))
             If current_screen_cutoff_arr_val <= 0 And current_screen_cutoff_unar_val <= 0 Then
-                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff: cutoff_deferred = True: Debug.Print "Cutoff deferred: " & Carry_Over_Cutoff_To_Applied_Amount
+                Carry_Over_Cutoff_To_Applied_Amount = excel_E_Cutoff
+                cutoff_deferred = True
+                Debug.Print "Cutoff deferred: " & Carry_Over_Cutoff_To_Applied_Amount
             Else
-                val_to_input_in_cutoff_arr = 0: val_to_input_in_cutoff_unar = 0
-                If current_screen_cutoff_arr_val > 0 Then val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
+                val_to_input_in_cutoff_arr = 0
+                val_to_input_in_cutoff_unar = 0
+                If current_screen_cutoff_arr_val > 0 Then
+                    val_to_input_in_cutoff_arr = Application.WorksheetFunction.Min(excel_E_Cutoff, current_screen_cutoff_arr_val)
+                End If
                 remaining_excel_val_for_cutoff_unar = excel_E_Cutoff - val_to_input_in_cutoff_arr
-                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                If remaining_excel_val_for_cutoff_unar > 0 And current_screen_cutoff_unar_val > 0 Then
+                    val_to_input_in_cutoff_unar = Application.WorksheetFunction.Min(remaining_excel_val_for_cutoff_unar, current_screen_cutoff_unar_val)
+                End If
+
                 If val_to_input_in_cutoff_arr > 0 Then
-                    obScreen.PutText2 "dec", 12, 31: formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000"): obScreen.PutText2 formattedAmount, 12, 35
-                    If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then obScreen.PutText2 "01", 13, 47: reasonCodeEntered_CutoffUnar = True
+                    obScreen.PutText2 "dec", 12, 31
+                    formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000")
+                    obScreen.PutText2 formattedAmount, 12, 35
+                    If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then
+                        obScreen.PutText2 "01", 13, 47
+                        reasonCodeEntered_CutoffUnar = True
+                    End If
                 End If
                 If val_to_input_in_cutoff_unar > 0 Then
-                    obScreen.PutText2 "dec", 13, 31: formattedAmount = Format(val_to_input_in_cutoff_unar, "0.00000000"): obScreen.PutText2 formattedAmount, 13, 35
-                    If Not reasonCodeEntered_CutoffUnar Then obScreen.PutText2 "01", 13, 47
+                    obScreen.PutText2 "dec", 13, 31
+                    formattedAmount = Format(val_to_input_in_cutoff_unar, "0.00000000")
+                    obScreen.PutText2 formattedAmount, 13, 35
+                    If Not reasonCodeEntered_CutoffUnar Then
+                        obScreen.PutText2 "01", 13, 47
+                    End If
                 End If
             End If
         End If
     End If
+
+    ' APPLIED INTEREST
     Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
     Debug.Print "Applied Debtor: " & Total_Applied_Debtor_Amount & " (F:" & excel_F_Applied_Debit & ",CO:" & Carry_Over_Cutoff_To_Applied_Amount & "). Applied Credit(G):" & excel_G_Applied_Credit
     If screenType = "BC" Then
-        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(BC):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 14, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 14, 35: obScreen.PutText2 "01", 14, 47
-        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(BC):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 15, 31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
+        If excel_G_Applied_Credit > 0 Then
+            Debug.Print "Applying Cr(BC):" & excel_G_Applied_Credit
+            obScreen.PutText2 "inc", 14, 31
+            formattedAmount = Format(excel_G_Applied_Credit, "0.00000000")
+            obScreen.PutText2 formattedAmount, 14, 35
+            obScreen.PutText2 "01", 14, 47
+        End If
+        If Total_Applied_Debtor_Amount > 0 Then
+            Debug.Print "Applying Dr(BC):" & Total_Applied_Debtor_Amount
+            obScreen.PutText2 "dec", 15, 31
+            formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000")
+            obScreen.PutText2 formattedAmount, 15, 35
+            obScreen.PutText2 "01", 15, 47
+        End If
     ElseIf screenType = "Normal" Then
-        If excel_G_Applied_Credit > 0 Then Debug.Print "Applying Cr(Norm):" & excel_G_Applied_Credit: obScreen.PutText2 "inc", 15, 31: formattedAmount = Format(excel_G_Applied_Credit, "0.00000000"): obScreen.PutText2 formattedAmount, 15, 35: obScreen.PutText2 "01", 15, 47
-        If Total_Applied_Debtor_Amount > 0 Then Debug.Print "Applying Dr(Norm):" & Total_Applied_Debtor_Amount: obScreen.PutText2 "dec", 16,_
-        31: formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000"): obScreen.PutText2 formattedAmount, 16, 35: obScreen.PutText2 "01", 16, 47
+        If excel_G_Applied_Credit > 0 Then
+            Debug.Print "Applying Cr(Norm):" & excel_G_Applied_Credit
+            obScreen.PutText2 "inc", 15, 31
+            formattedAmount = Format(excel_G_Applied_Credit, "0.00000000")
+            obScreen.PutText2 formattedAmount, 15, 35
+            obScreen.PutText2 "01", 15, 47
+        End If
+        If Total_Applied_Debtor_Amount > 0 Then
+            Debug.Print "Applying Dr(Norm):" & Total_Applied_Debtor_Amount
+            obScreen.PutText2 "dec", 16, 31 ' Corrected line
+            formattedAmount = Format(Total_Applied_Debtor_Amount, "0.00000000")
+            obScreen.PutText2 formattedAmount, 16, 35
+            obScreen.PutText2 "01", 16, 47
+        End If
     End If
     Debug.Print "Data entry potentially complete"
     ' --- End Data Entry Logic ---
