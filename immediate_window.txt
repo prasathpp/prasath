@@ -750,23 +750,23 @@ End Function
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
-    Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object 
+    Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object
     Dim sessionIsOpen As Boolean
-    Dim waitLoops As Integer 
+    Dim waitLoops As Integer
 
     On Error GoTo ConnectExtra_ErrorHandler
     currentAction = "Initializing ConnectExtra"
     Debug.Print currentAction
     
-    ' CleanUpReflectionObjects is now called by the Main sub before calling ConnectExtra
+    ' CleanUp is called by Main before this sub
 
     edpPathFromSheet = ""
-    On Error Resume Next 
-    Set ws = Nothing 
-    Set ws = Sheet4 
+    On Error Resume Next
+    Set ws = Nothing
+    Set ws = Sheet4
     If Err.Number = 0 And Not ws Is Nothing Then
         Set OleObj = Nothing
-        Set OleObj = ws.OLEObjects("txtEDPPath") 
+        Set OleObj = ws.OLEObjects("txtEDPPath")
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
@@ -785,7 +785,7 @@ Sub ConnectExtra()
         Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found or is Nothing. Error: " & Err.Description
     End If
     Err.Clear
-    On Error GoTo ConnectExtra_ErrorHandler 
+    On Error GoTo ConnectExtra_ErrorHandler
 
     If edpPathFromSheet <> "" Then
         stEDPFile = edpPathFromSheet
@@ -796,46 +796,52 @@ Sub ConnectExtra()
 
     If stEDPFile = "False" Or stEDPFile = "" Then
         MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
-        Exit Sub 
+        Exit Sub
     End If
     
     strBoPath = stEDPFile
     sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
-    targetSessionViewTitle = sessionName 
+    targetSessionViewTitle = sessionName
 
-    currentAction = "GetObject(, ""Reflection Workspace"")"
+    currentAction = "Acquiring Reflection Application Object"
     Debug.Print currentAction
     On Error Resume Next
     Set app = GetObject(, "Reflection Workspace")
     If Err.Number <> 0 Or app Is Nothing Then
         Err.Clear
-        Debug.Print "ConnectExtra: GetObject FAILED. Attempting CreateObject..."
+        Debug.Print "ConnectExtra: GetObject FAILED. Attempting CreateObject(""Reflection Workspace"")..."
         currentAction = "CreateObject(""Reflection Workspace"")"
         Set app = CreateObject("Reflection Workspace")
         If Err.Number <> 0 Or app Is Nothing Then
             Err.Clear
             Debug.Print "ConnectExtra: CreateObject FAILED."
-            GoTo ConnectExtra_ErrorHandler_FinalMsg 
+            GoTo ConnectExtra_ErrorHandler_FinalMsg
         End If
-        Debug.Print "ConnectExtra: CreateObject successful."
-        Application.Wait (Now + TimeValue("00:00:02"))
+        Debug.Print "ConnectExtra: CreateObject successful. Making app visible."
+        app.Visible = True ' Try to make it visible early if newly created
+        Application.Wait (Now + TimeValue("00:00:03")) ' Longer pause for new instance
     Else
         Debug.Print "ConnectExtra: GetObject successful."
+        If Not app.Visible Then ' If existing app is not visible, make it so
+            app.Visible = True
+            Application.Wait (Now + TimeValue("00:00:01"))
+        End If
     End If
-    On Error GoTo ConnectExtra_ErrorHandler 
+    On Error GoTo ConnectExtra_ErrorHandler
     Debug.Print "ConnectExtra: App Object obtained. TypeName: " & TypeName(app)
 
-    If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then 
+    currentAction = "Waiting for app.IsInitialized"
+    Debug.Print currentAction
+    If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then
         waitLoops = 0
-        Do While app.IsInitialized = False And waitLoops < 150 
+        Do While app.IsInitialized = False And waitLoops < 150 ' Max 30 seconds
             Debug.Print "ConnectExtra: Waiting for app.IsInitialized... Loop: " & waitLoops
-            app.Wait 200 
+            app.Wait 200
             DoEvents
             waitLoops = waitLoops + 1
         Loop
         If Not app.IsInitialized Then
             Debug.Print "ConnectExtra: app.IsInitialized remained False after waiting."
-            currentAction = "app.IsInitialized Timeout"
             GoTo ConnectExtra_ErrorHandler_FinalMsg
         End If
         Debug.Print "ConnectExtra: app.IsInitialized is True."
@@ -844,24 +850,46 @@ Sub ConnectExtra()
         currentAction = "Unknown app TypeName: " & TypeName(app)
         GoTo ConnectExtra_ErrorHandler_FinalMsg
     End If
+    
+    ' Ensure the application has a moment to process UI events after initialization
+    Application.Wait (Now + TimeValue("00:00:01"))
+    DoEvents
 
     currentAction = "app.GetObject(""Frame"")"
     Debug.Print currentAction
-    Set ThisFrame = app.GetObject("Frame") 
+    Set ThisFrame = app.GetObject("Frame")
     If ThisFrame Is Nothing Then
-        Debug.Print "ConnectExtra: app.GetObject(""Frame"") returned Nothing."
+        Debug.Print "ConnectExtra: app.GetObject(""Frame"") returned Nothing. Critical failure."
         GoTo ConnectExtra_ErrorHandler_FinalMsg
     End If
     Debug.Print "ConnectExtra: Frame Object obtained. TypeName: " & TypeName(ThisFrame)
 
+    ' Re-check IsInitialized and ensure visibility AFTER getting the frame, as this can be a point of instability
+    currentAction = "Ensuring Frame is ready"
+    Debug.Print currentAction
+    waitLoops = 0
+    Do While app.IsInitialized = False And waitLoops < 50 ' Max 10 seconds more
+        Debug.Print "ConnectExtra: Re-waiting for app.IsInitialized after getting Frame... Loop: " & waitLoops
+        app.Wait 200
+        DoEvents
+        waitLoops = waitLoops + 1
+    Loop
+    If Not app.IsInitialized Then
+        Debug.Print "ConnectExtra: app.IsInitialized became False or timed out after getting Frame."
+        GoTo ConnectExtra_ErrorHandler_FinalMsg
+    End If
+
     If Not ThisFrame.Visible Then
         Debug.Print "ConnectExtra: Frame not visible, setting ThisFrame.Visible = True"
         ThisFrame.Visible = True
-        app.Wait 500 
+        app.Wait 500 ' Wait after making visible
     End If
     ThisFrame.Activate
-    app.Wait 500 
+    app.Wait 500 ' Wait after activating
     Debug.Print "ConnectExtra: Frame Visible/Activated."
+    
+    ' ... rest of ConnectExtra (GetViewByTitleText, CreateView, GetControl, GetScreen) ...
+    ' This part is from the previously successful version and should generally be okay if Frame is stable
 
     currentAction = "ThisFrame.GetViewByTitleText(""" & targetSessionViewTitle & """)"
     Debug.Print currentAction
@@ -932,12 +960,14 @@ Sub ConnectExtra()
     Exit Sub
 
 ConnectExtra_ErrorHandler:
-    If currentAction = "" Then currentAction = "Unknown step in ConnectExtra"
-    Debug.Print "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description
-    MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
+    currentAction = currentAction & " (Error: " & Err.Number & " - " & Err.Description & ")"
+    Debug.Print "ConnectExtra Error in " & currentAction
+    MsgBox "ConnectExtra Error (" & currentAction & ")", vbCritical, SCRIPT_TITLE
 ConnectExtra_ErrorHandler_FinalMsg:
     If obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" And Not (stEDPFile = "False" Or stEDPFile = "") Then
-         MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection screen object.", vbCritical, SCRIPT_TITLE
+         If InStr(1, currentAction, "Invoke") = 0 Then ' Only show this generic if not the Invoke error
+            MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection screen object.", vbCritical, SCRIPT_TITLE
+         End If
     End If
     Call CleanUpReflectionObjects 
 End Sub
