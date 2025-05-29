@@ -35,6 +35,90 @@ Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
 ' Public Const ControlKeyCode_PF2 As Long = 38      ' Example for PF2
 ' Public Const ControlKeyCode_Attention As Long = 35 ' Example for ATTN/PA1 (might vary)
 
+'===============================================================================
+' MAIN PROCESSING SUB
+'===============================================================================
+Sub ProcessInterestAdjustments_Main()
+    Dim Ws_Data As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim processingStatus As String
+
+    Const START_ROW As Long = 2
+    Const DATA_SHEET_NAME As String = "Sheet1" ' !!! UPDATE THIS to your actual sheet name !!!
+
+    On Error GoTo MainErrorHandler
+
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Started at " & Now
+    processingStatus = "Processing started..."
+
+    Set Ws_Data = ThisWorkbook.Worksheets(DATA_SHEET_NAME)
+    lastRow = Ws_Data.Cells(Rows.Count, "A").End(xlUp).Row
+    Debug.Print "ProcessInterestAdjustments_Main: Last row in sheet '" & DATA_SHEET_NAME & "' is " & lastRow
+
+    If lastRow < START_ROW Then
+        processingStatus = "No data found in sheet '" & DATA_SHEET_NAME & "'."
+        MsgBox processingStatus, vbInformation, SCRIPT_TITLE
+        Exit Sub
+    End If
+
+    Debug.Print "ProcessInterestAdjustments_Main: Calling ConnectExtra..."
+    Call ConnectExtra
+    
+    If obScreen Is Nothing Then
+        processingStatus = "Failed to connect to Reflection. Automation cannot continue."
+        MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+        Exit Sub
+    End If
+    Debug.Print "ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set."
+
+    Debug.Print "ProcessInterestAdjustments_Main: Starting loop from row " & START_ROW & " to " & lastRow
+    For i = START_ROW To lastRow
+        Debug.Print "-----------------------------------------------------"
+        Debug.Print "ProcessInterestAdjustments_Main: Processing row " & i
+        
+        Ws_Data.Range("H" & i & ":J" & i).ClearContents ' Output columns for status, user, timestamp
+        
+        If obScreen Is Nothing Then
+            Ws_Data.Range("H" & i).Value = "Critical Error - Session Lost Before Processing Row"
+            processingStatus = "Reflection session was lost before processing row " & i & ". Aborting."
+            MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+            Exit For
+        End If
+        
+        Call ProcessSingleAdjustment(i, Ws_Data)
+        
+        If obScreen Is Nothing Then
+             Ws_Data.Range("H" & i).Value = "Critical Error - Session Lost During Processing Row"
+             processingStatus = "Reflection session was lost during processing row " & i & ". Aborting."
+             MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+             Exit For
+        End If
+        Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
+    Next i
+
+    If i > lastRow Then
+        processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
+    Else
+        processingStatus = "Processing stopped at row " & i & "."
+    End If
+    
+    MsgBox "Processing complete. " & processingStatus, vbInformation, SCRIPT_TITLE
+    Call CleanUpReflectionObjects
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Ended Successfully at " & Now
+    Exit Sub
+
+MainErrorHandler:
+    processingStatus = "VBA Error in Main: " & Err.Description & " (ErrNo " & Err.Number & ")"
+    MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+    If i >= START_ROW And i <= lastRow And Not Ws_Data Is Nothing Then
+        On Error Resume Next
+        Ws_Data.Range("H" & i).Value = "Main Sub Error: " & Err.Description
+        On Error GoTo 0
+    End If
+    Call CleanUpReflectionObjects
+    Debug.Print "ProcessInterestAdjustments_Main: Sub Ended with Error at " & Now
+End Sub
 
 '===============================================================================
 ' PROCESS SINGLE ADJUSTMENT
