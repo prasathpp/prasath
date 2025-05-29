@@ -291,7 +291,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     obScreen.WaitForHostSettle 3000, 10000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: Sent " & confirmCode
     
-    If VerifyScreen("Command not recognized", 20, 36, 22) Then Ws_Data.Range("H" & iRow).Value = "Brand cmd NR": GoTo NextCase_Adjustment
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then
+        Ws_Data.Range("H" & iRow).Value = "Brand cmd NR"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
@@ -305,34 +308,49 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             loopCounter = 1
             Do
                 If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
-                If VerifyScreen("", 1, 1, 80) Then Call SendData("STAR", 1, 1, True, 2500)
-                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then Call SendKey(ControlKeyCode_Transmit, 2500)
-                Else Exit Do
+                If VerifyScreen("", 1, 1, 80) Then
+                    Call SendData("STAR", 1, 1, True, 2500)
+                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
+                    Call SendKey(ControlKeyCode_Transmit, 2500)
+                Else
+                    Exit Do
                 End If
                 If obScreen Is Nothing Then GoTo FatalExit_Adjustment
                 obScreen.WaitForHostSettle 1000, 3000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
                 loopCounter = loopCounter + 1
             Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10 And Not obScreen Is Nothing
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Fail past STAR": GoTo NextCase_Adjustment
+            If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
+                 Ws_Data.Range("H" & iRow).Value = "Fail past STAR"
+                 GoTo NextCase_Adjustment
+            End If
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
         End If
     End If
 
     obScreen.WaitForHostSettle 1000, 4000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then Ws_Data.Range("H" & iRow).Value = "Not on OptH": GoTo NextCase_Adjustment
+    If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
+        Ws_Data.Range("H" & iRow).Value = "Not on OptH"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
     
     Call SendData("19", 21, 16, True, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then Ws_Data.Range("H" & iRow).Value = "Not on BOSys": GoTo NextCase_Adjustment
+    If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then
+        Ws_Data.Range("H" & iRow).Value = "Not on BOSys"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_BO_SYSTEM
 
     Call SendData("01", 22, 16, True, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then Ws_Data.Range("H" & iRow).Value = "Not on MI": GoTo NextCase_Adjustment
+    If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then
+        Ws_Data.Range("H" & iRow).Value = "Not on MI"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_MASTER_INDEX
 
@@ -341,7 +359,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     obScreen.PutText2 Format(sortCode, "000000"), 22, 74
     Call SendKey(ControlKeyCode_Transmit, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then Ws_Data.Range("H" & iRow).Value = "Not on FMI": GoTo NextCase_Adjustment
+    If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then
+        Ws_Data.Range("H" & iRow).Value = "Not on FMI"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_FILE_MAINT_IDX
 
@@ -350,7 +371,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     obScreen.PutText2 Format(accountNo, "00000000"), 22, 21
     Call SendKey(ControlKeyCode_Transmit, 2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then Ws_Data.Range("H" & iRow).Value = "Not on IT": GoTo NextCase_Adjustment
+    If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then
+        Ws_Data.Range("H" & iRow).Value = "Not on IT"
+        GoTo NextCase_Adjustment
+    End If
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     Debug.Print "ProcessSingle: On " & SCREEN_INTERNAL_TXNS
 
@@ -358,7 +382,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     obScreen.WaitForHostSettle 2000, 6000: If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then Ws_Data.Range("H" & iRow).Value = "Not on IA scrn": GoTo NextCase_Adjustment
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
+            Ws_Data.Range("H" & iRow).Value = "Not on IA scrn"
+            GoTo NextCase_Adjustment
+        End If
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     End If
     Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
@@ -374,10 +401,14 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
     tempStr = Trim(obScreen.GetTextSafe(3, 42, 16))
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    If tempStr = "BUSINESS CURRENT" Then screenType = "BC" Else screenType = "Normal"
+    If tempStr = "BUSINESS CURRENT" Then
+        screenType = "BC"
+    Else
+        screenType = "Normal"
+    End If
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
-    ' --- Data Entry Logic (Corrected) ---
+    ' --- Data Entry Logic (Corrected IF structures) ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
@@ -429,10 +460,11 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         End If 
     End If 
 
-    Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double
-    Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double
-    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean
-    cutoff_deferred = False
+    ' CUTOFF INTEREST
+    'Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double ' Already Dim'd
+    'Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double ' Already Dim'd
+    'Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean ' Already Dim'd
+    cutoff_deferred = False ' Reset for this section
     
     If excel_E_Cutoff > 0 Then
         Debug.Print "Processing Cutoff: " & excel_E_Cutoff
@@ -487,6 +519,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         End If 
     End If 
 
+    ' APPLIED INTEREST
     Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
     Debug.Print "Applied Debtor: " & Total_Applied_Debtor_Amount & " (F:" & excel_F_Applied_Debit & ",CO:" & Carry_Over_Cutoff_To_Applied_Amount & "). Applied Credit(G):" & excel_G_Applied_Credit
     If screenType = "BC" Then
@@ -542,8 +575,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
                 If obScreen Is Nothing Then GoTo FatalExit_Adjustment
                 Dim intermediateMsg As String: intermediateMsg = Left(Trim(obScreen.GetTextSafe(23, 4, 25)), 25)
                 If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-                If UCase(intermediateMsg) = "PRESS <ENTER> TO CONFIRM" Then Debug.Print "ProcessSingle: Intermediate 'PRESS <ENTER> TO CONFIRM' found. Continuing."
-                Else Debug.Print "ProcessSingle: No specific error/accepted/confirm message at (23,4) after 1st Enter. Text: '" & intermediateMsg & "'"
+                If UCase(intermediateMsg) = "PRESS <ENTER> TO CONFIRM" Then
+                    Debug.Print "ProcessSingle: Intermediate 'PRESS <ENTER> TO CONFIRM' found. Continuing."
+                Else
+                    Debug.Print "ProcessSingle: No specific error/accepted/confirm message at (23,4) after 1st Enter. Text: '" & intermediateMsg & "'"
                 End If
             End If
         End If
@@ -628,13 +663,15 @@ PageDownAndExit_Adjustment:
         Debug.Print "ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL."
         obScreen.SendControlKey ControlKeyCode_Transmit
         Call WaitReady(3000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-        If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via TERM ALL + Enter"
+        If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+            returnedToAppMenu = True: Debug.Print "Returned via TERM ALL + Enter"
         Else
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             Debug.Print "ProcessSingle (PageDownExit): TERM ALL failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
             Debug.Print "ProcessSingle (PageDownExit): Trying one more ATTN key as final final resort."
             Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via final ATTN"
+            If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+                returnedToAppMenu = True: Debug.Print "Returned via final ATTN"
             Else
                 If obScreen Is Nothing Then GoTo FatalExit_Adjustment
                 Debug.Print "ProcessSingle (PageDownExit): All recovery attempts failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
