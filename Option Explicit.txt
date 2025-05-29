@@ -169,6 +169,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     ' --- Navigation Logic ---
     Call WaitReady(200, 5000)
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+        Call SendKey(ControlKeyCode_PF2, 1500)
         Ws_Data.Range("H" & iRow).Value = "Not on App Menu"
         GoTo NextCase_Adjustment
     End If
