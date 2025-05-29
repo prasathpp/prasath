@@ -158,23 +158,50 @@ End Sub
 Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     On Error GoTo ErrorHandler_Adjustment
 
-    Dim sortCode As String, accountNo As String, iBrand As String, confirmCode As String
-    Dim excel_D_Accrued As Double, excel_E_Cutoff As Double
-    Dim excel_F_Applied_Debit As Double, excel_G_Applied_Credit As Double
-    Dim Carry_Over_Cutoff_To_Applied_Amount As Double, Total_Applied_Debtor_Amount As Double
-    Dim screenType As String, tempStr As String, loopCounter As Long
-    Dim k As Integer
+    ' --- Declare ALL variables used in this function ---
+    Dim sortCode As String
+    Dim accountNo As String
+    Dim iBrand As String
+    Dim confirmCode As String
+    Dim excel_D_Accrued As Double
+    Dim excel_E_Cutoff As Double
+    Dim excel_F_Applied_Debit As Double
+    Dim excel_G_Applied_Credit As Double
+    Dim Carry_Over_Cutoff_To_Applied_Amount As Double
+    Dim Total_Applied_Debtor_Amount As Double
+    Dim screenType As String
+    Dim tempStr As String
+    Dim loopCounter As Long
+    Dim k As Integer ' For For...Next loops (like the 3x Transmit)
     Dim hostStatusMessage As String
     Dim formattedAmount As String
     Dim appMenuReached As Boolean
-    Dim recoveryAttempts As Integer
+    Dim recoveryAttempts As Integer ' For recovery loops
+    
+    ' Variables specific to data entry logic for accrued/cutoff interest
     Dim reasonCodeEntered_AccruedUnar As Boolean
     Dim reasonCodeEntered_CutoffUnar As Boolean
+    Dim current_screen_arr_val As Double
+    Dim current_screen_unar_val As Double
+    Dim val_to_input_in_arr As Double
+    Dim val_to_input_in_unar As Double
+    Dim remaining_excel_val_for_unar_accr As Double
+    Dim current_screen_cutoff_arr_val As Double
+    Dim current_screen_cutoff_unar_val As Double
+    Dim val_to_input_in_cutoff_arr As Double
+    Dim val_to_input_in_cutoff_unar As Double
+    Dim remaining_excel_val_for_cutoff_unar As Double
+    Dim cutoff_deferred As Boolean
+    ' Dim i As Integer ' This was for a small loop, if it's still needed it should be here. The main loop uses 'i'. Let's check if it's reused.
+                      ' Ah, it was used for the "TERM ALL" loop just before sending confirmCode. Let's rename it to avoid conflict.
+    Dim termLoopIdx As Integer ' For the "TERM ALL" loop
 
+    ' --- Initialize variables ---
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
     reasonCodeEntered_AccruedUnar = False
     reasonCodeEntered_CutoffUnar = False
+    appMenuReached = False ' Initialize
     
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
 
@@ -200,6 +227,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
+    ' --- Initial App Menu Navigation (Recovery Logic) ---
     Call WaitReady(1500, 15000)
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
@@ -269,12 +297,22 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
     
-    Debug.Print "ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field."
-    Call SendData("TERM ALL", 21, 13, True, 3500) : If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-    
-    If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
+    ' --- TERM ALL to clear command line on App Menu (was using undeclared 'i') ---
+    For termLoopIdx = 1 To 3 ' Renamed loop variable to termLoopIdx
+        Call SendData("TERM ALL", 21, 13, True, 1500)
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-        Debug.Print "ProcessSingle: Navigated away from App Menu after TERM ALL. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        obScreen.WaitForHostSettle 750, 3000
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+    Next termLoopIdx
+    ' --- End TERM ALL on App Menu ---
+    
+    If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then ' Re-verify after TERM ALL loop
+        If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "ProcessSingle: Navigated away from App Menu after TERM ALL loop. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
         Debug.Print "ProcessSingle: Attempting to return to App Menu with ATTN."
         Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
         If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
@@ -307,7 +345,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
-                If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment
                 If VerifyScreen("", 1, 1, 80) Then
                     Call SendData("STAR", 1, 1, True, 2500)
                 ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
@@ -409,10 +447,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
     ' --- Data Entry Logic (Corrected IF structures) ---
-    Dim current_screen_arr_val As Double, current_screen_unar_val As Double
-    Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
-    Dim remaining_excel_val_for_unar_accr As Double
-    
     If excel_D_Accrued > 0 Then
         Debug.Print "Processing Accrued: " & excel_D_Accrued
         If screenType = "BC" Then
@@ -459,13 +493,8 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             End If
         End If 
     End If 
-
-    ' CUTOFF INTEREST
-    'Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double ' Already Dim'd
-    'Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double ' Already Dim'd
-    'Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean ' Already Dim'd
-    cutoff_deferred = False ' Reset for this section
     
+    cutoff_deferred = False 
     If excel_E_Cutoff > 0 Then
         Debug.Print "Processing Cutoff: " & excel_E_Cutoff
         If screenType = "BC" Then
@@ -519,7 +548,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         End If 
     End If 
 
-    ' APPLIED INTEREST
     Total_Applied_Debtor_Amount = excel_F_Applied_Debit + Carry_Over_Cutoff_To_Applied_Amount
     Debug.Print "Applied Debtor: " & Total_Applied_Debtor_Amount & " (F:" & excel_F_Applied_Debit & ",CO:" & Carry_Over_Cutoff_To_Applied_Amount & "). Applied Credit(G):" & excel_G_Applied_Credit
     If screenType = "BC" Then
