@@ -193,12 +193,16 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
     ' --- END MODIFIED Navigation Logic ---
 
-    Call SendData("TERM ALL", 21, 13, True, 1000) ' SendData includes WaitReady(1000)
-    obScreen.WaitForHostSettle 500, 2000          ' Additional specific settle
-    Debug.Print "ProcessSingle: Sent TERM ALL"
+    Dim i As Integer
+    For i = 1 To 3
+        Call SendData("TERM ALL", 21, 13, True, 1500)   ' SendData includes WaitReady(1000)
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        obScreen.WaitForHostSettle 750, 3000           ' Additional specific settle
+    Next i
 
-    Call SendData(confirmCode, 21, 13, True, 1000) ' SendData includes WaitReady(1000)
-    obScreen.WaitForHostSettle 500, 2000           ' Additional specific settle
+    Call SendData(confirmCode, 21, 13, True, 1500) ' SendData includes WaitReady(1000)
+    obScreen.WaitForHostSettle 750, 3000           ' Additional specific settle
     Debug.Print "ProcessSingle: Sent " & confirmCode
     
     ' Then it checks for "Command not recognized" and "OPTION HANDLER FUNCTION SCREEN"
