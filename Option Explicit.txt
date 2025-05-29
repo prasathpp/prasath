@@ -1,50 +1,4 @@
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 08:56:45
-ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 2
-ProcessInterestAdjustments_Main: Calling ConnectExtra...
-Initializing ConnectExtra
-GetObject(, "Reflection Workspace")
-GetObject FAILED. Attempting CreateObject...
-App Object obtained. TypeName: ApplicationObject
-app.GetObject("Frame")
-Frame Object obtained. TypeName: Frame
-Frame Visible/Activated.
-ThisFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")
-View obtained. Title: 'NTS Back Office - Prod.rd3x'. TypeName: View
-osView.Control
-Terminal Object. TypeName: IbmTerminal
-ibmTerminal.Screen
-Screen Object. TypeName: IbmScreen
-ConnectExtra: Success.
-ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set.
-ProcessInterestAdjustments_Main: Starting loop from row 2 to 2
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 2
-ProcessSingle: Row 2, S/C: 524131, Confirm: PRCIN#T#
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle: Still not on App Menu after Attention key (retry 1).
-ProcessSingle: Reached App Menu after Attention key (retry 2).
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Sent TERM ALL
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle: Sent ControlKeyCode_Attention
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-Did not return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 08 56
-ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Screen already accepted
-CleanUpReflectionObjects: Releasing...
-CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 08:56:57
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 08:56:58
+ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 09:07:20
 ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 2
 ProcessInterestAdjustments_Main: Calling ConnectExtra...
 Initializing ConnectExtra
@@ -68,58 +22,15 @@ ProcessInterestAdjustments_Main: Processing row 2
 ProcessSingle: Row 2, S/C: 524131, Confirm: PRCIN#T#
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'tion Handler Function Scre'@R1C28L26
 ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'tion Handler Function Scre'@R1C28L26
-ProcessSingle: Still not on App Menu after Attention key (retry 1).
-ProcessSingle: Reached App Menu after Attention key (retry 2).
+ProcessSingle: Reached App Menu after Attention key (retry 1).
 ProcessSingle: On APPLICATION SELECTION MENU
 ProcessSingle: Sent TERM ALL
 ProcessSingle: Sent PRCIN#T#
 VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle: Sent ControlKeyCode_Attention
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-Did not return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 08 56
-ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Screen already accepted
-CleanUpReflectionObjects: Releasing...
-CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 08:57:03
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 08:57:13
-ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 2
-ProcessInterestAdjustments_Main: Calling ConnectExtra...
-Initializing ConnectExtra
-GetObject(, "Reflection Workspace")
-GetObject FAILED. Attempting CreateObject...
-App Object obtained. TypeName: ApplicationObject
-app.GetObject("Frame")
-Frame Object obtained. TypeName: Frame
-Frame Visible/Activated.
-ThisFrame.GetViewByTitleText("NTS Back Office - Prod.rd3x")
-View obtained. Title: 'NTS Back Office - Prod.rd3x'. TypeName: View
-osView.Control
-Terminal Object. TypeName: IbmTerminal
-ibmTerminal.Screen
-Screen Object. TypeName: IbmScreen
-ConnectExtra: Success.
-ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set.
-ProcessInterestAdjustments_Main: Starting loop from row 2 to 2
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 2
-ProcessSingle: Row 2, S/C: 524131, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Sent TERM ALL
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found ''@R1C1L24
-VerifyScreen FAIL: Exp 'OPTION HANDLER FUNCTION SCREEN',Found ''@R1C26L30
+VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'Date :29/05/2025'@R1C1L24
+VerifyScreen FAIL: Exp 'OPTION HANDLER FUNCTION SCREEN',Found 'APPLICATION SELECTION MENU'@R1C26L30
 ProcessInterestAdjustments_Main: Finished row 2. Status: Not on OptH
 CleanUpReflectionObjects: Releasing...
 CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 08:57:20
+ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 09:07:26
 
