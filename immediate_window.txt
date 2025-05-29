@@ -27,10 +27,11 @@ Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
 
 ' --- Reflection Key Codes (ensure your library reference provides these) ---
 Public Const ControlKeyCode_Transmit As Long = 14 ' Example for Enter
-Public Const ControlKeyCode_PF2 As Long = 38      ' !!! EXAMPLE PF2 - VERIFY THIS CODE !!!
-Public Const ControlKeyCode_PF3 As Long = 39      ' !!! EXAMPLE PF3 - VERIFY THIS CODE !!!
+Public Const ControlKeyCode_PF2 As Long = 38      ' !!! EXAMPLE PF2 - VERIFY THIS CODE !!! (Commonly F2)
+Public Const ControlKeyCode_PF3 As Long = 39      ' !!! EXAMPLE PF3 - VERIFY THIS CODE !!! (Commonly F3)
 Public Const ControlKeyCode_Attention As Long = 35 ' !!! EXAMPLE ATTN/PA1 - VERIFY THIS CODE !!!
 Public Const ControlKeyCode_Clear As Long = 70    ' !!! EXAMPLE CLEAR - VERIFY THIS CODE !!!
+' Public Const ControlKeyCode_Delete As Long = 83   ' Example for Delete Char
 
 
 '===============================================================================
@@ -50,7 +51,7 @@ Sub ProcessInterestAdjustments_Main()
 
     Debug.Print "ProcessInterestAdjustments_Main: Sub Started at " & Now
     processingStatus = "Processing started..."
-    i = START_ROW ' Initialize i here
+    i = START_ROW ' Initialize i here, ensures it's set before first ConnectSequence if needed
 
     Set Ws_Data = ThisWorkbook.Worksheets(DATA_SHEET_NAME)
     lastRow = Ws_Data.Cells(Rows.Count, "A").End(xlUp).Row
@@ -64,12 +65,19 @@ Sub ProcessInterestAdjustments_Main()
 
 ConnectSequence:
     sessionLostMidProcess = False ' Reset flag before attempting connection
-    Debug.Print "ProcessInterestAdjustments_Main: Calling ConnectExtra..."
+    Debug.Print "ProcessInterestAdjustments_Main: Calling ConnectExtra (Attempting for row " & i & " if applicable)..."
+    Call CleanUpReflectionObjects ' Ensure clean state before connecting
     Call ConnectExtra
     
     If obScreen Is Nothing Then
-        processingStatus = "Failed to connect to Reflection. Automation cannot continue after multiple attempts."
-        MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+        If i <= lastRow Then ' Only show critical error if there were still rows to process
+            Ws_Data.Range("H" & i).Value = "FATAL: Cannot connect to Reflection"
+            processingStatus = "Failed to connect to Reflection. Automation cannot continue (tried for row " & i & ")."
+            MsgBox processingStatus, vbCritical, SCRIPT_TITLE
+        Else ' All rows processed before this final connection failure
+            processingStatus = "Finished processing, but final connection check/cleanup failed."
+            Debug.Print processingStatus
+        End If
         Exit Sub ' Critical failure to connect
     End If
     Debug.Print "ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set."
@@ -80,52 +88,47 @@ ConnectSequence:
         Debug.Print "-----------------------------------------------------"
         Debug.Print "ProcessInterestAdjustments_Main: Processing row " & i
         
-        ' Clear previous status only if we are not retrying due to session loss
+        ' Clear previous status only if we are not retrying the same row due to session loss mid-process
         If Not sessionLostMidProcess Then
             Ws_Data.Range("H" & i & ":J" & i).ClearContents
         End If
-        sessionLostMidProcess = False ' Reset for current row processing
+        ' sessionLostMidProcess will be reset by ProcessSingleAdjustment or if a new connection is made
         
         If obScreen Is Nothing Then 
-            Ws_Data.Range("H" & i).Value = "Session Lost Before Row " & i
+            If Not Ws_Data.Range("H" & i).Value Like "*Session Lost*" Then ' Avoid appending if already noted
+                Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " (Session Lost Before Row " & i & ")")
+            End If
             Debug.Print "ProcessInterestAdjustments_Main: Session lost before processing row " & i & ". Attempting reconnect."
-            sessionLostMidProcess = True ' Set flag
-            Call CleanUpReflectionObjects
-            Application.Wait (Now + TimeValue("00:00:05")) 
-            GoTo ConnectSequence ' Attempt to reconnect; loop will resume from current 'i'
+            sessionLostMidProcess = True 
+            GoTo ConnectSequence 
         End If
         
-        Call ProcessSingleAdjustment(i, Ws_Data)
+        Call ProcessSingleAdjustment(i, Ws_Data) ' This function now handles its own fatal exits by setting obScreen = Nothing
         
         If obScreen Is Nothing Then 
-             ' ProcessSingleAdjustment should have already set an error, but we ensure a note about session loss
-             If Ws_Data.Range("H" & i).Value = "" Or Not Ws_Data.Range("H" & i).Value Like "*Session Lost*" Then
-                Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " (Session Lost During Row Processing)")
+             If Not Ws_Data.Range("H" & i).Value Like "*Session Lost*" Then
+                Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " (Session Lost During Row " & i & ")")
              End If
              Debug.Print "ProcessInterestAdjustments_Main: Session detected as lost after processing row " & i & ". Attempting reconnect."
-             sessionLostMidProcess = True ' Set flag
-             Call CleanUpReflectionObjects
-             Application.Wait (Now + TimeValue("00:00:05"))
-             GoTo ConnectSequence ' Attempt to reconnect; loop will resume from current 'i'
+             sessionLostMidProcess = True 
+             GoTo ConnectSequence 
         End If
         Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
+        sessionLostMidProcess = False ' Successfully processed row, reset flag for next iteration
     Next i
     
-    ' If loop completes without sessionLostMidProcess being true at the end:
-    If Not sessionLostMidProcess And Not obScreen Is Nothing Then
+    If Not obScreen Is Nothing Then ' Only if session is still active
       Debug.Print "ProcessInterestAdjustments_Main: Loop finished. Sending final TERM ALL."
       Call SendData("TERM ALL", 21, 13, True, 3500)
     Else
-      Debug.Print "ProcessInterestAdjustments_Main: Loop may have been interrupted or session is not available. Skipping final TERM ALL."
+      Debug.Print "ProcessInterestAdjustments_Main: Loop finished, but session is not available. Skipping final TERM ALL."
     End If
     
-    If i > lastRow And Not sessionLostMidProcess Then ' 'i' will be lastRow + 1 if loop completed normally
+    If i > lastRow Then ' 'i' will be lastRow + 1 if loop completed normally
         processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
-    ElseIf sessionLostMidProcess Then
-        processingStatus = "Processing interrupted at row " & i & " due to session loss and could not complete. Please review."
+    Else ' Loop was exited prematurely, likely by a GoTo ConnectSequence that ultimately failed to reconnect
+        processingStatus = "Processing stopped at row " & i & ". Not all rows may have been processed."
         MsgBox processingStatus, vbExclamation, SCRIPT_TITLE
-    Else
-        processingStatus = "Processing stopped at row " & i & "." ' Should not happen if loop completes
     End If
     
     Call CleanUpReflectionObjects
@@ -136,11 +139,11 @@ MainErrorHandler:
     processingStatus = "VBA Error in Main: " & Err.Description & " (ErrNo " & Err.Number & ", Line: " & Erl & ")"
     Debug.Print "ProcessInterestAdjustments_Main: " & processingStatus
     MsgBox processingStatus, vbCritical, SCRIPT_TITLE
-    If i >= START_ROW And i <= lastRow And Not Ws_Data Is Nothing Then
-        On Error Resume Next ' Avoid error within error handler
+    If i > 0 And i <= lastRow And Not Ws_Data Is Nothing Then ' Check if i is a valid row index
+        On Error Resume Next 
         If Ws_Data.Range("H" & i).Value = "" Then
             Ws_Data.Range("H" & i).Value = "Main Sub Error: " & Err.Description
-        Else
+        ElseIf Not Ws_Data.Range("H" & i).Value Like "*Main Sub Error*" Then ' Avoid appending multiple times
             Ws_Data.Range("H" & i).Value = Trim(Ws_Data.Range("H" & i).Value & " | Main Sub Error: " & Err.Description)
         End If
         On Error GoTo 0
@@ -165,9 +168,13 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim formattedAmount As String
     Dim appMenuReached As Boolean 
     Dim recoveryAttempts As Integer
+    Dim reasonCodeEntered_AccruedUnar As Boolean 
+    Dim reasonCodeEntered_CutoffUnar As Boolean  
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
+    reasonCodeEntered_AccruedUnar = False 
+    reasonCodeEntered_CutoffUnar = False  
     
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
 
@@ -193,7 +200,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
-InitialNavSequence:
     Call WaitReady(1500, 15000) 
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
@@ -362,7 +368,7 @@ InitialNavSequence:
         Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted"
         GoTo PageDownAndExit_Adjustment
     End If
-    If obScreen Is Nothing Then GoTo FatalExit_Adjustment ' Check after GetTextSafe
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment 
 
     Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
     tempStr = Trim(obScreen.GetTextSafe(3, 42, 16))
@@ -371,6 +377,10 @@ InitialNavSequence:
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
     ' --- Data Entry Logic ---
+    Dim current_screen_arr_val As Double, current_screen_unar_val As Double
+    Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
+    Dim remaining_excel_val_for_unar_accr As Double
+    
     If excel_D_Accrued > 0 Then
         Debug.Print "Processing Accrued: " & excel_D_Accrued
         If screenType = "BC" Then
@@ -392,6 +402,9 @@ InitialNavSequence:
             End If
         End If
     End If
+    Dim current_screen_cutoff_arr_val As Double, current_screen_cutoff_unar_val As Double
+    Dim val_to_input_in_cutoff_arr As Double, val_to_input_in_cutoff_unar As Double
+    Dim remaining_excel_val_for_cutoff_unar As Double, cutoff_deferred As Boolean: cutoff_deferred = False
     If excel_E_Cutoff > 0 Then
         Debug.Print "Processing Cutoff: " & excel_E_Cutoff
         If screenType = "BC" Then
@@ -464,8 +477,10 @@ InitialNavSequence:
     Else
         hostStatusMessage = Trim(obScreen.GetTextSafe(23, 3, 78))
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-        Debug.Print "Amendment FAILED. Status(20,2):'" & Trim(obScreen.GetTextSafe(20, 2, 20)) & "'. ErrLine(23,3):'" & hostStatusMessage & "'"
+        Dim tempHostMsg As String
+        tempHostMsg = Trim(obScreen.GetTextSafe(20, 2, 20)) 
         If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+        Debug.Print "Amendment FAILED. Status(20,2):'" & tempHostMsg & "'. ErrLine(23,3):'" & hostStatusMessage & "'"
         Ws_Data.Range("H" & iRow).Value = "Exception - Not Accepted. HostMsg: " & Left(hostStatusMessage, 50)
     End If
     
@@ -473,19 +488,21 @@ PageDownAndExit_Adjustment:
     Dim returnedToAppMenu As Boolean: returnedToAppMenu = False
     If obScreen Is Nothing Then
         Debug.Print "ProcessSingle (PageDownExit): Session lost before attempting to return to App Menu."
-        Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (SessionLostBeforeExitNav)")
-        GoTo FatalExit_Adjustment ' Cannot navigate without a session
+        If Ws_Data.Range("H" & iRow).Value = "" Or Not Ws_Data.Range("H" & iRow).Value Like "*SessionLost*" Then
+            Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (SessionLostBeforeExitNav)")
+        End If
+        GoTo FatalExit_Adjustment 
     End If
 
     Debug.Print "ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     
-    ' Try CLEAR first
     Debug.Print "ProcessSingle (PageDownExit): Trying CLEAR key."
     Call SendKey(ControlKeyCode_Clear, 4000): Call WaitReady(3000)
     If obScreen Is Nothing Then GoTo FatalExit_Adjustment
     If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via CLEAR"
+    If obScreen Is Nothing Then GoTo FatalExit_Adjustment
 
-    ' If CLEAR failed, Try PF2 (up to 2 times)
     If Not returnedToAppMenu Then
         Debug.Print "ProcessSingle (PageDownExit): CLEAR failed. Trying PF2."
         For recoveryAttempts = 1 To 2
@@ -494,11 +511,10 @@ PageDownAndExit_Adjustment:
             Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via PF2": Exit For
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            Debug.Print "ProcessSingle (PageDownExit): PF2 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (PageDownExit): PF2 (Att " & recoveryAttempts & ") failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
         Next recoveryAttempts
     End If
 
-    ' If PF2 failed, try ATTN (up to 2 times)
     If Not returnedToAppMenu Then
         Debug.Print "ProcessSingle (PageDownExit): PF2 failed. Trying ATTN."
         For recoveryAttempts = 1 To 2
@@ -507,11 +523,10 @@ PageDownAndExit_Adjustment:
             Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via ATTN": Exit For
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            Debug.Print "ProcessSingle (PageDownExit): ATTN failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (PageDownExit): ATTN (Att " & recoveryAttempts & ") failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
         Next recoveryAttempts
     End If
 
-    ' If ATTN failed, try PF3 (up to 2 times)
     If Not returnedToAppMenu Then
         Debug.Print "ProcessSingle (PageDownExit): ATTN failed. Trying PF3."
         For recoveryAttempts = 1 To 2
@@ -520,11 +535,10 @@ PageDownAndExit_Adjustment:
             Call WaitReady(3500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via PF3": Exit For
             If obScreen Is Nothing Then GoTo FatalExit_Adjustment
-            Debug.Print "ProcessSingle (PageDownExit): PF3 failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Debug.Print "ProcessSingle (PageDownExit): PF3 (Att " & recoveryAttempts & ") failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
         Next recoveryAttempts
     End If
 
-    ' If PF3 also failed, try TERM ALL sequence as last resort
     If Not returnedToAppMenu Then
         Debug.Print "ProcessSingle (PageDownExit): PF3 failed. Attempting TERM ALL sequence."
         Call SendData("TERM ALL", 21, 13, True, 4000): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
@@ -539,13 +553,17 @@ PageDownAndExit_Adjustment:
             Debug.Print "ProcessSingle (PageDownExit): Trying one more ATTN key as final final resort."
             Call SendKey(ControlKeyCode_Attention, 4000): Call WaitReady(2500): If obScreen Is Nothing Then GoTo FatalExit_Adjustment
             If VerifyScreen(SCREEN_APP_MENU, 1, 28) Then returnedToAppMenu = True: Debug.Print "Returned via final ATTN"
-            Else: If obScreen Is Nothing Then GoTo FatalExit_Adjustment: Debug.Print "ProcessSingle (PageDownExit): All recovery attempts failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
+            Else
+                If obScreen Is Nothing Then GoTo FatalExit_Adjustment
+                Debug.Print "ProcessSingle (PageDownExit): All recovery attempts failed. Current: " & Left(Trim(obScreen.GetTextSafe(1,1,80)),50)
             End If
         End If
     End If
     
     If Not returnedToAppMenu Then
-        Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (NavBackFail)")
+        If Not Ws_Data.Range("H" & iRow).Value Like "*(NavBackFail)" Then ' Avoid appending if already present
+             Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (NavBackFail)")
+        End If
     End If
 
 NextCase_Adjustment:
@@ -559,53 +577,69 @@ NextCase_Adjustment:
 FatalExit_Adjustment:
     Debug.Print "---!!! ProcessSingleAdjustment: FATAL EXIT - obScreen is Nothing for row " & iRow & " !!!---"
     If Not Ws_Data Is Nothing Then
-      If Ws_Data.Range("H" & iRow).Value = "" Then
-          Ws_Data.Range("H" & iRow).Value = "Session Lost Mid-Row"
-      Else
+      If Ws_Data.Range("H" & iRow).Value = "" Or Not Ws_Data.Range("H" & iRow).Value Like "*Session Lost*" Then
           Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " (Session Lost Mid-Row)")
       End If
+      On Error Resume Next 
       Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
       Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+      On Error GoTo 0
     End If
-    ProcessSingleAdjustment = False ' Ensure it returns False
-    ' obScreen is already Nothing, so main loop should handle reconnect
+    ProcessSingleAdjustment = False 
+    Set obScreen = Nothing 
     Exit Function
 
 ErrorHandler_Adjustment:
-    Ws_Data.Range("H" & iRow).Value = "VBA Error: " & Err.Description & " (Line: " & Erl & ")"
-    Debug.Print "---!!! VBA Error in ProcessSingleAdjustment for row " & iRow & ": " & Err.Description & " (Line: " & Erl & ") !!!---"
-    On Error Resume Next ' Avoid error within error handler
+    Dim errDesc As String: errDesc = Err.Description
+    Dim errLine As Long: errLine = Erl
+    Dim errNumber As Long: errNumber = Err.Number
+
+    Debug.Print "---!!! VBA Error in ProcessSingleAdjustment for row " & iRow & ": " & errDesc & " (ErrNo " & errNumber & ", Line: " & errLine & ") !!!---"
+    
     If Not Ws_Data Is Nothing Then
+      On Error Resume Next 
+      If Ws_Data.Range("H" & iRow).Value = "" Then
+          Ws_Data.Range("H" & iRow).Value = "VBA Error: " & errDesc & " (Line: " & errLine & ")"
+      ElseIf Not Ws_Data.Range("H" & iRow).Value Like "*VBA Error*" Then
+          Ws_Data.Range("H" & iRow).Value = Trim(Ws_Data.Range("H" & iRow).Value & " | VBA Error: " & errDesc & " (Line: " & errLine & ")")
+      End If
       Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
       Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+      On Error GoTo 0
     End If
-    If Err.Number <> 0 And InStr(1, Err.Description, "out of the range of valid values", vbTextCompare) > 0 Then
-        Debug.Print "ErrorHandler_Adjustment: Detected 'out of range' error, likely session loss. Setting obScreen to Nothing."
-        Set obScreen = Nothing ' Explicitly set to Nothing to trigger reconnect in main loop
+
+    If InStr(1, errDesc, "out of the range of valid values", vbTextCompare) > 0 Or _
+       InStr(1, errDesc, "session", vbTextCompare) > 0 Or _
+       InStr(1, errDesc, "connection", vbTextCompare) > 0 Or _
+       errNumber = 91 Or errNumber = 424 Then 
+        Debug.Print "ErrorHandler_Adjustment: Critical error detected, likely session loss. Setting obScreen to Nothing."
+        Set obScreen = Nothing 
     End If
-    On Error GoTo 0
     ProcessSingleAdjustment = False
 End Function
 
 '===============================================================================
-' CONNECTION SUB (Unchanged from your previous version)
+' CONNECTION SUB
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
-    Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object
+    Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object 
     Dim sessionIsOpen As Boolean
 
     On Error GoTo ConnectExtra_ErrorHandler
     currentAction = "Initializing ConnectExtra"
     Debug.Print currentAction
+    
+    ' Ensure Reflection objects are cleared before attempting to connect
+    Call CleanUpReflectionObjects
 
     edpPathFromSheet = ""
-    On Error Resume Next
+    On Error Resume Next ' Temporarily disable error handling for sheet/object access
+    Set ws = Nothing ' Initialize ws
     Set ws = Sheet4 ' Assuming Sheet4 is the CodeName of the sheet with the EDP Path textbox
-    If Err.Number = 0 Then
+    If Err.Number = 0 And Not ws Is Nothing Then
         Set OleObj = Nothing
-        On Error Resume Next ' Trap error if OLEObject doesn't exist
-        Set OleObj = ws.OLEObjects("txtEDPPath")
+        Set OleObj = ws.OLEObjects("txtEDPPath") ' This can error if object doesn't exist
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
@@ -621,7 +655,7 @@ Sub ConnectExtra()
         End If
         Err.Clear
     Else
-        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
+        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found or is Nothing. Error: " & Err.Description
     End If
     Err.Clear
     On Error GoTo ConnectExtra_ErrorHandler ' Restore original error handler
@@ -635,12 +669,13 @@ Sub ConnectExtra()
 
     If stEDPFile = "False" Or stEDPFile = "" Then
         MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
-        Set obScreen = Nothing: Set app = Nothing: Exit Sub ' Ensure app is also cleared
+        ' Set obScreen = Nothing: Set app = Nothing: ' Already handled by CleanUpReflectionObjects
+        Exit Sub 
     End If
     
     strBoPath = stEDPFile
     sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
-    targetSessionViewTitle = sessionName
+    targetSessionViewTitle = sessionName ' Use full filename for title text initially
 
     currentAction = "GetObject(, ""Reflection Workspace"")"
     Debug.Print currentAction
@@ -659,12 +694,18 @@ Sub ConnectExtra()
     Debug.Print "App Object obtained. TypeName: " & TypeName(app)
     On Error GoTo ConnectExtra_ErrorHandler
 
-    ' Wait for app to initialize if it's a new instance
-    If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then ' Reflection Workspace object types
-        Do While app.IsInitialized = False
-            app.Wait 200 ' Use app.Wait for Reflection Workspace
+    If TypeName(app) = "ApplicationObject" Or TypeName(app) = "Application" Then
+        Dim waitLoops As Integer: waitLoops = 0
+        Do While app.IsInitialized = False And waitLoops < 100 ' Max 20 seconds
+            app.Wait 200 
             DoEvents
+            waitLoops = waitLoops + 1
         Loop
+        If Not app.IsInitialized Then
+            Debug.Print "ConnectExtra: app.IsInitialized remained False after waiting."
+            currentAction = "app.IsInitialized Timeout"
+            GoTo ConnectExtra_ErrorHandler_FinalMsg
+        End If
     End If
 
     currentAction = "app.GetObject(""Frame"")"
@@ -683,18 +724,21 @@ Sub ConnectExtra()
     If Err.Number <> 0 Or osView Is Nothing Then
         Err.Clear
         Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
-        Debug.Print "Iterating views for: " & sessionName
+        Debug.Print "Iterating views for short name: " & Left(sessionName, InStrRev(sessionName, ".") -1) ' Try with short name if full name fails
         sessionIsOpen = False
-        Dim viewsCollection As Object, tempView As Object
+        Dim viewsCollection As Object 
         Set viewsCollection = Nothing
         currentAction = "Accessing ThisFrame.Views for iteration"
         Set viewsCollection = ThisFrame.Views
         If Err.Number = 0 And Not viewsCollection Is Nothing Then
             If viewsCollection.Count > 0 Then
-                 For Each tempView In viewsCollection
-                    If InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then
+                 For Each tempView In viewsCollection 
+                    If InStr(1, tempView.titleText, Left(sessionName, InStrRev(sessionName, ".") -1), vbTextCompare) > 0 Then ' Compare with name part
                         Set osView = tempView: sessionIsOpen = True
-                        Debug.Print "Found view by iteration: " & osView.titleText: Exit For
+                        Debug.Print "Found view by iteration (short name): " & osView.titleText: Exit For
+                    ElseIf InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then ' Fallback to full name
+                        Set osView = tempView: sessionIsOpen = True
+                        Debug.Print "Found view by iteration (full name): " & osView.titleText: Exit For
                     End If
                 Next tempView
             Else Debug.Print "ThisFrame.Views.Count is 0."
@@ -703,7 +747,7 @@ Sub ConnectExtra()
         End If
         Err.Clear
         If Not sessionIsOpen Then
-            Debug.Print "View not found. Attempting CreateView: " & strBoPath
+            Debug.Print "View not found by GetViewByTitleText or iteration. Attempting CreateView: " & strBoPath
             currentAction = "ThisFrame.CreateView(""" & strBoPath & """)"
             On Error Resume Next
             Set osView = ThisFrame.CreateView(strBoPath)
@@ -712,6 +756,7 @@ Sub ConnectExtra()
                 Err.Clear: Debug.Print "CreateView FAILED. ErrNo: " & capErrNo & " Desc: " & capErrDesc
                 On Error GoTo ConnectExtra_ErrorHandler: GoTo ConnectExtra_ErrorHandler_FinalMsg
             End If
+             Application.Wait (Now + TimeValue("00:00:05")) ' Give time for new session to settle
         End If
     End If
     On Error GoTo ConnectExtra_ErrorHandler
@@ -740,11 +785,11 @@ ConnectExtra_ErrorHandler:
     If currentAction = "" Then currentAction = "Unknown step in ConnectExtra"
     MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
 ConnectExtra_ErrorHandler_FinalMsg:
-    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then ' No session file chosen
+    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then 
     ElseIf obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" Then
          MsgBox "Critical failure in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
     End If
-    Call CleanUpReflectionObjects ' Ensure cleanup if error occurs
+    Call CleanUpReflectionObjects 
 End Sub
 
 
@@ -754,14 +799,14 @@ End Sub
 Private Sub WaitReady(Optional settleTimeMs As Long = 800, Optional timeoutMs As Long = 25000)
     If obScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
-    On Error Resume Next ' To catch errors if obScreen becomes invalid during loop
+    On Error Resume Next 
     Do While obScreen.OIA.XStatus <> 0
-        If obScreen Is Nothing Then Exit Sub ' Check inside loop
+        If obScreen Is Nothing Then Exit Sub 
         If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
             Debug.Print "WaitReady: Timeout XStatus."
             Exit Do
         End If
-        obScreen.WaitForHostSettle 100, 250 ' Increased timeout for inner settle
+        obScreen.WaitForHostSettle 100, 250 
         DoEvents
         If Err.Number <> 0 Then
             Debug.Print "WaitReady: Error in XStatus loop: " & Err.Description
@@ -780,7 +825,7 @@ Private Sub WaitReady(Optional settleTimeMs As Long = 800, Optional timeoutMs As
 End Sub
 
 Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
-    VerifyScreen = False ' Default to False
+    VerifyScreen = False 
     If obScreen Is Nothing Then Exit Function
     
     Call WaitReady(400) 
@@ -791,8 +836,8 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     End If
     
     Dim actualText As String
-    actualText = obScreen.GetTextSafe(rowNum, colNum, length) ' Use GetTextSafe
-    If obScreen Is Nothing Then Exit Function ' GetTextSafe might set obScreen to Nothing
+    actualText = obScreen.GetTextSafe(rowNum, colNum, length) 
+    If obScreen Is Nothing Then Exit Function 
 
     If UCase(Trim(actualText)) = UCase(Trim(expectedText)) Then
         VerifyScreen = True
@@ -802,9 +847,8 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     End If
 End Function
 
-' New Safe GetText function
 Private Function GetTextSafe(rowNum As Long, colNum As Long, length As Long) As String
-    GetTextSafe = "" ' Default to empty string
+    GetTextSafe = "" 
     If obScreen Is Nothing Then
         Debug.Print "GetTextSafe: obScreen is Nothing. Cannot get text."
         Exit Function
@@ -813,14 +857,17 @@ Private Function GetTextSafe(rowNum As Long, colNum As Long, length As Long) As 
     On Error Resume Next
     GetTextSafe = obScreen.GetText(rowNum, colNum, length)
     If Err.Number <> 0 Then
-        Debug.Print "GetTextSafe: Error getting text R" & rowNum & "C" & colNum & "L" & length & ". Desc: " & Err.Description
-        If InStr(1, Err.Description, "out of the range of valid values", vbTextCompare) > 0 Or _
-           InStr(1, Err.Description, "session", vbTextCompare) > 0 Or _
-           InStr(1, Err.Description, "connection", vbTextCompare) > 0 Then
+        Dim errDescSafe As String: errDescSafe = Err.Description ' Capture error desc before it's cleared
+        Dim errNumSafe As Long: errNumSafe = Err.Number
+        Debug.Print "GetTextSafe: Error getting text R" & rowNum & "C" & colNum & "L" & length & ". Desc: " & errDescSafe
+        If InStr(1, errDescSafe, "out of the range of valid values", vbTextCompare) > 0 Or _
+           InStr(1, errDescSafe, "session", vbTextCompare) > 0 Or _
+           InStr(1, errDescSafe, "connection", vbTextCompare) > 0 Or _
+           errNumSafe = 91 Or errNumSafe = 424 Then 
             Debug.Print "GetTextSafe: Critical error detected, setting obScreen to Nothing."
             Set obScreen = Nothing
         End If
-        GetTextSafe = "" ' Return empty on error
+        GetTextSafe = "" 
     End If
     On Error GoTo 0
 End Function
@@ -849,15 +896,11 @@ End Sub
 
 Private Sub CleanUpReflectionObjects()
     Debug.Print "CleanUpReflectionObjects: Releasing..."
-    On Error Resume Next ' Ignore errors during cleanup
+    On Error Resume Next 
     Set obScreen = Nothing
     Set ibmTerminal = Nothing
     Set osView = Nothing
     Set ThisFrame = Nothing
-    ' Only release app if it was created by this instance.
-    ' If GetObject was used, another process might own it.
-    ' However, for simplicity here, we'll try to release it.
-    ' A more robust solution would track if CreateObject was used.
     Set app = Nothing
     Debug.Print "CleanUpReflectionObjects: Released."
     On Error GoTo 0
