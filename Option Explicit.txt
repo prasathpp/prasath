@@ -24,12 +24,17 @@ Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
 Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
 Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
 Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
-Private Const SCREEN_MESSAGES As String = "M E S S A G E S" ' For the "TERM ALL" intermediate screen
 
-' --- Reflection Key Codes ---
-' Public Const ControlKeyCode_Transmit As Long = 14 
-' Public Const ControlKeyCode_Attention As Long = 35 
-' Public Const ControlKeyCode_PF3 As Long = 39 ' Example for PF3 if needed later
+' --- Reflection Key Codes (ensure your library reference provides these) ---
+' Common key codes (ensure these are correct for your Reflection version if not using built-in constants)
+' These might be available from 'Attachmate_Reflection_Objects_Emulation_IbmHosts'
+' or 'MicroFocus.Reflection.Objects.Emulation.IbmHosts'
+' If not, uncomment and define or ensure they are defined elsewhere.
+' Public Const ControlKeyCode_Transmit As Long = 14 ' Example for Enter
+' Public Const ControlKeyCode_Delete As Long = 83   ' Example for Delete Char
+' Public Const ControlKeyCode_PF2 As Long = 38      ' Example for PF2
+' Public Const ControlKeyCode_Attention As Long = 35 ' Example for ATTN/PA1 (might vary)
+
 
 '===============================================================================
 ' MAIN PROCESSING SUB
@@ -73,7 +78,7 @@ Sub ProcessInterestAdjustments_Main()
         Debug.Print "-----------------------------------------------------"
         Debug.Print "ProcessInterestAdjustments_Main: Processing row " & i
         
-        Ws_Data.Range("H" & i & ":J" & i).ClearContents 
+        Ws_Data.Range("H" & i & ":J" & i).ClearContents ' Output columns for status, user, timestamp
         
         If obScreen Is Nothing Then
             Ws_Data.Range("H" & i).Value = "Critical Error - Session Lost Before Processing Row"
@@ -130,17 +135,8 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim k As Integer
     Dim hostStatusMessage As String
     Dim formattedAmount As String
-    Dim appMenuReached As Boolean
-    Dim retryCount As Integer
-    Dim menuOptionRow As Long, foundBrandOnMenu As Boolean
-
-    ' --- Constants for App Menu dynamic selection ---
-    Const APP_MENU_LIST_START_ROW As Long = 8 ' Example: Row where brand list starts (Confirm this)
-    Const APP_MENU_LIST_END_ROW As Long = 15  ' Example: Row where brand list ends (Confirm this)
-    Const APP_MENU_CONFIRM_CODE_COL As Long = 8 ' Example: Column for "PRCIN#T#" text (Confirm this)
-    Const APP_MENU_CONFIRM_CODE_LEN As Long = 10 ' Example: Length of "PRCIN#T#" text (Confirm this)
-    Const APP_MENU_SELECTION_COL As Long = 3  ' Example: Column for "S" selection char (Confirm this)
-
+    Dim appMenuReached As Boolean ' For initial screen check
+    Dim retryCount As Integer     ' For initial screen check loop
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
@@ -167,96 +163,62 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             Ws_Data.Range("H" & iRow).Value = "Unknown Brand: " & iBrand
             GoTo NextCase_Adjustment
     End Select
-    Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Brand Target Code: " & confirmCode
+    Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
-    ' --- Phase 1: Ensure Clean State & Reach App Menu ---
-    Call WaitReady(200, 5000) 
+    ' --- MODIFIED Navigation Logic for Initial App Menu Check ---
+    Call WaitReady(200, 5000) ' Initial settle before first check
+    
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
     
     If Not appMenuReached Then
-        Debug.Print "ProcessSingle: Not initially on App Menu. Sending TERM ALL."
-        ' Assuming R21,C13 is a global command input for TERM ALL if not on App Menu
-        Call SendData("TERM ALL", 21, 13, True, 1500) ' Sends TERM ALL + Enter, then waits
-        obScreen.WaitForHostSettle 750, 3000         ' Additional settle after TERM ALL
+        Debug.Print "ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key."
+        Call SendKey(ControlKeyCode_Attention, 1500) ' Attempt to return to App Menu (SendKey includes WaitReady)
         
-        ' Check for MESSAGES screen
-        ' Using your provided coordinates: R1, C36, L15 for "M E S S A G E S"
-        If VerifyScreen(SCREEN_MESSAGES, 1, 36, 15) Then 
-            Debug.Print "ProcessSingle: On MESSAGES screen after TERM ALL. Sending Enter."
-            Call SendKey(ControlKeyCode_Transmit, 1500) ' Send Enter to dismiss
-            Call WaitReady(750)                         ' Extra settle
-        Else
-            Debug.Print "ProcessSingle: MESSAGES screen not detected after TERM ALL. Current screen top line: " & Left(Trim(obScreen.GetText(1,1,80)),50)
-        End If
+        For retryCount = 1 To 3 ' Try up to 3 times to verify App Menu after Attention
+            Call WaitReady(750) ' Increased wait/settle time for each retry
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+            If appMenuReached Then
+                Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
+                Exit For ' Successfully reached, exit retry loop
+            Else
+                Debug.Print "ProcessSingle: Still not on App Menu after Attention key (retry " & retryCount & ")."
+            End If
+        Next retryCount
         
-        ' Now, robustly try to get to/confirm App Menu using Attention key as a fallback or final step
-        appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28) ' Check again
         If Not appMenuReached Then
-            Debug.Print "ProcessSingle: Still not on App Menu. Attempting navigation with Attention key."
-            Call SendKey(ControlKeyCode_Attention, 1500) 
-            For retryCount = 1 To 3 
-                Call WaitReady(750) 
-                appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
-                If appMenuReached Then
-                    Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
-                    Exit For 
-                Else
-                    Debug.Print "ProcessSingle: Still not on App Menu after Attention key (retry " & retryCount & ")."
-                End If
-            Next retryCount
+             Ws_Data.Range("H" & iRow).Value = "Not on App Menu; Nav failed after retries"
+             GoTo NextCase_Adjustment
         End If
-    End If ' End of If Not appMenuReached (initial check)
-    
-    If Not appMenuReached Then
-         Ws_Data.Range("H" & iRow).Value = "Failed to reach App Menu after all attempts"
-         GoTo NextCase_Adjustment
     End If
-    Debug.Print "ProcessSingle: Confirmed on " & SCREEN_APP_MENU
-    
-    ' --- Phase 2: Select Brand from App Menu (Dynamic Selection) ---
-    foundBrandOnMenu = False
-    For menuOptionRow = APP_MENU_LIST_START_ROW To APP_MENU_LIST_END_ROW
-        Call WaitReady(50)
-        tempStr = Trim(obScreen.GetText(menuOptionRow, APP_MENU_CONFIRM_CODE_COL, APP_MENU_CONFIRM_CODE_LEN))
-        Debug.Print "ProcessSingle: AppMenu Scan Row " & menuOptionRow & ", Col " & APP_MENU_CONFIRM_CODE_COL & ": Found '" & tempStr & "'"
-        
-        If InStr(1, tempStr, confirmCode, vbTextCompare) > 0 Then
-            Debug.Print "ProcessSingle: Found target '" & confirmCode & "' on App Menu row " & menuOptionRow
-            obScreen.PutText2 "S", menuOptionRow, APP_MENU_SELECTION_COL ' Put selection character "S"
-            Call SendKey(ControlKeyCode_Transmit, 1500)       ' Send Enter to select
-            foundBrandOnMenu = True
-            Exit For 
-        End If
-    Next menuOptionRow
+    Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
+    ' --- END MODIFIED Navigation Logic ---
 
-    If Not foundBrandOnMenu Then
-        Ws_Data.Range("H" & iRow).Value = "Target code '" & confirmCode & "' not found on App Menu rows " & APP_MENU_LIST_START_ROW & "-" & APP_MENU_LIST_END_ROW & "."
+
+    Call SendData("TERM ALL", 21, 13, True, 1500)
+    obScreen.WaitForHostSettle 750, 3000
+    Debug.Print "ProcessSingle: Sent TERM ALL"
+
+    Call SendData(confirmCode, 21, 13, True, 1500)
+    obScreen.WaitForHostSettle 750, 3000
+    Debug.Print "ProcessSingle: Sent " & confirmCode
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then
+        Ws_Data.Range("H" & iRow).Value = "Brand cmd NR"
         GoTo NextCase_Adjustment
     End If
-
-    ' --- Phase 3: Continue with rest of navigation ---
-    obScreen.WaitForHostSettle 750, 3000 ' Settle after brand selection
-    Debug.Print "ProcessSingle: Brand selected from App Menu."
-
-    ' Check for potential errors after brand selection
-    If VerifyScreen("Command not recognized", 20, 36, 22) Then ' Unlikely here, but good to keep
-        Ws_Data.Range("H" & iRow).Value = "App Menu selection error (Cmd NR)"
-        GoTo NextCase_Adjustment
-    End If
-        
+    
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
         Call SendKey(ControlKeyCode_Transmit, 1000)
         obScreen.WaitForHostSettle 500, 2000
-        If VerifyScreen("", 1, 1, 80) Then 
+        If VerifyScreen("", 1, 1, 80) Then
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
                 If VerifyScreen("", 1, 1, 80) Then
                     Call SendData("STAR", 1, 1, True, 1000)
-                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then 
+                ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
                     Call SendKey(ControlKeyCode_Transmit, 1000)
-                Else 
+                Else
                     Exit Do
                 End If
                 obScreen.WaitForHostSettle 300, 1000
@@ -271,7 +233,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
 
     obScreen.WaitForHostSettle 300, 1000
     If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
-        Ws_Data.Range("H" & iRow).Value = "Not on OptH (post-AppMenu selection)"
+        Ws_Data.Range("H" & iRow).Value = "Not on OptH"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
@@ -317,7 +279,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Call SendData("04", 22, 8, True, 1000)
     obScreen.WaitForHostSettle 500, 2000
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
-        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then 
+        If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
             Ws_Data.Range("H" & iRow).Value = "Not on IA scrn"
             GoTo NextCase_Adjustment
         End If
@@ -325,13 +287,10 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
 
     Call WaitReady(200)
-    tempStr = Trim(obScreen.GetText(20, 2, 20)) ' Check for "ACCEPTED BY OPERATOR"
-    If tempStr = "ACCEPTED BY OPERATOR" Then
+    If Trim(obScreen.GetText(20, 2, 20)) = "ACCEPTED BY OPERATOR" Then
         Debug.Print "ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row."
         Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted"
-        ' Solution for navigating back from "ACCEPTED" state needs to be determined by user
-        ' For now, using standard Attention key. If this fails, NavBackFail will be appended.
-        GoTo PageDownAndExit_Adjustment 
+        GoTo PageDownAndExit_Adjustment
     End If
 
     Debug.Print "ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---"
@@ -341,15 +300,15 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: obScreen is VALID. Row " & iRow & ". excel_D_Accrued: " & excel_D_Accrued
     
-    tempStr = Trim(obScreen.GetText(3, 42, 16)) 
+    tempStr = Trim(obScreen.GetText(3, 42, 16))
     If tempStr = "BUSINESS CURRENT" Then
         screenType = "BC"
     Else
-        screenType = "Normal" 
+        screenType = "Normal"
     End If
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
-    ' --- Data Entry Logic (remains unchanged from last version with Format() for amounts) ---
+    ' --- Data Entry Logic ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
@@ -381,9 +340,9 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
                 obScreen.PutText2 "dec", 8, 31
                 formattedAmount = Format(val_to_input_in_arr, "0.00000000")
                 obScreen.PutText2 formattedAmount, 8, 35
-                 If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then 
-                    obScreen.PutText2 "01", 9, 47 
-                    reasonCodeEntered_AccruedUnar = True 
+                 If val_to_input_in_unar > 0 Or val_to_input_in_arr > 0 Then
+                    obScreen.PutText2 "01", 9, 47
+                    reasonCodeEntered_AccruedUnar = True
                  End If
             End If
             If val_to_input_in_unar > 0 Then
@@ -432,7 +391,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
                     formattedAmount = Format(val_to_input_in_cutoff_arr, "0.00000000")
                     obScreen.PutText2 formattedAmount, 12, 35
                     If val_to_input_in_cutoff_unar > 0 Or val_to_input_in_cutoff_arr > 0 Then
-                        obScreen.PutText2 "01", 13, 47 
+                        obScreen.PutText2 "01", 13, 47
                         reasonCodeEntered_CutoffUnar = True
                     End If
                 End If
@@ -485,13 +444,13 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "Data entry potentially complete"
 
     Call WaitReady(100)
-    obScreen.PutText2 "CHARGEBACK", 18, 2 
+    obScreen.PutText2 "CHARGEBACK", 18, 2
     Debug.Print "Input 'CHARGEBACK' at R18,C2"
     
     For k = 1 To 3
-        Call SendKey(ControlKeyCode_Transmit, 750) 
-        If k = 1 Then 
-            obScreen.WaitForHostSettle 500, 2000 
+        Call SendKey(ControlKeyCode_Transmit, 750)
+        If k = 1 Then
+            obScreen.WaitForHostSettle 500, 2000
             If VerifyScreen("REASON CODE NOT ENTERED", 23, 4, 25) Then
                 Ws_Data.Range("H" & iRow).Value = "HostError: REASON CODE still not accepted"
                 Debug.Print "Host still reports REASON CODE NOT ENTERED after 1st Enter"
@@ -499,34 +458,33 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
             ElseIf VerifyScreen("AMENDMENT ACCEPTED", 23, 4, 18) Or VerifyScreen("TRANSACTION ACCEPTED", 23, 4, 20) Then
                 Debug.Print "Amendment accepted message after first Enter."
             Else
-                Debug.Print "No specific 'REASON CODE' or 'ACCEPTED' message found at (23,4) after 1st Enter. Screen text at (23,4,25): " & Left(Trim(obScreen.GetText(23,4,25)), 25)
+                Debug.Print "No specific 'REASON CODE' or 'ACCEPTED' message found at (23,4) after 1st Enter. Screen text at (23,4,25): " & Left(Trim(obScreen.GetText(23, 4, 25)), 25)
             End If
         End If
     Next k
     Debug.Print "ProcessSingle: Sent Enter x3"
 
     Call WaitReady(500)
-    hostStatusMessage = Trim(obScreen.GetText(20, 2, 20)) 
+    hostStatusMessage = Trim(obScreen.GetText(20, 2, 20))
     If hostStatusMessage = "ACCEPTED BY OPERATOR" Then
         Debug.Print "Amendment ACCEPTED BY OPERATOR for row " & iRow
         Ws_Data.Range("H" & iRow).Value = "Completed": ProcessSingleAdjustment = True
     Else
-        hostStatusMessage = Trim(obScreen.GetText(23, 3, 78)) 
+        hostStatusMessage = Trim(obScreen.GetText(23, 3, 78))
         Debug.Print "Amendment FAILED. Status(20,2):'" & Trim(obScreen.GetText(20, 2, 20)) & "'. ErrLine(23,3):'" & hostStatusMessage & "'"
         Ws_Data.Range("H" & iRow).Value = "Exception - Not Accepted. HostMsg: " & Left(hostStatusMessage, 50)
     End If
     
 PageDownAndExit_Adjustment:
-    ' Add logic here if a different key is needed when "ACCEPTED BY OPERATOR" was true
-    Call SendKey(ControlKeyCode_Attention, 1500) 
+    Call SendKey(ControlKeyCode_Attention, 1500)
     Debug.Print "ProcessSingle: Sent ControlKeyCode_Attention"
-    Call WaitReady(1000) 
+    Call WaitReady(1000)
     
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
         Debug.Print "Did not return to App Menu. Current: " & Left(Trim(obScreen.GetText(1, 1, 80)), 50)
         If Ws_Data.Range("H" & iRow).Value Like "*Completed*" Or Ws_Data.Range("H" & iRow).Value Like "*Accepted*" Then
             Ws_Data.Range("H" & iRow).Value = Ws_Data.Range("H" & iRow).Value & " (NavBackFail)"
-        ElseIf Ws_Data.Range("H" & iRow).Value = "" Then 
+        ElseIf Ws_Data.Range("H" & iRow).Value = "" Then
              Ws_Data.Range("H" & iRow).Value = "Processed (NavBackFail)"
         End If
     End If
@@ -551,138 +509,265 @@ ErrorHandler_Adjustment:
 End Function
 
 '===============================================================================
-' CONNECTION SUB (Remains unchanged)
+' CONNECTION SUB (No changes from your last provided version)
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
     Dim targetSessionViewTitle As String, OleObj As Object, tempView As Object
     Dim sessionIsOpen As Boolean
+
     On Error GoTo ConnectExtra_ErrorHandler
-    currentAction = "Initializing ConnectExtra": Debug.Print currentAction
-    edpPathFromSheet = "": On Error Resume Next
+    currentAction = "Initializing ConnectExtra"
+    Debug.Print currentAction
+
+    edpPathFromSheet = ""
+    On Error Resume Next
     Set ws = Sheet4
     If Err.Number = 0 Then
-        Set OleObj = Nothing: Set OleObj = ws.OLEObjects("txtEDPPath")
+        Set OleObj = Nothing
+        Set OleObj = ws.OLEObjects("txtEDPPath")
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
-                If TypeOf OleObj.Object Is MSForms.TextBox Then edpPathFromSheet = OleObj.Object.Text Else Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
-            Else Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' was found by name but is Nothing (unusual)."
+                If TypeOf OleObj.Object Is MSForms.TextBox Then
+                    edpPathFromSheet = OleObj.Object.Text
+                Else
+                    Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
+                End If
+            Else
+                 Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' was found by name but is Nothing (unusual)."
             End If
-        Else Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4 (CodeName). Error: " & Err.Description
+        Else
+             Debug.Print "ConnectExtra: OLEObject 'txtEDPPath' not found on Sheet4 (CodeName). Error: " & Err.Description
         End If
-    Else Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
+    Else
+        Debug.Print "ConnectExtra: Sheet with CodeName 'Sheet4' not found. Error: " & Err.Description
     End If
-    Err.Clear: On Error GoTo ConnectExtra_ErrorHandler
-    If edpPathFromSheet <> "" Then stEDPFile = edpPathFromSheet Else Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not correctly found. Prompting user.": stEDPFile = Application.GetOpenFilename(Title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
-    If stEDPFile = "False" Or stEDPFile = "" Then MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE: Set obScreen = Nothing: Exit Sub
-    strBoPath = stEDPFile: sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1): targetSessionViewTitle = sessionName
-    currentAction = "GetObject(, ""Reflection Workspace"")": Debug.Print currentAction: On Error Resume Next
+    Err.Clear
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    If edpPathFromSheet <> "" Then
+        stEDPFile = edpPathFromSheet
+    Else
+        Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not correctly found. Prompting user."
+        stEDPFile = Application.GetOpenFilename(Title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+    End If
+
+    If stEDPFile = "False" Or stEDPFile = "" Then
+        MsgBox "No session file selected. Exiting.", vbCritical, SCRIPT_TITLE
+        Set obScreen = Nothing: Exit Sub
+    End If
+    
+    strBoPath = stEDPFile
+    sessionName = Mid(strBoPath, InStrRev(strBoPath, "\") + 1)
+    targetSessionViewTitle = sessionName
+
+    currentAction = "GetObject(, ""Reflection Workspace"")"
+    Debug.Print currentAction
+    On Error Resume Next
     Set app = GetObject(, "Reflection Workspace")
     If Err.Number <> 0 Or app Is Nothing Then
-        Err.Clear: Debug.Print "GetObject FAILED. Attempting CreateObject...": currentAction = "CreateObject(""Reflection Workspace"")"
+        Err.Clear: Debug.Print "GetObject FAILED. Attempting CreateObject..."
+        currentAction = "CreateObject(""Reflection Workspace"")"
         Set app = CreateObject("Reflection Workspace")
-        If Err.Number <> 0 Or app Is Nothing Then Err.Clear: Debug.Print "CreateObject FAILED.": On Error GoTo ConnectExtra_ErrorHandler: GoTo ConnectExtra_ErrorHandler_FinalMsg
+        If Err.Number <> 0 Or app Is Nothing Then
+            Err.Clear: Debug.Print "CreateObject FAILED."
+            On Error GoTo ConnectExtra_ErrorHandler
+            GoTo ConnectExtra_ErrorHandler_FinalMsg
+        End If
     End If
-    Debug.Print "App Object obtained. TypeName: " & TypeName(app): On Error GoTo ConnectExtra_ErrorHandler
-    currentAction = "app.GetObject(""Frame"")": Debug.Print currentAction
+    Debug.Print "App Object obtained. TypeName: " & TypeName(app)
+    On Error GoTo ConnectExtra_ErrorHandler
+
+    currentAction = "app.GetObject(""Frame"")"
+    Debug.Print currentAction
     Set ThisFrame = app.GetObject("Frame")
-    If ThisFrame Is Nothing Then Debug.Print "Frame obj is Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+    If ThisFrame Is Nothing Then
+        Debug.Print "Frame obj is Nothing."
+        GoTo ConnectExtra_ErrorHandler_FinalMsg
+    End If
     Debug.Print "Frame Object obtained. TypeName: " & TypeName(ThisFrame)
+
     If Not ThisFrame.Visible Then ThisFrame.Visible = True
     ThisFrame.Activate: Debug.Print "Frame Visible/Activated."
-    currentAction = "ThisFrame.GetViewByTitleText(""" & targetSessionViewTitle & """)": Debug.Print currentAction: On Error Resume Next
+
+    currentAction = "ThisFrame.GetViewByTitleText(""" & targetSessionViewTitle & """)"
+    Debug.Print currentAction
+    On Error Resume Next
     Set osView = ThisFrame.GetViewByTitleText(targetSessionViewTitle)
+    
     If Err.Number <> 0 Or osView Is Nothing Then
-        Err.Clear: Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description: Debug.Print "Iterating views for: " & sessionName: sessionIsOpen = False
-        Dim viewsCollection As Object: Set viewsCollection = Nothing: currentAction = "Accessing ThisFrame.Views for iteration"
+        Err.Clear
+        Debug.Print "GetViewByTitleText FAILED for '" & targetSessionViewTitle & "'. Err: " & Err.Description
+        Debug.Print "Iterating views for: " & sessionName
+        sessionIsOpen = False
+        
+        Dim viewsCollection As Object
+        Set viewsCollection = Nothing
+        currentAction = "Accessing ThisFrame.Views for iteration"
         Set viewsCollection = ThisFrame.Views
         If Err.Number = 0 And Not viewsCollection Is Nothing Then
-            If viewsCollection.Count > 0 Then For Each tempView In viewsCollection If InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then Set osView = tempView: sessionIsOpen = True: Debug.Print "Found view by iteration: " & osView.titleText: Exit For: End If: Next tempView Else Debug.Print "ThisFrame.Views.Count is 0."
-            Else Debug.Print "Could not access ThisFrame.Views or it is Nothing. Err: " & Err.Description
-        End If: Err.Clear
-        If Not sessionIsOpen Then
-            Debug.Print "View not found by GetViewByTitleText or iteration. Attempting CreateView: " & strBoPath: currentAction = "ThisFrame.CreateView(""" & strBoPath & """)": On Error Resume Next
-            Set osView = ThisFrame.CreateView(strBoPath)
-            If Err.Number <> 0 Or osView Is Nothing Then Dim capturedErrNumber As Long: capturedErrNumber = Err.Number: Dim capturedErrDesc As String: capturedErrDesc = Err.Description: Err.Clear: Debug.Print "CreateView FAILED. ErrNo: " & capturedErrNumber & " Desc: " & capturedErrDesc: On Error GoTo ConnectExtra_ErrorHandler: GoTo ConnectExtra_ErrorHandler_FinalMsg
-            End If: On Error GoTo ConnectExtra_ErrorHandler
-        Else: On Error GoTo ConnectExtra_ErrorHandler
+            If viewsCollection.Count > 0 Then
+                 For Each tempView In viewsCollection
+                    If InStr(1, tempView.titleText, sessionName, vbTextCompare) > 0 Then
+                        Set osView = tempView
+                        sessionIsOpen = True
+                        Debug.Print "Found view by iteration: " & osView.titleText
+                        Exit For
+                    End If
+                Next tempView
+            Else
+                Debug.Print "ThisFrame.Views.Count is 0."
+            End If
+        Else
+            Debug.Print "Could not access ThisFrame.Views or it is Nothing. Err: " & Err.Description
         End If
-    Else: On Error GoTo ConnectExtra_ErrorHandler
+        Err.Clear
+
+        If Not sessionIsOpen Then
+            Debug.Print "View not found by GetViewByTitleText or iteration. Attempting CreateView: " & strBoPath
+            currentAction = "ThisFrame.CreateView(""" & strBoPath & """)"
+            On Error Resume Next
+            Set osView = ThisFrame.CreateView(strBoPath)
+            
+            If Err.Number <> 0 Or osView Is Nothing Then
+                Dim capturedErrNumber As Long: capturedErrNumber = Err.Number
+                Dim capturedErrDesc As String: capturedErrDesc = Err.Description
+                Err.Clear
+                Debug.Print "CreateView FAILED. ErrNo: " & capturedErrNumber & " Desc: " & capturedErrDesc
+                On Error GoTo ConnectExtra_ErrorHandler
+                GoTo ConnectExtra_ErrorHandler_FinalMsg
+            End If
+            On Error GoTo ConnectExtra_ErrorHandler
+        Else
+            On Error GoTo ConnectExtra_ErrorHandler
+        End If
+    Else
+        On Error GoTo ConnectExtra_ErrorHandler
     End If
-    If osView Is Nothing Then currentAction = "Final osView Validity Check": Debug.Print "ConnectExtra: Critical - osView is Nothing after all acquisition attempts.": GoTo ConnectExtra_ErrorHandler_FinalMsg
+
+    If osView Is Nothing Then
+        currentAction = "Final osView Validity Check"
+        Debug.Print "ConnectExtra: Critical - osView is Nothing after all acquisition attempts."
+        GoTo ConnectExtra_ErrorHandler_FinalMsg
     End If
+
     Debug.Print "View obtained. Title: '" & osView.titleText & "'. TypeName: " & TypeName(osView)
-    currentAction = "osView.Control": Debug.Print currentAction: Set ibmTerminal = osView.Control
+
+    currentAction = "osView.Control": Debug.Print currentAction
+    Set ibmTerminal = osView.Control
     If ibmTerminal Is Nothing Then Debug.Print "Terminal obj Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
     Debug.Print "Terminal Object. TypeName: " & TypeName(ibmTerminal)
-    currentAction = "ibmTerminal.Screen": Debug.Print currentAction: Set obScreen = ibmTerminal.screen
+
+    currentAction = "ibmTerminal.Screen": Debug.Print currentAction
+    Set obScreen = ibmTerminal.screen
     If obScreen Is Nothing Then Debug.Print "Screen obj Nothing.": GoTo ConnectExtra_ErrorHandler_FinalMsg
     Debug.Print "Screen Object. TypeName: " & TypeName(obScreen)
+
     On Error Resume Next
     ibmTerminal.DisableKeystrokeProductivity = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableKeystrokeProd: " & Err.Description: Err.Clear
     ibmTerminal.DisableScreenHistory = True: If Err.Number <> 0 Then Debug.Print "Info Err DisableScreenHist: " & Err.Description: Err.Clear
     On Error GoTo ConnectExtra_ErrorHandler
-    Debug.Print "ConnectExtra: Success.": Exit Sub
+
+    Debug.Print "ConnectExtra: Success."
+    Exit Sub
+
 ConnectExtra_ErrorHandler:
     If currentAction = "" Then currentAction = "Unknown step in ConnectExtra"
     MsgBox "ConnectExtra Error (" & currentAction & "): " & Err.Number & " - " & Err.Description, vbCritical, SCRIPT_TITLE
 ConnectExtra_ErrorHandler_FinalMsg:
-    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then ElseIf obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" Then MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
-    End If: Call CleanUpReflectionObjects
+    If app Is Nothing And (stEDPFile = "False" Or stEDPFile = "") And currentAction = "Initializing ConnectExtra" Then
+        ' Do nothing
+    ElseIf obScreen Is Nothing And currentAction <> "Initializing ConnectExtra" Then
+         MsgBox "A critical failure occurred in ConnectExtra. Unable to establish Reflection connection.", vbCritical, SCRIPT_TITLE
+    End If
+    Call CleanUpReflectionObjects
 End Sub
 
 '===============================================================================
-' HELPER FUNCTIONS (Remains unchanged)
+' HELPER FUNCTIONS
 '===============================================================================
 Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As Long = 10000)
     If obScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
     On Error Resume Next
     Do While obScreen.OIA.XStatus <> 0
-        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then Debug.Print "WaitReady: Timeout XStatus.": Exit Do
+        If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
+            Debug.Print "WaitReady: Timeout XStatus."
+            Exit Do
+        End If
         obScreen.WaitForHostSettle 100, 50: DoEvents
-        If Err.Number <> 0 Then Debug.Print "WaitReady: Error in XStatus loop: " & Err.Description: Set obScreen = Nothing: Exit Sub
+        If Err.Number <> 0 Then
+            Debug.Print "WaitReady: Error in XStatus loop: " & Err.Description
+            Set obScreen = Nothing
+            Exit Sub
         End If
     Loop
-    If obScreen Is Nothing Then Exit Sub 
+    If obScreen Is Nothing Then Exit Sub
+    
     obScreen.WaitForHostSettle settleTimeMs, timeoutMs
-    If Err.Number <> 0 Then Debug.Print "WaitReady: Error in final WaitForHostSettle: " & Err.Description: Set obScreen = Nothing
-    End If: On Error GoTo 0
+    If Err.Number <> 0 Then
+        Debug.Print "WaitReady: Error in final WaitForHostSettle: " & Err.Description
+        Set obScreen = Nothing
+    End If
+    On Error GoTo 0
 End Sub
 
 Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
     If obScreen Is Nothing Then VerifyScreen = False: Exit Function
-    Call WaitReady(100) 
-    If obScreen Is Nothing Then VerifyScreen = False: Exit Function 
+    Call WaitReady(100)
+    If obScreen Is Nothing Then VerifyScreen = False: Exit Function
+
     If length = 0 Then
         If expectedText = "" Then length = 80 Else length = Len(expectedText)
     End If
-    Dim actualText As String: On Error Resume Next
+    
+    Dim actualText As String
+    On Error Resume Next
     actualText = obScreen.GetText(rowNum, colNum, length)
-    If Err.Number <> 0 Then Debug.Print "VerifyScreen FAIL GetText R" & rowNum & "C" & colNum & ": " & Err.Description: VerifyScreen = False: Set obScreen = Nothing: Exit Function
-    End If: On Error GoTo 0
-    If UCase(Trim(actualText)) = UCase(Trim(expectedText)) Then VerifyScreen = True Else Debug.Print "VerifyScreen FAIL: Exp '" & expectedText & "',Found '" & Trim(actualText) & "'@R" & rowNum & "C" & colNum & "L" & length: VerifyScreen = False
+    If Err.Number <> 0 Then
+        Debug.Print "VerifyScreen FAIL GetText R" & rowNum & "C" & colNum & ": " & Err.Description
+        VerifyScreen = False
+        Set obScreen = Nothing
+        Exit Function
+    End If
+    On Error GoTo 0
+    
+    If UCase(Trim(actualText)) = UCase(Trim(expectedText)) Then
+        VerifyScreen = True
+    Else
+        Debug.Print "VerifyScreen FAIL: Exp '" & expectedText & "',Found '" & Trim(actualText) & "'@R" & rowNum & "C" & colNum & "L" & length
+        VerifyScreen = False
     End If
 End Function
 
 Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 750)
     If obScreen Is Nothing Then Exit Sub
-    Call WaitReady(100): If obScreen Is Nothing Then Exit Sub
+    Call WaitReady(100)
+    If obScreen Is Nothing Then Exit Sub
+
     obScreen.PutText2 data, rowNum, colNum
-    If sendTransmit Then obScreen.SendControlKey ControlKeyCode_Transmit: Call WaitReady(waitAfterMs)
+    If sendTransmit Then
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        Call WaitReady(waitAfterMs)
     End If
 End Sub
 
 Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 750)
     If obScreen Is Nothing Then Exit Sub
-    Call WaitReady(100): If obScreen Is Nothing Then Exit Sub
-    obScreen.SendControlKey keyCode: Call WaitReady(waitAfterMs)
+    Call WaitReady(100)
+    If obScreen Is Nothing Then Exit Sub
+    
+    obScreen.SendControlKey keyCode
+    Call WaitReady(waitAfterMs)
 End Sub
+
+' ClearField subroutine is REMOVED
 
 Private Sub CleanUpReflectionObjects()
     Debug.Print "CleanUpReflectionObjects: Releasing..."
     On Error Resume Next
     Set obScreen = Nothing: Set ibmTerminal = Nothing: Set osView = Nothing
     Set ThisFrame = Nothing: Set app = Nothing
-    Debug.Print "CleanUpReflectionObjects: Released.": On Error GoTo 0
+    Debug.Print "CleanUpReflectionObjects: Released."
+    On Error GoTo 0
 End Sub
