@@ -1,4 +1,4 @@
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 07:00:03
+ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 07:34:55
 ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 2
 ProcessInterestAdjustments_Main: Calling ConnectExtra...
 Initializing ConnectExtra
@@ -20,52 +20,9 @@ ProcessInterestAdjustments_Main: Starting loop from row 2 to 2
 -----------------------------------------------------
 ProcessInterestAdjustments_Main: Processing row 2
 ProcessSingle: Row 2, S/C: 524131, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Sent TERM ALL
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: --- CHECKPOINT BEFORE DATA ENTRY ---
-ProcessSingle: obScreen is VALID. Row 2. excel_D_Accrued: 0.04
-ProcessSingle: Screen Type: Normal
-Processing Accrued: 0.04
-ClearField: Clearing R8C35 with 15 deletes.
-WaitReady: Timeout XStatus.
-ClearField: Clearing R9C47 with 5 deletes.
-WaitReady: Timeout XStatus.
-Applied Debtor: 0(F:0,CO:0). Applied Credit(G):0
-Data entry potentially complete
-WaitReady: Timeout XStatus.
-Input 'CHARGEBACK' at R18,C2
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-VerifyScreen FAIL: Exp 'REASON CODE NOT ENTERED',Found ''@R23C4L25
-WaitReady: Timeout XStatus.
-VerifyScreen FAIL: Exp 'AMENDMENT ACCEPTED',Found ''@R23C4L18
-WaitReady: Timeout XStatus.
-VerifyScreen FAIL: Exp 'TRANSACTION ACCEPTED',Found ''@R23C4L20
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-ProcessSingle: Sent Enter x3
-WaitReady: Timeout XStatus.
-Amendment FAILED. Status(20,2):''. ErrLine(23,3):''
-WaitReady: Timeout XStatus.
-WaitReady: Timeout XStatus.
-ProcessSingle: Sent PageDown
-WaitReady: Timeout XStatus.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-Did not return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 07 00
-ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Not Accepted. HostMsg:  (NavBackFail)
-CleanUpReflectionObjects: Releasing...
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'tion Handler Function Scre'@R1C28L26
+ProcessInterestAdjustments_Main:CleanUpReflectionObjects: Releasing...
 CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 07:04:13
+ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 07:35:00
+ Finished row 2. Status: Not on App Menu
 
