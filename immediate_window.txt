@@ -1,138 +1,12 @@
-ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 14:21:54
-ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 7
-ProcessInterestAdjustments_Main: Calling ConnectExtra...
-Initializing ConnectExtra
-GetObject(, "Reflection Workspace")
-GetObject FAILED. Attempting CreateObject...
-App Object obtained. TypeName: ApplicationObject
-app.GetObject("Frame")
-Frame Object obtained. TypeName: Frame
-Frame Visible/Activated.
-ThisFrame.GetViewByTitleText("Back Office - Prod.rd3x")
-View obtained. Title: 'Back Office - Prod.rd3x'. TypeName: View
-osView.Control
-Terminal Object. TypeName: IbmTerminal
-ibmTerminal.Screen
-Screen Object. TypeName: IbmScreen
-ConnectExtra: Success.
-ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set.
-ProcessInterestAdjustments_Main: Starting loop from row 2 to 7
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 2
-ProcessSingle: Row 2, S/C: 010527, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
 ProcessSingle: On MASTER INDEX
 ProcessSingle: On FILE MAINTENANCE INPUT INDEX
 ProcessSingle: On INTERNAL TRANSACTIONS
 ProcessSingle: Reached INTEREST AMENDMENTS
 ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 21
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
 ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): ATTN attempts failed. Trying PF3.
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): PF3 attempts failed. Attempting TERM ALL sequence.
-ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): TERM ALL failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): Trying one more ATTN key as last resort.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): All recovery attempts failed. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Screen already accepted (NavBackFail)
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 3
-ProcessSingle: Row 3, S/C: 543035, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 21
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
-ProcessInterestAdjustments_Main: Finished row 3. Status: Exception - Screen already accepted
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 4
-ProcessSingle: Row 4, S/C: 523050, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): ATTN attempts failed. Trying PF3.
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): Sent PF3 (Attempt 2)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): PF3 attempts failed. Attempting TERM ALL sequence.
-ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): TERM ALL failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): Trying one more ATTN key as last resort.
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): All recovery attempts failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessInterestAdjustments_Main: Finished row 4. Status: Exception - Screen already accepted (NavBackFail)
------------------------------------------------------
-ProcessInterestAdjustments_Main: Processing row 5
-ProcessSingle: Row 5, S/C: 543036, Confirm: PRCIN#T#
-ProcessSingle: On APPLICATION SELECTION MENU
-ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
-ProcessSingle: App Menu cleared and verified, ready for confirmCode.
-ProcessSingle: Sent PRCIN#T#
-VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
-VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
-ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
-ProcessSingle: On BACK OFFICE SYSTEM
-ProcessSingle: On MASTER INDEX
-ProcessSingle: On FILE MAINTENANCE INPUT INDEX
-ProcessSingle: On INTERNAL TRANSACTIONS
-ProcessSingle: Reached INTEREST AMENDMENTS
-ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
-VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 23
 ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
 ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
 ProcessInterestAdjustments_Main: Finished row 5. Status: Exception - Screen already accepted
@@ -152,13 +26,58 @@ ProcessSingle: On FILE MAINTENANCE INPUT INDEX
 ProcessSingle: On INTERNAL TRANSACTIONS
 ProcessSingle: Reached INTEREST AMENDMENTS
 ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
 ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 23
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
 ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
 ProcessInterestAdjustments_Main: Finished row 6. Status: Exception - Screen already accepted
 -----------------------------------------------------
 ProcessInterestAdjustments_Main: Processing row 7
 ProcessSingle: Row 7, S/C: 543016, Confirm: PRCIN#T#
+ProcessSingle: On APPLICATION SELECTION MENU
+ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
+ProcessSingle: App Menu cleared and verified, ready for confirmCode.
+ProcessSingle: Sent PRCIN#T#
+VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
+VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found ''@R1C1L24
+ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
+ProcessSingle: On BACK OFFICE SYSTEM
+ProcessSingle: On MASTER INDEX
+ProcessSingle: On FILE MAINTENANCE INPUT INDEX
+ProcessSingle: On INTERNAL TRANSACTIONS
+ProcessSingle: Reached INTEREST AMENDMENTS
+ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 23
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
+ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
+ProcessInterestAdjustments_Main: Finished row 7. Status: Exception - Screen already accepted
+CleanUpReflectionObjects: Releasing...
+CleanUpReflectionObjects: Released.
+ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 14:23:40
+ProcessInterestAdjustments_Main: Sub Started at 29/05/2025 14:24:43
+ProcessInterestAdjustments_Main: Last row in sheet 'Sheet1' is 36
+ProcessInterestAdjustments_Main: Calling ConnectExtra...
+Initializing ConnectExtra
+GetObject(, "Reflection Workspace")
+GetObject FAILED. Attempting CreateObject...
+App Object obtained. TypeName: ApplicationObject
+app.GetObject("Frame")
+Frame Object obtained. TypeName: Frame
+Frame Visible/Activated.
+ThisFrame.GetViewByTitleText("Back Office - Prod.rd3x")
+View obtained. Title: 'Back Office - Prod.rd3x'. TypeName: View
+osView.Control
+Terminal Object. TypeName: IbmTerminal
+ibmTerminal.Screen
+Screen Object. TypeName: IbmScreen
+ConnectExtra: Success.
+ProcessInterestAdjustments_Main: ConnectExtra successful. obScreen is set.
+ProcessInterestAdjustments_Main: Starting loop from row 2 to 36
+-----------------------------------------------------
+ProcessInterestAdjustments_Main: Processing row 2
+ProcessSingle: Row 2, S/C: 010527, Confirm: PRCIN#T#
 ProcessSingle: On APPLICATION SELECTION MENU
 ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
 ProcessSingle: App Menu cleared and verified, ready for confirmCode.
@@ -172,29 +91,110 @@ ProcessSingle: On FILE MAINTENANCE INPUT INDEX
 ProcessSingle: On INTERNAL TRANSACTIONS
 ProcessSingle: Reached INTEREST AMENDMENTS
 ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
-ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): ATTN attempts failed. Trying PF3.
 ProcessSingle (PageDownExit): Sent PF3 (Attempt 1)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): Sent PF3 (Attempt 2)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): PF3 failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): PF3 attempts failed. Attempting TERM ALL sequence.
 ProcessSingle (PageDownExit): Sending additional Transmit after TERM ALL.
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): TERM ALL failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
+ProcessSingle (PageDownExit): TERM ALL failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
 ProcessSingle (PageDownExit): Trying one more ATTN key as last resort.
+ProcessSingle (PageDownExit): Returned to App Menu via final ATTN.
+ProcessInterestAdjustments_Main: Finished row 2. Status: Exception - Screen already accepted
+-----------------------------------------------------
+ProcessInterestAdjustments_Main: Processing row 3
+ProcessSingle: Row 3, S/C: 543035, Confirm: PRCIN#T#
+ProcessSingle: On APPLICATION SELECTION MENU
+ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
+ProcessSingle: App Menu cleared and verified, ready for confirmCode.
+ProcessSingle: Sent PRCIN#T#
+VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
+VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
+ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
+ProcessSingle: On BACK OFFICE SYSTEM
+ProcessSingle: On MASTER INDEX
+ProcessSingle: On FILE MAINTENANCE INPUT INDEX
+ProcessSingle: On INTERNAL TRANSACTIONS
+ProcessSingle: Reached INTEREST AMENDMENTS
+ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
+ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
+ProcessInterestAdjustments_Main: Finished row 3. Status: Exception - Screen already accepted
+-----------------------------------------------------
+ProcessInterestAdjustments_Main: Processing row 4
+ProcessSingle: Row 4, S/C: 523050, Confirm: PRCIN#T#
+ProcessSingle: On APPLICATION SELECTION MENU
+ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
+ProcessSingle: App Menu cleared and verified, ready for confirmCode.
+ProcessSingle: Sent PRCIN#T#
+VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
+VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
+ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
+ProcessSingle: On BACK OFFICE SYSTEM
+ProcessSingle: On MASTER INDEX
+ProcessSingle: On FILE MAINTENANCE INPUT INDEX
+ProcessSingle: On INTERNAL TRANSACTIONS
+ProcessSingle: Reached INTEREST AMENDMENTS
+ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
 VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
-ProcessSingle (PageDownExit): All recovery attempts failed. Current: INTEREST AMENDMENTS       29MAY2025 14 22
-ProcessInterestAdjustments_Main: Finished row 7. Status: Exception - Screen already accepted (NavBackFail)
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
+ProcessSingle (PageDownExit): Returned to App Menu via ATTN.
+ProcessInterestAdjustments_Main: Finished row 4. Status: Exception - Screen already accepted
+-----------------------------------------------------
+ProcessInterestAdjustments_Main: Processing row 5
+ProcessSingle: Row 5, S/C: 543036, Confirm: PRCIN#T#
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
+ProcessSingle (Initial Nav): Not initially on App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (Initial Nav): Trying ATTN key.
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
+ProcessSingle (Initial Nav): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (Initial Nav): Trying PF3 key.
+ProcessSingle (Initial Nav): Reached App Menu after recovery attempts.
+ProcessSingle: On APPLICATION SELECTION MENU
+ProcessSingle: Now on App Menu. Performing TERM ALL to clear App Menu input field.
+ProcessSingle: App Menu cleared and verified, ready for confirmCode.
+ProcessSingle: Sent PRCIN#T#
+VerifyScreen FAIL: Exp 'Command not recognized',Found ''@R20C36L22
+VerifyScreen FAIL: Exp 'ROYAL BANK OF SCOTLAND',Found 'SP2001'@R1C1L24
+ProcessSingle: On OPTION HANDLER FUNCTION SCREEN
+ProcessSingle: On BACK OFFICE SYSTEM
+ProcessSingle: On MASTER INDEX
+ProcessSingle: On FILE MAINTENANCE INPUT INDEX
+ProcessSingle: On INTERNAL TRANSACTIONS
+ProcessSingle: Reached INTEREST AMENDMENTS
+ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row.
+ProcessSingle (PageDownExit): Attempting to return to App Menu. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 1)
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found 'NTEREST AMENDMENTS       2'@R1C28L26
+ProcessSingle (PageDownExit): ATTN failed. Current: INTEREST AMENDMENTS       29MAY2025 14 24
+ProcessSingle (PageDownExit): Sent ATTN (Attempt 2)
+VerifyScreen FAIL: Exp 'APPLICATION SELECTION MENU',Found ''@R1C28L26
+---!!! VBA Error in ProcessSingleAdjustment for row 5: Specified argument was out of the range of valid values.
+Parameter name: row (Line: 0) !!!---
+ProcessInterestAdjustments_Main: Finished row 5. Status: VBA Error: Specified argument was out of the range of valid values.
+Parameter name: row (Line: 0)
+-----------------------------------------------------
+ProcessInterestAdjustments_Main: Processing row 6
+ProcessSingle: Row 6, S/C: 523056, Confirm: PRCIN#T#
+VerifyScreen FAIL GetText R1C28: Specified argument was out of the range of valid values.
+Parameter name: row
+---!!! VBA Error in ProcessSingleAdjustment for row 6: Object variable or With block variable not set (Line: 0) !!!---
 CleanUpReflectionObjects: Releasing...
 CleanUpReflectionObjects: Released.
-ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 14:22:07
+ProcessInterestAdjustments_Main: Sub Ended Successfully at 29/05/2025 14:24:57
 
