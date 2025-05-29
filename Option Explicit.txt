@@ -35,6 +35,7 @@ Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
 ' Public Const ControlKeyCode_PF2 As Long = 38      ' Example for PF2
 ' Public Const ControlKeyCode_Attention As Long = 35 ' Example for ATTN/PA1 (might vary)
 
+
 '===============================================================================
 ' MAIN PROCESSING SUB
 '===============================================================================
@@ -136,7 +137,6 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim formattedAmount As String
     Dim appMenuReached As Boolean ' For initial screen check
     Dim retryCount As Integer     ' For initial screen check loop
-    Dim termAllAttempt As Integer ' For TERM ALL retry loop
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
@@ -165,20 +165,21 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End Select
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
-    ' --- Initial App Menu Check & Navigation ---
-    Call WaitReady(200, 5000) 
+    ' --- MODIFIED Navigation Logic for Initial App Menu Check ---
+    Call WaitReady(200, 5000) ' Initial settle before first check
+    
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
     
     If Not appMenuReached Then
         Debug.Print "ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key."
-        Call SendKey(ControlKeyCode_Attention, 1500) 
+        Call SendKey(ControlKeyCode_Attention, 1500) ' Attempt to return to App Menu (SendKey includes WaitReady)
         
-        For retryCount = 1 To 3 
-            Call WaitReady(750) 
+        For retryCount = 1 To 3 ' Try up to 3 times to verify App Menu after Attention
+            Call WaitReady(750) ' Increased wait/settle time for each retry
             appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
             If appMenuReached Then
                 Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
-                Exit For 
+                Exit For ' Successfully reached, exit retry loop
             Else
                 Debug.Print "ProcessSingle: Still not on App Menu after Attention key (retry " & retryCount & ")."
             End If
@@ -189,134 +190,23 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
              GoTo NextCase_Adjustment
         End If
     End If
-    Debug.Print "ProcessSingle: Confirmed on " & SCREEN_APP_MENU
+    Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
+    ' --- END MODIFIED Navigation Logic ---
 
-    ' --- Handling "TERM ALL" and "confirmCode" ---
-    ' The "TERM ALL" sequence will be attempted up to 3 times if not navigating away from App Menu.
-    For termAllAttempt = 1 To 3
-        Debug.Print "ProcessSingle: Attempt " & termAllAttempt & " for TERM ALL / confirmCode sequence."
+    Call SendData("TERM ALL", 21, 13, True, 1000) ' SendData includes WaitReady(1000)
+    obScreen.WaitForHostSettle 500, 2000          ' Additional specific settle
+    Debug.Print "ProcessSingle: Sent TERM ALL"
 
-        ' Send "TERM ALL"
-        Call WaitReady(100) 'Settle before putting text
-        obScreen.PutText2 "TERM ALL", 21, 13
-        Debug.Print "ProcessSingle: Put 'TERM ALL' on screen."
-        ' Send Transmit 5 times for TERM ALL
-        For k = 1 To 5
-            Call SendKey(ControlKeyCode_Transmit, 250) ' Shorter wait between rapid Enters
-            Debug.Print "ProcessSingle: Sent Transmit " & k & " for TERM ALL."
-        Next k
-        Call WaitReady(1500) ' Longer wait after all Enters for TERM ALL
-        obScreen.WaitForHostSettle 750, 3000
-        Debug.Print "ProcessSingle: Finished TERM ALL command input."
-
-        ' Handle potential "MESSAGES" screen after TERM ALL
-        Const MESSAGES_SCREEN_TEXT As String = "Enter=End" ' Unique text for MESSAGES screen
-        Const MESSAGES_SCREEN_ROW As Long = 22
-        Const MESSAGES_SCREEN_COL As Long = 1
-        Const MESSAGES_SCREEN_LEN As Long = 9
-        
-        Call WaitReady(200) ' Settle before checking for MESSAGES screen
-        If VerifyScreen(MESSAGES_SCREEN_TEXT, MESSAGES_SCREEN_ROW, MESSAGES_SCREEN_COL, MESSAGES_SCREEN_LEN) Then
-            Debug.Print "ProcessSingle: On MESSAGES screen after TERM ALL. Sending Enter."
-            Call SendKey(ControlKeyCode_Transmit, 1500) ' Send Enter to dismiss
-            Call WaitReady(750) ' Settle after dismissing MESSAGES
-            ' Re-verify if now on App Menu, because TERM ALL should lead here eventually
-            If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
-                 Debug.Print "ProcessSingle: Did not return to App Menu after dismissing MESSAGES screen."
-                 ' If it's stuck here, continuing the termAllAttempt loop might not help.
-                 ' For now, let it retry, but this could be a point of failure.
-            Else
-                 Debug.Print "ProcessSingle: Back on App Menu after dismissing MESSAGES screen."
-            End If
-        End If
-
-        ' Now, assuming TERM ALL (and MESSAGES screen if any) has led us to a state
-        ' where App Menu is ready for brand selection via dynamic scan & select method.
-        ' This part needs to be the dynamic selection, NOT SendData(confirmCode, ...)
-
-        ' --- DYNAMIC BRAND SELECTION ON APP MENU ---
-        Dim menuOptionRow As Long
-        Dim foundOption As Boolean
-        foundOption = False
-        Const MENU_START_ROW As Long = 10 ' Example, adjust
-        Const MENU_END_ROW As Long = 15   ' Example, adjust
-        Const CONFIRM_CODE_COL As Long = 8 ' Example, where "PRCIN#T#" text starts
-        Const CONFIRM_CODE_LEN As Long = 10 ' Example
-        Const SELECTION_COL As Long = 3  ' Example, where "S" is typed
-
-        If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
-            Ws_Data.Range("H" & iRow).Value = "Not on App Menu before dynamic selection"
-            ' If not on App Menu here, TERM ALL didn't work as expected, trying TERM ALL again might be futile
-            ' or could use Attention key again. For now, let loop retry.
-            If termAllAttempt < 3 Then Continue For ' Retry TERM ALL sequence
-            GoTo NextCase_Adjustment ' Failed after max retries
-        End If
-        Debug.Print "ProcessSingle: On App Menu, attempting dynamic brand selection for: " & confirmCode
-
-        For menuOptionRow = MENU_START_ROW To MENU_END_ROW
-            Call WaitReady(50)
-            Dim screenConfirmCodeText As String
-            screenConfirmCodeText = Trim(obScreen.GetText(menuOptionRow, CONFIRM_CODE_COL, CONFIRM_CODE_LEN))
-            
-            If InStr(1, screenConfirmCodeText, confirmCode, vbTextCompare) > 0 Then
-                Debug.Print "ProcessSingle: Found '" & confirmCode & "' on App Menu row " & menuOptionRow
-                obScreen.PutText2 "S", menuOptionRow, SELECTION_COL
-                Call SendKey(ControlKeyCode_Transmit, 1500) 
-                foundOption = True
-                Exit For 
-            End If
-        Next menuOptionRow
-
-        If Not foundOption Then
-            Ws_Data.Range("H" & iRow).Value = "Brand Code '" & confirmCode & "' not found on App Menu list."
-            If termAllAttempt < 3 Then Continue For ' Retry TERM ALL sequence
-            GoTo NextCase_Adjustment
-        End If
-        ' --- END DYNAMIC BRAND SELECTION ---
-        
-        obScreen.WaitForHostSettle 750, 3000 
-        Debug.Print "ProcessSingle: Sent selection for " & confirmCode
-
-        If VerifyScreen("Command not recognized", 20, 36, 22) Then
-            Ws_Data.Range("H" & iRow).Value = "Brand selection cmd NR"
-            If termAllAttempt < 3 Then Continue For ' Retry TERM ALL sequence
-            GoTo NextCase_Adjustment
-        End If
-        
-        ' Check if we successfully navigated away from App Menu towards Opt Handler
-        If VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
-             Debug.Print "ProcessSingle: Successfully navigated to Opt Handler after brand selection."
-             Exit For ' Successfully exited the termAllAttempt loop
-        ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
-            Debug.Print "ProcessSingle: Landed on RBS screen after brand selection."
-            Exit For ' RBS screen will be handled next
-        ElseIf VerifyScreen(SCREEN_APP_MENU, 1, 28) Then ' Still on App Menu
-            Debug.Print "ProcessSingle: Still on App Menu after selection attempt " & termAllAttempt
-            If termAllAttempt = 3 Then
-                Ws_Data.Range("H" & iRow).Value = "Stuck on App Menu after brand selection retries"
-                GoTo NextCase_Adjustment
-            End If
-            ' Implicitly continues to next termAllAttempt
-        Else ' Landed on some other unexpected screen
-            Dim currentScreenAfterSelection As String
-            currentScreenAfterSelection = Left(Trim(obScreen.GetText(1,1,50)),50)
-            Debug.Print "ProcessSingle: Unexpected screen after brand selection attempt " & termAllAttempt & ": " & currentScreenAfterSelection
-             If termAllAttempt = 3 Then
-                Ws_Data.Range("H" & iRow).Value = "Unexpected screen after brand selection: " & currentScreenAfterSelection
-                GoTo NextCase_Adjustment
-            End If
-            ' Implicitly continues to next termAllAttempt
-        End If
-    Next termAllAttempt
-
-    ' Re-check if we exited the loop because we are on Opt Handler or RBS
-    If Not (VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Or VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24)) Then
-        ' If after 3 attempts, still not on OptH or RBS, then record error
-        Ws_Data.Range("H" & iRow).Value = "Failed to navigate from App Menu after TERM ALL retries"
+    Call SendData(confirmCode, 21, 13, True, 1000) ' SendData includes WaitReady(1000)
+    obScreen.WaitForHostSettle 500, 2000           ' Additional specific settle
+    Debug.Print "ProcessSingle: Sent " & confirmCode
+    
+    ' Then it checks for "Command not recognized" and "OPTION HANDLER FUNCTION SCREEN"
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then
+        Ws_Data.Range("H" & iRow).Value = "Brand cmd NR"
         GoTo NextCase_Adjustment
     End If
-
-    ' --- Resume standard navigation ---
+    
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
         Call SendKey(ControlKeyCode_Transmit, 1000)
@@ -419,7 +309,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Screen Type: " & screenType
 
-    ' --- Data Entry Logic (remains unchanged from your last version) ---
+    ' --- Data Entry Logic ---
     Dim current_screen_arr_val As Double, current_screen_unar_val As Double
     Dim val_to_input_in_arr As Double, val_to_input_in_unar As Double
     Dim remaining_excel_val_for_unar_accr As Double
@@ -620,7 +510,7 @@ ErrorHandler_Adjustment:
 End Function
 
 '===============================================================================
-' CONNECTION SUB (Remains Unchanged)
+' CONNECTION SUB (No changes from your last provided version)
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
@@ -640,7 +530,7 @@ Sub ConnectExtra()
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
-                    edpPathFromSheet = OleObj.Object.Text
+                    edpPathFromSheet = OleObj.Object.text
                 Else
                     Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
                 End If
@@ -660,7 +550,7 @@ Sub ConnectExtra()
         stEDPFile = edpPathFromSheet
     Else
         Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not correctly found. Prompting user."
-        stEDPFile = Application.GetOpenFilename(Title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+        stEDPFile = Application.GetOpenFilename(title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
     If stEDPFile = "False" Or stEDPFile = "" Then
@@ -795,7 +685,7 @@ ConnectExtra_ErrorHandler_FinalMsg:
 End Sub
 
 '===============================================================================
-' HELPER FUNCTIONS (Remains Unchanged)
+' HELPER FUNCTIONS
 '===============================================================================
 Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As Long = 10000)
     If obScreen Is Nothing Then Exit Sub
