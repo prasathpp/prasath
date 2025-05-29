@@ -536,7 +536,7 @@ Sub ConnectExtra()
         If Err.Number = 0 Then
             If Not OleObj Is Nothing Then
                 If TypeOf OleObj.Object Is MSForms.TextBox Then
-                    edpPathFromSheet = OleObj.Object.text
+                    edpPathFromSheet = OleObj.Object.Text
                 Else
                     Debug.Print "ConnectExtra: Control 'txtEDPPath' on Sheet4 is not an MSForms.TextBox. Type: " & TypeName(OleObj.Object)
                 End If
@@ -556,7 +556,7 @@ Sub ConnectExtra()
         stEDPFile = edpPathFromSheet
     Else
         Debug.Print "ConnectExtra: Path from Sheet4.txtEDPPath is empty or control/sheet not correctly found. Prompting user."
-        stEDPFile = Application.GetOpenFilename(title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
+        stEDPFile = Application.GetOpenFilename(Title:="Choose Reflection Session", fileFilter:="Reflection Files *.rd3x (*.rd3x),")
     End If
 
     If stEDPFile = "False" Or stEDPFile = "" Then
