@@ -1,16 +1,15 @@
-Subject: VBA Automation for Interest Amendments – Ready for Review and Potential Business Use
-
 Hi Rega,
 
-I wanted to share that I’ve developed a VBA macro automation to handle interest amendments in the back office, a process that is currently managed manually by four team members on a daily basis.
+I wanted to share that I’ve developed a VBA macro automation to handle interest amendments in the back office, a process that is currently managed manually by four team members daily.
 
-The tool processes each account in just 3–4 seconds, compared to the 15–20 seconds currently taken manually. It also reduces the risk of human error to near zero, ensuring accuracy and consistency.
+The tool processes each account in just 3–4 seconds, compared to the 20+ seconds currently taken manually. It also reduces the risk of human error to near zero, ensuring accuracy and consistency.
 
-While the SCE team is in the early stages of developing an RPA solution for this, the VBA tool is already fully functional and could be considered as an immediate interim solution to deliver significant time savings and efficiency.
+While the SCE team is in the early stages of developing an RPA solution for this, the VBA tool is already fully functional and could be considered as an immediate solution to deliver significant time savings and efficiency.
 
 I’ve also begun working on expanding this tool to cover charge amendments, provided we have similar structured data inputs as we do for interest adjustments. That enhancement is currently in progress.
 
-Please feel free to share this with the relevant stakeholders for review and possible approval for official business use. I’d be happy to provide a quick demo or walkthrough if required.
+Please feel free to share this with the relevant stakeholders for review and potential approval for official business use. I’d be happy to provide a demo or walkthrough if needed.
+
+Looking forward to your thoughts.
 
 Best regards,
-[Your Full Name]
