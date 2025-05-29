@@ -97,14 +97,16 @@ Sub ProcessInterestAdjustments_Main()
         End If
         Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
     Next i
-
+    
+    Call SendData("TERM ALL", 21, 13, True, 1500)
+    
     If i > lastRow Then
         processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
     Else
         processingStatus = "Processing stopped at row " & i & "."
     End If
     
-    MsgBox "Processing complete. " & processingStatus, vbInformation, SCRIPT_TITLE
+    ' MsgBox "Processing complete. " & processingStatus, vbInformation, SCRIPT_TITLE
     Call CleanUpReflectionObjects
     Debug.Print "ProcessInterestAdjustments_Main: Sub Ended Successfully at " & Now
     Exit Sub
