@@ -24,10 +24,10 @@ Private Const SCREEN_MASTER_INDEX As String = "MASTER INDEX"
 Private Const SCREEN_FILE_MAINT_IDX As String = "FILE MAINTENANCE INPUT INDEX"
 Private Const SCREEN_INTERNAL_TXNS As String = "INTERNAL TRANSACTIONS"
 Private Const SCREEN_INTEREST_AMENDMENTS As String = "INTEREST AMENDMENTS"
-Private Const SCREEN_MESSAGES As String = "Enter=End" ' Unique text from MESSAGES screen
-Private Const MESSAGES_SCREEN_ROW As Long = 22
-Private Const MESSAGES_SCREEN_COL As Long = 1
-Private Const MESSAGES_SCREEN_LEN As Long = 9
+Private Const SCREEN_MESSAGES As String = "Enter=End" ' Unique text from MESSAGES screen based on screenshot
+Private Const MESSAGES_SCREEN_ROW As Long = 22        ' Row for "Enter=End"
+Private Const MESSAGES_SCREEN_COL As Long = 1         ' Column for "Enter=End"
+Private Const MESSAGES_SCREEN_LEN As Long = 9         ' Length of "Enter=End"
 
 
 ' --- Reflection Key Codes (ensure your library reference provides these) ---
@@ -145,11 +145,12 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Dim retryCount As Integer
     Dim menuOptionRow As Long, foundMenuOption As Boolean
     
-    Const MENU_START_ROW As Long = 9      ' Example, adjust based on actual screen for app list
-    Const MENU_END_ROW As Long = 16       ' Example, adjust
-    Const CONFIRM_CODE_COL As Long = 10   ' Example column for PRCIN#T#
-    Const CONFIRM_CODE_LEN As Long = 8    ' Example length of PRCIN#T#
-    Const SELECTION_COL As Long = 3     ' Example column for "S"
+    ' --- !! IMPORTANT: Adjust these App Menu scanning coordinates !! ---
+    Const MENU_START_ROW As Long = 9      ' First row of selectable menu items on App Menu
+    Const MENU_END_ROW As Long = 16       ' Last row of selectable menu items on App Menu
+    Const CONFIRM_CODE_COL As Long = 10   ' Column where "PRCIN#T#"-like text starts on App Menu
+    Const CONFIRM_CODE_LEN As Long = 8    ' Length of the "PRCIN#T#"-like text
+    Const SELECTION_COL As Long = 3       ' Column where "S" selection char goes on App Menu
 
     ProcessSingleAdjustment = False
     Carry_Over_Cutoff_To_Applied_Amount = 0
@@ -183,54 +184,72 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
     
     If Not appMenuReached Then
-        Debug.Print "ProcessSingle: Not initially on App Menu. Sending TERM ALL."
-        Call SendData("TERM ALL", 21, 13, True, 2000) ' Send TERM ALL (to R21,C13) and wait
-        obScreen.WaitForHostSettle 750, 3000            ' Additional settle after TERM ALL
-        
-        ' Check for MESSAGES screen
-        If VerifyScreen(SCREEN_MESSAGES, MESSAGES_SCREEN_ROW, MESSAGES_SCREEN_COL, MESSAGES_SCREEN_LEN) Then
-            Debug.Print "ProcessSingle: On MESSAGES screen after TERM ALL. Sending Enter."
-            Call SendKey(ControlKeyCode_Transmit, 1500) ' Send Enter to dismiss
-            Call WaitReady(750)                         ' Settle after dismissing MESSAGES
-        End If
-        
-        ' Now, robustly try to get to/confirm App Menu using Attention key
-        appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28) ' Check again before Attention loop
-        If Not appMenuReached Then
-            Debug.Print "ProcessSingle: Still not on App Menu. Attempting navigation with Attention key."
-            Call SendKey(ControlKeyCode_Attention, 1500)
-            For retryCount = 1 To 3 
-                Call WaitReady(750) 
-                appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
-                If appMenuReached Then
-                    Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
-                    Exit For 
-                Else
-                    Debug.Print "ProcessSingle: Still not on App Menu after Attention key (retry " & retryCount & ")."
-                End If
-            Next retryCount
-        End If
+        Debug.Print "ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key first."
+        Call SendKey(ControlKeyCode_Attention, 1500) ' Try Attention key to get to App Menu
+        For retryCount = 1 To 3 
+            Call WaitReady(750) 
+            appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+            If appMenuReached Then
+                Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
+                Exit For 
+            Else
+                Debug.Print "ProcessSingle: Still not on App Menu after Attention key (retry " & retryCount & ")."
+            End If
+        Next retryCount
+    End If
+
+    ' If still not on App Menu, exit for this row
+    If Not appMenuReached Then
+        Ws_Data.Range("H" & iRow).Value = "Failed to reach App Menu initially."
+        GoTo NextCase_Adjustment
     End If
     
+    ' Now we are on APP MENU, send TERM ALL
+    Debug.Print "ProcessSingle: On App Menu, sending TERM ALL."
+    Call SendData("TERM ALL", 21, 13, True, 2000) ' Send TERM ALL to R21,C13
+    obScreen.WaitForHostSettle 750, 3000            ' Additional settle after TERM ALL
+    
+    ' Check for MESSAGES screen after TERM ALL
+    If VerifyScreen(SCREEN_MESSAGES, MESSAGES_SCREEN_ROW, MESSAGES_SCREEN_COL, MESSAGES_SCREEN_LEN) Then
+        Debug.Print "ProcessSingle: On MESSAGES screen after TERM ALL. Sending Enter."
+        Call SendKey(ControlKeyCode_Transmit, 1500) ' Send Enter to dismiss
+        Call WaitReady(750)                         ' Settle after dismissing MESSAGES
+    End If
+    
+    ' After TERM ALL (and potential MESSAGES screen), ensure we are back/still on App Menu
+    appMenuReached = False ' Reset for re-verification
+    For retryCount = 1 To 3
+        Call WaitReady(500)
+        appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
+        If appMenuReached Then
+            Debug.Print "ProcessSingle: Confirmed on App Menu after TERM ALL/Messages (retry " & retryCount & ")."
+            Exit For
+        Else
+             Debug.Print "ProcessSingle: Not on App Menu after TERM ALL/Messages (retry " & retryCount & "). Current: " & Left(Trim(obScreen.GetText(1,1,50)),50)
+             ' If not App Menu, try Attention once per retry to recover
+             If retryCount < 3 Then Call SendKey(ControlKeyCode_Attention, 1000)
+        End If
+    Next retryCount
+
     If Not appMenuReached Then
-         Ws_Data.Range("H" & iRow).Value = "Failed to reach App Menu after TERM ALL/Attention"
+         Ws_Data.Range("H" & iRow).Value = "Failed to return to App Menu after TERM ALL sequence."
          GoTo NextCase_Adjustment
     End If
-    Debug.Print "ProcessSingle: On " & SCREEN_APP_MENU
+    Debug.Print "ProcessSingle: Confirmed on " & SCREEN_APP_MENU & " before brand selection."
     
     ' --- Phase 2: Select Brand from App Menu (Dynamic Selection) ---
     foundMenuOption = False
     For menuOptionRow = MENU_START_ROW To MENU_END_ROW
         Call WaitReady(50)
-        If obScreen Is Nothing Then GoTo ErrorHandler_Adjustment ' Check if session lost
+        If obScreen Is Nothing Then GoTo ErrorHandler_Adjustment 
         tempStr = Trim(obScreen.GetText(menuOptionRow, CONFIRM_CODE_COL, CONFIRM_CODE_LEN))
         
         Debug.Print "ProcessSingle: AppMenu Scan Row " & menuOptionRow & ", Col " & CONFIRM_CODE_COL & " Found: '" & tempStr & "'"
         
         If InStr(1, tempStr, confirmCode, vbTextCompare) > 0 Then
             Debug.Print "ProcessSingle: Found '" & confirmCode & "' on App Menu row " & menuOptionRow
-            obScreen.PutText2 "S", menuOptionRow, SELECTION_COL ' Put selection char "S"
-            Call SendKey(ControlKeyCode_Transmit, 1500)      ' Send Enter
+            obScreen.PutText2 "S", menuOptionRow, SELECTION_COL 
+            Call SendKey(ControlKeyCode_Transmit, 1500)      
             foundMenuOption = True
             Exit For
         End If
@@ -241,9 +260,9 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         GoTo NextCase_Adjustment
     End If
 
-    obScreen.WaitForHostSettle 750, 3000 ' Settle after selection from App Menu
+    obScreen.WaitForHostSettle 750, 3000 
     
-    If VerifyScreen("Command not recognized", 20, 36, 22) Then ' Should not happen if selection is valid
+    If VerifyScreen("Command not recognized", 20, 36, 22) Then 
         Ws_Data.Range("H" & iRow).Value = "App Menu selection error (Cmd NR)"
         GoTo NextCase_Adjustment
     End If
@@ -521,11 +540,11 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
 PageDownAndExit_Adjustment:
     ' Determine specific exit key if "ACCEPTED BY OPERATOR" was true, else use Attention
     If Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted" Or Ws_Data.Range("H" & iRow).Value = "Completed" Then
-        ' You mentioned PF3 might be needed from "ACCEPTED" state. If so, use it here.
-        ' For now, using Attention as a general approach, but this might need to be specific.
-        ' Example if PF3 is needed: Call SendKey(ControlKeyCode_PF3, 1500)
+        ' TODO: Determine the correct key/sequence to exit from "ACCEPTED" state if Attention doesn't work.
+        ' For now, using Attention as a general approach. If PF3 (or another key) is confirmed, replace ControlKeyCode_Attention.
+        ' Example: Call SendKey(ControlKeyCode_PF3, 1500)
         Call SendKey(ControlKeyCode_Attention, 1500) 
-        Debug.Print "ProcessSingle: Sent Attention key to exit IA screen."
+        Debug.Print "ProcessSingle: Sent Attention key to exit IA screen (from accepted/completed state)."
     Else
         Call SendKey(ControlKeyCode_Attention, 1500) 
         Debug.Print "ProcessSingle: Sent Attention key to exit IA screen."
