@@ -1,215 +1,193 @@
-Option Explicit ' Enforces variable declaration, good practice!
-
-' --- CONFIGURATION FOR SENSITIVITY LABELS ---
-' TODO: USER ACTION REQUIRED!
-' Please verify SENSITIVITY_LABEL_NAME_TO_APPLY is the exact display name of the label
-' in your Excel UI that corresponds to the IDs below.
-
-' Set this to True if you want the macro to attempt to apply the sensitivity label.
-' Set to False to disable this feature entirely.
-Private Const AUTO_APPLY_SENSITIVITY_LABEL As Boolean = True
-
-' The exact name of the sensitivity label you want to apply (e.g., "Restricted").
-' This MUST match the name as known by your organization's MIP/AIP setup.
-' Since .GetLabel().Name failed in your test, manually ensure this is the correct display name.
-Private Const SENSITIVITY_LABEL_NAME_TO_APPLY As String = "Restricted" ' <<< VERIFY THIS NAME IS CORRECT
-
-' The Label ID for the sensitivity label.
-Private Const SENSITIVITY_LABEL_ID As String = "b59aeb30-a57c-43c8-b724-82722089b0f7" ' <<< From your output
-
-' The Site ID (often Tenant ID) associated with the sensitivity label.
-Private Const SENSITIVITY_SITE_ID As String = "7c917db0-71f2-438e-9554-388ffcab8764"  ' <<< From your output
-' --- END CONFIGURATION ---
-
 Sub SplitDataIntoMultipleWorkbooks_Improved()
-    Dim srcWS As Worksheet ' Source Worksheet
-    Dim srcWB As Workbook  ' Source Workbook
-    Dim newWB As Workbook  ' Newly created Workbook
+    Dim ws As Worksheet
+    Dim wb As Workbook
     Dim headerRange As Range
     Dim totalRows As Long, rowsPerWorkbook As Long, extraRows As Long
     Dim startRow As Long, endRow As Long
     Dim splitCount As Long, numberOfSplits As Long
     Dim savePath As String
-    Dim baseFileName As String
+    Dim fileName As String
     Dim splitFileName As String
-    Dim fldr As FileDialog
-    Dim splitsInput As Variant
-    Dim attemptLabelApplicationThisRun As Boolean
+    Dim fDialog As FileDialog
 
-    ' --- Performance Settings ---
+    ' --- Performance & Environment Settings ---
+    Dim originalScreenUpdating As Boolean
+    Dim originalCalculation As XlCalculation
+    Dim originalEnableEvents As Boolean
+    Dim originalDisplayAlerts As Boolean
+
+    ' Store original Excel settings
+    originalScreenUpdating = Application.ScreenUpdating
+    originalCalculation = Application.Calculation
+    originalEnableEvents = Application.EnableEvents
+    originalDisplayAlerts = Application.DisplayAlerts
+
+    ' Apply performance settings
     Application.ScreenUpdating = False
-    Application.DisplayAlerts = False ' Suppress overwrite prompts, etc.
     Application.Calculation = xlCalculationManual
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False ' Attempt to suppress prompts, including overwrite and potentially sensitivity
 
-    ' --- Determine if we should attempt label application this run ---
-    attemptLabelApplicationThisRun = AUTO_APPLY_SENSITIVITY_LABEL
-    If attemptLabelApplicationThisRun Then
-        If SENSITIVITY_LABEL_ID = "YOUR_LABEL_ID_HERE" Or SENSITIVITY_LABEL_ID = "" Or _
-           SENSITIVITY_SITE_ID = "YOUR_SITE_ID_HERE" Or SENSITIVITY_SITE_ID = "" Or _
-           SENSITIVITY_LABEL_NAME_TO_APPLY = "" Or _
-           (SENSITIVITY_LABEL_ID = "b59aeb30-a57c-43c8-b724-82722089b0f7" And SENSITIVITY_LABEL_NAME_TO_APPLY = "Restricted" And SENSITIVITY_SITE_ID = "7c917db0-71f2-438e-9554-388ffcab8764" And SENSITIVITY_LABEL_ID = "YOUR_LABEL_ID_HERE") Then ' Complex check to see if it's still the very first default placeholder
-            MsgBox "Sensitivity label automation is enabled (AUTO_APPLY_SENSITIVITY_LABEL = True), " & _
-                   "but one or more required label constants (Name, ID, SiteID) appear to be " & _
-                   "default placeholders or potentially incomplete." & vbCrLf & vbCrLf & _
-                   "Please verify these constants at the top of the VBA module are correct for your organization." & vbCrLf & _
-                   "If they are already correct, you can ignore this message. " & _
-                   "Sensitivity labels will be attempted for this run.", vbExclamation, "Verify Label Configuration"
-        End If
-    End If
+    On Error GoTo ErrorHandler
 
-    ' --- Get Source Data ---
-    Set srcWB = ActiveWorkbook ' User changed to ActiveWorkbook
-    
-    On Error Resume Next
-    Set srcWS = srcWB.ActiveSheet
-    On Error GoTo 0
-    If srcWS Is Nothing Then
-        MsgBox "Could not determine the source worksheet. Please ensure a sheet is active in the workbook containing this macro.", vbCritical
-        GoTo CleanUpAndExit
-    End If
+    ' Set the active worksheet (current active sheet in the active workbook)
+    Set ws = ActiveSheet
 
-    totalRows = srcWS.Cells(srcWS.Rows.Count, 1).End(xlUp).Row
+    ' Get the total number of rows of data, assuming the first row contains headers
+    totalRows = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
 
+    ' Check if there's enough data to split (at least one row of data plus header)
     If totalRows <= 1 Then
-        MsgBox "Not enough data to split. Please ensure your data has at least one row of data below the header.", vbExclamation
-        GoTo CleanUpAndExit
+        MsgBox "Not enough data to split. Please ensure your data has multiple rows.", vbExclamation
+        GoTo CleanExit ' Use GoTo for cleanup
     End If
 
-    splitsInput = Application.InputBox("Enter the number of parts you want to split the data into:", "Split Data", Type:=1)
+    ' Prompt user to input the number of splits
+    Dim splitsInput As Variant
+    splitsInput = InputBox("Enter the number of parts you want to split the data into:", "Split Data")
+
+    ' Validate the user input for number of splits
+    If Not IsNumeric(splitsInput) Then
+        MsgBox "Invalid input. Please enter a positive number greater than zero.", vbExclamation
+        GoTo CleanExit
+    End If
     
-    If VarType(splitsInput) = vbBoolean And splitsInput = False Then
-        MsgBox "Operation cancelled by user.", vbInformation
-        GoTo CleanUpAndExit
-    End If
+    numberOfSplits = CLng(splitsInput) ' Convert to Long
     
-    If splitsInput <= 0 Or Int(splitsInput) <> splitsInput Then
-        MsgBox "Invalid input. Please enter a positive whole number greater than zero for the number of splits.", vbExclamation
-        GoTo CleanUpAndExit
-    End If
-    numberOfSplits = CLng(splitsInput)
-
-    Set headerRange = srcWS.Rows(1)
-
-    rowsPerWorkbook = (totalRows - 1) \ numberOfSplits
-    extraRows = (totalRows - 1) Mod numberOfSplits
-
-    If rowsPerWorkbook = 0 Then
-        MsgBox "Not enough rows to split across " & numberOfSplits & " workbooks (each part would get 0 data rows). " & _
-               "Please use fewer splits or ensure there is more data.", vbExclamation
-        GoTo CleanUpAndExit
+    If numberOfSplits <= 0 Then
+        MsgBox "Invalid input. Number of splits must be greater than zero.", vbExclamation
+        GoTo CleanExit
     End If
 
-    Set fldr = Application.FileDialog(msoFileDialogFolderPicker)
-    With fldr
-        .Title = "Select a Folder to Save the Split Files"
-        .AllowMultiSelect = False
-        If .Show <> -1 Then
-            MsgBox "Operation cancelled by user (folder selection).", vbInformation
-            GoTo CleanUpAndExit
+
+    ' Define the header range (assuming headers are in the first row)
+    Set headerRange = ws.Rows(1)
+
+    ' Calculate rows per workbook and extra rows if any (excluding header)
+    rowsPerWorkbook = (totalRows - 1) \ numberOfSplits ' Determine rows per workbook
+    extraRows = (totalRows - 1) Mod numberOfSplits      ' Determine leftover rows
+
+    ' Check if rowsPerWorkbook is zero, which would cause issues
+    If rowsPerWorkbook = 0 And (totalRows - 1) > 0 Then ' Ensure there's data but not enough for all splits
+        MsgBox "Not enough rows to split across " & numberOfSplits & " workbooks with at least one data row each. " & _
+               "Each split part must contain at least one data row. Try fewer splits or add more data.", vbExclamation
+        GoTo CleanExit
+    ElseIf (totalRows - 1) = 0 Then ' No data rows at all
+         MsgBox "No data rows found to split (excluding header).", vbExclamation
+        GoTo CleanExit
+    End If
+
+
+    ' --- Get Save Path from User ---
+    Set fDialog = Application.FileDialog(msoFileDialogFolderPicker)
+    fDialog.Title = "Select a Folder to Save the Split Files"
+    If fDialog.Show = True Then
+        savePath = fDialog.SelectedItems(1)
+        ' Ensure path ends with a path separator
+        If Right(savePath, 1) <> Application.PathSeparator Then
+            savePath = savePath & Application.PathSeparator
         End If
-        savePath = .SelectedItems(1)
-    End With
-    Set fldr = Nothing
+    Else
+        MsgBox "No folder selected. Operation cancelled.", vbInformation
+        GoTo CleanExit ' Use GoTo for cleanup
+    End If
+    ' No need to check if Dir(savePath, vbDirectory) = "" because FileDialog ensures it exists
 
-    If Right(savePath, 1) <> Application.PathSeparator Then
-        savePath = savePath & Application.PathSeparator
+    ' Get the base file name of the active workbook (without extension)
+    If InStrRev(ActiveWorkbook.Name, ".") > 0 Then
+        fileName = Left(ActiveWorkbook.Name, InStrRev(ActiveWorkbook.Name, ".") - 1)
+    Else
+        fileName = ActiveWorkbook.Name ' Workbook might not have an extension (e.g., new unsaved)
     End If
 
-    If Dir(savePath, vbDirectory) = "" Then
-        MsgBox "The selected save path does not exist or is invalid: " & savePath, vbExclamation
-        GoTo CleanUpAndExit
-    End If
 
-    baseFileName = Left(srcWB.Name, InStrRev(srcWB.Name, ".") - 1)
-    startRow = 2
+    ' If rowsPerWorkbook is valid, proceed with the split
+    startRow = 2 ' Data starts from row 2 (excluding the header)
 
+    ' Split data into the specified number of workbooks
     For splitCount = 1 To numberOfSplits
         If startRow <= totalRows Then
-            Set newWB = Workbooks.Add
-            headerRange.Copy Destination:=newWB.Sheets(1).Rows(1)
+            ' Create a new workbook for each split
+            Set wb = Workbooks.Add
+
+            ' Copy header to the new workbook
+            headerRange.Copy Destination:=wb.Sheets(1).Rows(1)
             
-            endRow = startRow + rowsPerWorkbook - 1
+            ' Determine the end row for this split
+            Dim currentRowsForThisSplit As Long
+            currentRowsForThisSplit = rowsPerWorkbook
             If extraRows > 0 Then
-                endRow = endRow + 1
-                extraRows = extraRows - 1
+                currentRowsForThisSplit = currentRowsForThisSplit + 1
+                extraRows = extraRows - 1 ' Reduce the extra row count
+            End If
+            
+            ' If no rows for this split (can happen if total data rows < numberOfSplits)
+            If currentRowsForThisSplit = 0 Then
+                ' This case should ideally be caught by the earlier check for rowsPerWorkbook = 0
+                ' but as a failsafe if logic allows it to reach here with 0 rows for a part
+                wb.Close SaveChanges:=False ' Close the empty workbook
+                Set wb = Nothing
+                GoTo NextSplitIteration ' Skip to next iteration
             End If
 
+            endRow = startRow + currentRowsForThisSplit - 1
+
+            ' Ensure we don't exceed total rows
             If endRow > totalRows Then endRow = totalRows
-            If startRow > endRow Then Exit For
-
-            srcWS.Rows(startRow & ":" & endRow).Copy Destination:=newWB.Sheets(1).Rows(2)
-            splitFileName = savePath & baseFileName & "_part" & splitCount & ".xlsx"
-
-            ' --- Attempt to Apply Sensitivity Label BEFORE SaveAs ---
-            If attemptLabelApplicationThisRun Then
-                On Error Resume Next ' Local error handling for label application
-                Dim sl As Object      ' Represents the Workbook.SensitivityLabel object
-                Dim lblInfo As Object ' Represents the LabelInfo object
-                
-                Set sl = newWB.SensitivityLabel
-                
-                If Err.Number = 0 And Not sl Is Nothing Then
-                    ' Successfully got the SensitivityLabel object
-                    Set lblInfo = sl.CreateLabelInfo() ' Create a LabelInfo object
-                    
-                    If Err.Number = 0 And Not lblInfo Is Nothing Then
-                        With lblInfo
-                            .LabelId = SENSITIVITY_LABEL_ID
-                            .LabelName = SENSITIVITY_LABEL_NAME_TO_APPLY
-                            .SiteId = SENSITIVITY_SITE_ID
-                            .AssignmentMethod = 2 ' msoAssignmentMethodPrivileged (2 = automatic/programmatic assignment)
-                            ' Other properties like .ActionId, .ContentBits, .IsEnabled, .Justification can be set if needed by your org
-                        End With
-                        
-                        sl.SetLabel lblInfo ' Apply the label using the LabelInfo object
-                        
-                        If Err.Number <> 0 Then
-                            Debug.Print "Error applying sensitivity label to '" & newWB.Name & "' using LabelInfo: " & Err.Description & _
-                                        " (LabelName: " & SENSITIVITY_LABEL_NAME_TO_APPLY & ", LabelID: " & SENSITIVITY_LABEL_ID & ", SiteID: " & SENSITIVITY_SITE_ID & ")"
-                            Err.Clear ' Clear the error for this attempt
-                        End If
-                    Else
-                        Debug.Print "Error creating LabelInfo object for '" & newWB.Name & "'. Error: " & Err.Description
-                        Err.Clear ' Clear the error
-                        If attemptLabelApplicationThisRun Then
-                            MsgBox "Could not create LabelInfo object for sensitivity labeling on workbook '" & newWB.Name & "'. " & _
-                                   "This might be due to your Excel version or policies." & vbCrLf & vbCrLf & _
-                                   "Labels will not be applied automatically for the remainder of this operation.", vbInformation, "Sensitivity Label Feature Note"
-                            attemptLabelApplicationThisRun = False ' Stop trying for subsequent files
-                        End If
-                    End If
-                Else
-                    Debug.Print "SensitivityLabel object not available or errored for '" & newWB.Name & "'. Error: " & Err.Description
-                    If attemptLabelApplicationThisRun Then
-                        MsgBox "Could not access the SensitivityLabel feature on workbook '" & newWB.Name & "'. This might be due to your Excel version, " & _
-                               "security policies, or incorrect label configuration (IDs/Name)." & vbCrLf & vbCrLf & _
-                               "Labels will not be applied automatically for the remainder of this operation.", vbInformation, "Sensitivity Label Feature Note"
-                        attemptLabelApplicationThisRun = False ' Stop trying for subsequent files
-                    End If
-                    Err.Clear
-                End If
-                On Error GoTo 0 ' Reset main error handler
+            
+            ' If, after adjustments, startRow is beyond endRow (e.g. no data left for this split)
+            If startRow > endRow Then
+                wb.Close SaveChanges:=False ' Close the empty workbook
+                Set wb = Nothing
+                GoTo NextSplitIteration ' Skip to next iteration
             End If
 
-            newWB.SaveAs Filename:=splitFileName, FileFormat:=xlOpenXMLWorkbook
-            newWB.Close SaveChanges:=False
 
+            ' Copy data to the new workbook
+            ws.Rows(startRow & ":" & endRow).Copy Destination:=wb.Sheets(1).Rows(2)
+
+            ' Construct the file name for each split workbook
+            splitFileName = savePath & fileName & "_part" & splitCount & ".xlsx"
+
+            ' Save the new workbook using the specified path and filename format
+            ' *** This is where the Sensitivity Label prompt might appear ***
+            wb.SaveAs fileName:=splitFileName, FileFormat:=xlOpenXMLWorkbook ' Explicitly specify modern format
+            wb.Close SaveChanges:=False ' Already saved
+
+            ' Move to the next starting row
             startRow = endRow + 1
-        Else
-            Exit For
+            
+            ' Reopen the saved workbook so all split files will be visible
+            ' (This line was in the original and not requested to be removed)
+            ' Note: Reopening might also trigger sensitivity label prompts if policies apply on open.
+            If Dir(splitFileName) <> "" Then ' Check if file was actually saved before trying to open
+                 Workbooks.Open fileName:=splitFileName
+            End If
         End If
+NextSplitIteration:
     Next splitCount
 
-    MsgBox "Data has been successfully split into " & IIf(splitCount - 1 < 0, 0, splitCount - 1) & " workbooks and saved to:" & vbCrLf & savePath, vbInformation
+    MsgBox "Data has been successfully split into " & numberOfSplits & " workbooks, saved" & _
+           IIf(Application.DisplayAlerts = False, " (and attempts were made to open them)", "") & _
+           " in the folder: " & vbCrLf & savePath, vbInformation
 
-CleanUpAndExit:
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-    Application.Calculation = xlCalculationAutomatic
+CleanExit:
+    ' Restore original Excel settings
+    Application.DisplayAlerts = originalDisplayAlerts
+    Application.EnableEvents = originalEnableEvents
+    Application.Calculation = originalCalculation
+    Application.ScreenUpdating = originalScreenUpdating
 
-    Set srcWS = Nothing
-    Set srcWB = Nothing
-    Set newWB = Nothing
+    ' Clean up object variables
+    Set ws = Nothing
+    Set wb = Nothing
     Set headerRange = Nothing
-    Set fldr = Nothing
+    Set fDialog = Nothing
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "An error occurred: " & Err.Description & vbCrLf & _
+           "Macro will now attempt to restore Excel settings and exit.", vbCritical, "Error"
+    Resume CleanExit ' Go to cleanup and exit
+
 End Sub
