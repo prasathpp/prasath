@@ -1,29 +1,23 @@
-Sub RunMainProcess()
-    ' This sub can be used to call the main formatting routine
-    ' and manage application settings centrally.
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False ' Suppress alerts like "Large amount of data on clipboard"
-
-    Call FormatAccountStatement
-
-    Application.DisplayAlerts = True
-    Application.ScreenUpdating = True
-    MsgBox "Main process complete. A new workbook may have been created and formatted.", vbInformation
-End Sub
-
 Sub FormatAccountStatement()
     Dim wb As Workbook
     Dim wsInterest As Worksheet
     Dim wsDays As Worksheet
     Dim newWb As Workbook
-    Dim newWs As Worksheet
+    Dim newWs As Worksheet         ' This will be the first sheet in newWb
+    Dim filteredWs As Worksheet    ' This will be the second, filtered sheet in newWb
     Dim lastRowInterest As Long
+    Dim lastRowCutRange As Long
+    Dim col As Variant
+    Dim r As Long
+    Dim sumEFGH As Double
+    Dim lastRowFiltered As Long
 
+    ' --- Initial Setup & Original Workbook Operations ---
     Set wb = ActiveWorkbook
-    On Error Resume Next ' Basic error handling for sheet existence
+    On Error Resume Next
     Set wsInterest = wb.Sheets("Interest calculated")
     Set wsDays = wb.Sheets("Interst Days calculated")
-    On Error GoTo 0 ' Resume normal error handling
+    On Error GoTo 0
 
     If wsInterest Is Nothing Then
         MsgBox "Sheet 'Interest calculated' not found!", vbExclamation
@@ -34,14 +28,11 @@ Sub FormatAccountStatement()
         Exit Sub
     End If
 
-    ' Apply AutoFilter and sort by column B on "Interest calculated"
     With wsInterest
         .AutoFilterMode = False
-        If .FilterMode Then .ShowAllData ' Clear existing filters if any
-        .Range("A1").AutoFilter
-    
-        ' Ensure there's data to sort beyond the header
+        If .FilterMode Then .ShowAllData
         If .Cells(Rows.Count, "A").End(xlUp).Row > 1 Then
+            .Range("A1").AutoFilter
             .AutoFilter.Sort.SortFields.Clear
             .AutoFilter.Sort.SortFields.Add Key:=.Range("B1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
             With .AutoFilter.Sort
@@ -54,43 +45,32 @@ Sub FormatAccountStatement()
         End If
     End With
 
-    ' Copy specific columns from "Interst Days calculated"
     wsDays.Range("E:F,H:H,AA:AA").Copy
-
-    ' Paste to column O in "Interest calculated"
     wsInterest.Range("O1").PasteSpecial Paste:=xlPasteValues
     Application.CutCopyMode = False
 
-    ' Determine last row for RemoveDuplicates accurately based on column O (or any pasted column)
     lastRowInterest = wsInterest.Cells(Rows.Count, "O").End(xlUp).Row
-    If lastRowInterest < 1 Then lastRowInterest = 1 ' Handle empty paste
+    If lastRowInterest < 1 Then lastRowInterest = 1
 
-    ' Remove duplicates in pasted data (columns O to R, based on column P)
-    ' The range for RemoveDuplicates should be dynamic
     If lastRowInterest > 1 Then
-        wsInterest.Range("O1:R" & lastRowInterest).RemoveDuplicates Columns:=2, header:=xlYes ' Column P is the 2nd in O:R
+        wsInterest.Range("O1:R" & lastRowInterest).RemoveDuplicates Columns:=2, header:=xlYes
     End If
 
-    ' Copy columns C, J to L from "Interest calculated" and paste to column S
     With wsInterest
-        .Range("C:C,J:L").Copy ' This copies entire columns, adjust if needed for specific rows
+        .Range("C:C,J:L").Copy
         .Range("S1").PasteSpecial Paste:=xlPasteValues
         Application.CutCopyMode = False
 
-        ' Format header row on "Interest calculated" sheet (original formatting)
         With .Rows("1:1")
             .WrapText = True
-            .Font.Bold = False ' Assuming original request only included WrapText for this sheet
+            .Font.Bold = False
             .Orientation = 0
             .AddIndent = False
             .IndentLevel = 0
             .ShrinkToFit = False
             .ReadingOrder = xlContext
-            ' .Font.Bold = True ' If you also want bold here
         End With
 
-        ' Rearranging columns: move S to W, T to S in "Interest calculated"
-        ' Check if columns exist before trying to cut/insert
         If Not .Columns("S").EntireColumn.Hidden And Application.WorksheetFunction.CountA(.Columns("S")) > 0 Then
             .Columns("S:S").Cut
             .Columns("W:W").Insert Shift:=xlToRight
@@ -102,115 +82,124 @@ Sub FormatAccountStatement()
         Application.CutCopyMode = False
     End With
 
-    ' --- New Steps: Cut O:V to New Workbook and Format ---
-
-    ' Create a new workbook
+    ' --- Create New Workbook and Process First Sheet (newWs) ---
     Set newWb = Workbooks.Add
-    Set newWs = newWb.Sheets(1) ' Get the first sheet of the new workbook
+    Set newWs = newWb.Sheets(1)
+    newWs.Name = "Raw Data" ' Give the first sheet a name
 
-    ' Cut columns O:V from wsInterest and paste to the new worksheet (newWs)
-    ' Determine the actual last row of data in columns O:V on wsInterest
-    Dim lastRowCutRange As Long
-    Dim col As Variant
-    lastRowCutRange = 1 ' Start with header row
+    lastRowCutRange = 0
     For Each col In Array("O", "P", "Q", "R", "S", "T", "U", "V")
         If wsInterest.Cells(Rows.Count, col).End(xlUp).Row > lastRowCutRange Then
             lastRowCutRange = wsInterest.Cells(Rows.Count, col).End(xlUp).Row
         End If
     Next col
 
-    If lastRowCutRange >= 1 Then ' Ensure there's at least a header
+    If lastRowCutRange >= 1 Then
         wsInterest.Range("O1:V" & lastRowCutRange).Cut Destination:=newWs.Range("A1")
     Else
         MsgBox "No data found in columns O:V of 'Interest calculated' sheet to move.", vbInformation
-        newWb.Close SaveChanges:=False ' Close the empty new workbook
-        Exit Sub ' Or handle as needed
+        newWb.Close SaveChanges:=False
+        Set newWb = Nothing
+        Set newWs = Nothing
+        Exit Sub
     End If
 
-    ' Call the formatting sub for the new worksheet
-    ' The newWs will be active by default after paste, but good to be explicit.
-    newWs.Activate
-    Call FormatSortAccount(newWs) ' Pass the worksheet object
+    newWs.Activate ' Ensure it's active for FormatSortAccount if it relies on ActiveSheet implicitly
+    Call FormatSortAccount(newWs)
 
-    ' Format header row (Row 1) in the new worksheet
     With newWs.Rows(1)
         .WrapText = True
         .Font.Bold = True
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
     End With
-
-    ' Optional: Autofit columns in the new worksheet for better readability
     newWs.Columns.AutoFit
 
-    ' The new workbook (newWb) is now open with the formatted data.
-    ' You might want to save it or prompt the user to save it.
-    ' Example:
-    ' Dim savePath As String
-    ' savePath = Application.GetSaveAsFilename(InitialFileName:="Formatted_Output.xlsx", FileFilter:="Excel Files (*.xlsx), *.xlsx")
-    ' If savePath <> "False" Then
-    '     newWb.SaveAs Filename:=savePath
-    ' Else
-    '     MsgBox "New workbook was not saved.", vbInformation
-    ' End If
-    ' Or just leave it open for the user:
-    MsgBox "Columns O:V moved to a new workbook and formatted.", vbInformation
+    ' --- Create Second Sheet in newWb and Filter Data ---
+    Set filteredWs = newWb.Sheets.Add(After:=newWb.Sheets(newWb.Sheets.Count))
+    filteredWs.Name = "Filtered Data"
+
+    ' Copy all data from the first new sheet (newWs) to the filtered sheet (filteredWs)
+    newWs.Cells.Copy Destination:=filteredWs.Range("A1")
+    filteredWs.Activate ' Work on the filtered sheet
+
+    ' Find the last row of data on the filtered sheet (assuming Column A is a reliable indicator)
+    lastRowFiltered = filteredWs.Cells(Rows.Count, "A").End(xlUp).Row
+
+    ' Loop backwards from the last row to the second row (to avoid issues when deleting rows)
+    ' Data headers are in row 1, actual data starts from row 2
+    If lastRowFiltered >= 2 Then ' Only proceed if there's data beyond headers
+        For r = lastRowFiltered To 2 Step -1
+            sumEFGH = 0 ' Reset sum for each row
+            ' Calculate sum of columns E, F, G, H for the current row
+            ' Using Application.WorksheetFunction.Sum is robust as it treats non-numeric text as 0
+            On Error Resume Next ' To handle potential errors if cells are completely un-summable (though Sum usually handles this)
+            sumEFGH = Application.WorksheetFunction.Sum(filteredWs.Range(filteredWs.Cells(r, "E"), filteredWs.Cells(r, "H")))
+            On Error GoTo 0
+
+            ' If the sum is not greater than 0 (i.e., sum <= 0), delete the entire row
+            If sumEFGH <= 0 Then
+                filteredWs.Rows(r).Delete
+            End If
+        Next r
+    End If
+
+    ' Optional: Autofit columns in the filtered worksheet as well
+    filteredWs.Columns.AutoFit
+    
+    ' Activate the first sheet of the new workbook before finishing, or the filtered sheet, as preferred
+    newWs.Activate 
+    ' filteredWs.Activate ' Uncomment if you want the filtered sheet to be active at the end
+
+    MsgBox "Process complete. New workbook created with 'Raw Data' and 'Filtered Data' sheets.", vbInformation
 
 End Sub
 
-' Modified to accept a worksheet parameter
-Sub FormatSortAccount(ByVal targetWs As Worksheet)
 
+' --- RunMainProcess and FormatSortAccount subs remain unchanged ---
+
+Sub RunMainProcess()
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Call FormatAccountStatement
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    ' MsgBox "Main process complete.", vbInformation ' Message from FormatAccountStatement is now more specific
+End Sub
+
+
+Sub FormatSortAccount(ByVal targetWs As Worksheet)
     Dim lastRow As Long
     Dim i As Long
     Dim sortCodeValue As Variant
     Dim accountValue As Variant
 
-    ' --- Configuration ---
-    ' Set ws = ActiveSheet ' No longer needed, use targetWs
-
-    ' Assuming headers are in row 1, data starts in row 2
     Const START_ROW As Long = 2
+    Const SORT_CODE_COLUMN As String = "A"
+    Const ACCOUNT_COLUMN As String = "B"
 
-    ' Define column letters (or you can use column numbers: 1 for A, 2 for B, etc.)
-    ' These will now apply to the targetWs (the new workbook's sheet)
-    Const SORT_CODE_COLUMN As String = "A" ' Originally column O
-    Const ACCOUNT_COLUMN As String = "B" ' Originally column P
-    ' --- End Configuration ---
-
-    ' ScreenUpdating is typically handled by the calling sub
-
-    ' Find the last row with data in the Sort Code column (or Account) on the targetWs
     lastRow = targetWs.Cells(Rows.Count, SORT_CODE_COLUMN).End(xlUp).Row
     If targetWs.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row > lastRow Then
         lastRow = targetWs.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row
     End If
 
-    ' Check if there's any data to process
     If lastRow < START_ROW Then
-        MsgBox "No data found to process in the new sheet starting from row " & START_ROW & ".", vbInformation
         Exit Sub
     End If
 
-    ' Loop through each row from START_ROW to the lastRow on targetWs
     For i = START_ROW To lastRow
-
-        ' --- Process Sort Code ---
         sortCodeValue = targetWs.Cells(i, SORT_CODE_COLUMN).Value
-
         If Not IsEmpty(sortCodeValue) And Trim(CStr(sortCodeValue)) <> "" Then
             targetWs.Cells(i, SORT_CODE_COLUMN).NumberFormat = "@"
             targetWs.Cells(i, SORT_CODE_COLUMN).Value = Format(sortCodeValue, "000000")
         End If
 
-        ' --- Process Account Number ---
         accountValue = targetWs.Cells(i, ACCOUNT_COLUMN).Value
-
         If Not IsEmpty(accountValue) And Trim(CStr(accountValue)) <> "" Then
             targetWs.Cells(i, ACCOUNT_COLUMN).NumberFormat = "@"
             targetWs.Cells(i, ACCOUNT_COLUMN).Value = Format(accountValue, "00000000")
         End If
-
     Next i
-
-    ' MsgBox "Sort Code and Account formatting complete for " & (lastRow - START_ROW + 1) & " data rows in the new sheet!", vbInformation
-    ' Consider removing this individual message if the main sub gives a summary
 End Sub
