@@ -1,6 +1,6 @@
 ?ActiveWorkbook.SensitivityLabel.GetLabel().Name
-(Verify this shows "Restricted" or your organization's exact name for it. Use this name in the SENSITIVITY_LABEL_NAME_TO_APPLY constant below.)
+method or data member not found
 ?ActiveWorkbook.SensitivityLabel.GetLabel().LabelId
-(This will be a long string of letters and numbers with hyphens, like a GUID. This goes into the SENSITIVITY_LABEL_ID constant.)
+b59aeb30-a57c-43c8-b724-82722089b0f7
 ?ActiveWorkbook.SensitivityLabel.GetLabel().SiteId
-(This is another GUID, often your organization's Tenant ID. This goes into the SENSITIVITY_SITE_ID constant.)
+7c917db0-71f2-438e-9554-388ffcab8764
