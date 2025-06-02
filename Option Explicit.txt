@@ -98,7 +98,8 @@ Sub ProcessInterestAdjustments_Main()
         Debug.Print "ProcessInterestAdjustments_Main: Finished row " & i & ". Status: " & Ws_Data.Range("H" & i).Value
     Next i
     
-    Call SendData("TERM ALL", 21, 13, True, 1500)
+    ' --- Wait times are tripled from original values below based on previous instructions ---
+    Call SendData("TERM ALL", 21, 13, True, 4500) ' MODIFIED: 1500 * 3 = 4500
     
     If i > lastRow Then
         processingStatus = "All rows processed (" & START_ROW & " to " & lastRow & ")."
@@ -168,16 +169,17 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Debug.Print "ProcessSingle: Row " & iRow & ", S/C: " & sortCode & ", Confirm: " & confirmCode
 
     ' --- MODIFIED Navigation Logic for Initial App Menu Check ---
-    Call WaitReady(200, 5000) ' Initial settle before first check
+    ' --- Wait times are tripled from original values below based on previous instructions ---
+    Call WaitReady(600, 15000) ' MODIFIED: Initial settle (200*3=600, 5000*3=15000)
     
     appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
     
     If Not appMenuReached Then
         Debug.Print "ProcessSingle: Not initially on App Menu. Attempting navigation with Attention key."
-        Call SendKey(ControlKeyCode_Attention, 1500) ' Attempt to return to App Menu (SendKey includes WaitReady)
+        Call SendKey(ControlKeyCode_Attention, 4500) ' MODIFIED: Attempt to return (1500*3=4500)
         
         For retryCount = 1 To 3 ' Try up to 3 times to verify App Menu after Attention
-            Call WaitReady(750) ' Increased wait/settle time for each retry
+            Call WaitReady(2250) ' MODIFIED: Increased wait/settle for retry (750*3=2250)
             appMenuReached = VerifyScreen(SCREEN_APP_MENU, 1, 28)
             If appMenuReached Then
                 Debug.Print "ProcessSingle: Reached App Menu after Attention key (retry " & retryCount & ")."
@@ -197,17 +199,16 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
 
     Dim i As Integer
     For i = 1 To 3
-        Call SendData("TERM ALL", 21, 13, True, 1500)   ' SendData includes WaitReady(1000)
+        Call SendData("TERM ALL", 21, 13, True, 4500)   ' MODIFIED: (1500*3=4500)
         obScreen.SendControlKey ControlKeyCode_Transmit
         obScreen.SendControlKey ControlKeyCode_Transmit
-        obScreen.WaitForHostSettle 750, 3000           ' Additional specific settle
+        obScreen.WaitForHostSettle 2250, 9000           ' MODIFIED: (750*3=2250, 3000*3=9000)
     Next i
 
-    Call SendData(confirmCode, 21, 13, True, 1500) ' SendData includes WaitReady(1000)
-    obScreen.WaitForHostSettle 750, 3000           ' Additional specific settle
+    Call SendData(confirmCode, 21, 13, True, 4500) ' MODIFIED: (1500*3=4500)
+    obScreen.WaitForHostSettle 2250, 9000           ' MODIFIED: (750*3=2250, 3000*3=9000)
     Debug.Print "ProcessSingle: Sent " & confirmCode
     
-    ' Then it checks for "Command not recognized" and "OPTION HANDLER FUNCTION SCREEN"
     If VerifyScreen("Command not recognized", 20, 36, 22) Then
         Ws_Data.Range("H" & iRow).Value = "Brand cmd NR"
         GoTo NextCase_Adjustment
@@ -215,20 +216,20 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     
     If VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
         Debug.Print "ProcessSingle: Handling RBS screen"
-        Call SendKey(ControlKeyCode_Transmit, 1000)
-        obScreen.WaitForHostSettle 500, 2000
+        Call SendKey(ControlKeyCode_Transmit, 3000) ' MODIFIED: (1000*3=3000)
+        obScreen.WaitForHostSettle 1500, 6000       ' MODIFIED: (500*3=1500, 2000*3=6000)
         If VerifyScreen("", 1, 1, 80) Then
             Debug.Print "ProcessSingle: Blank after RBS, STAR loop"
             loopCounter = 1
             Do
                 If VerifyScreen("", 1, 1, 80) Then
-                    Call SendData("STAR", 1, 1, True, 1000)
+                    Call SendData("STAR", 1, 1, True, 3000) ' MODIFIED: (1000*3=3000)
                 ElseIf VerifyScreen("ROYAL BANK OF SCOTLAND", 1, 1, 24) Then
-                    Call SendKey(ControlKeyCode_Transmit, 1000)
+                    Call SendKey(ControlKeyCode_Transmit, 3000) ' MODIFIED: (1000*3=3000)
                 Else
                     Exit Do
                 End If
-                obScreen.WaitForHostSettle 300, 1000
+                obScreen.WaitForHostSettle 900, 3000 ' MODIFIED: (300*3=900, 1000*3=3000)
                 loopCounter = loopCounter + 1
             Loop While Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) And loopCounter <= 10
             If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
@@ -238,53 +239,53 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
         End If
     End If
 
-    obScreen.WaitForHostSettle 300, 1000
+    obScreen.WaitForHostSettle 900, 3000 ' MODIFIED: (300*3=900, 1000*3=3000)
     If Not VerifyScreen(SCREEN_OPT_HANDLER, 1, 26) Then
         Ws_Data.Range("H" & iRow).Value = "Not on OptH"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_OPT_HANDLER
     
-    Call SendData("19", 21, 16, True, 1000)
-    obScreen.WaitForHostSettle 500, 2000
+    Call SendData("19", 21, 16, True, 3000) ' MODIFIED: (1000*3=3000)
+    obScreen.WaitForHostSettle 1500, 6000    ' MODIFIED: (500*3=1500, 2000*3=6000)
     If Not VerifyScreen(SCREEN_BO_SYSTEM, 1, 7) Then
         Ws_Data.Range("H" & iRow).Value = "Not on BOSys"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_BO_SYSTEM
 
-    Call SendData("01", 22, 16, True, 1000)
-    obScreen.WaitForHostSettle 500, 2000
+    Call SendData("01", 22, 16, True, 3000) ' MODIFIED: (1000*3=3000)
+    obScreen.WaitForHostSettle 1500, 6000    ' MODIFIED: (500*3=1500, 2000*3=6000)
     If Not VerifyScreen(SCREEN_MASTER_INDEX, 1, 28) Then
         Ws_Data.Range("H" & iRow).Value = "Not on MI"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_MASTER_INDEX
 
-    Call WaitReady(100)
+    Call WaitReady(300) ' MODIFIED: (100*3=300)
     obScreen.PutText2 "20", 22, 8
     obScreen.PutText2 Format(sortCode, "000000"), 22, 74
-    Call SendKey(ControlKeyCode_Transmit, 1000)
-    obScreen.WaitForHostSettle 500, 2000
+    Call SendKey(ControlKeyCode_Transmit, 3000) ' MODIFIED: (1000*3=3000)
+    obScreen.WaitForHostSettle 1500, 6000       ' MODIFIED: (500*3=1500, 2000*3=6000)
     If Not VerifyScreen(SCREEN_FILE_MAINT_IDX, 1, 21) Then
         Ws_Data.Range("H" & iRow).Value = "Not on FMI"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_FILE_MAINT_IDX
 
-    Call WaitReady(100)
+    Call WaitReady(300) ' MODIFIED: (100*3=300)
     obScreen.PutText2 "20", 22, 8
     obScreen.PutText2 Format(accountNo, "00000000"), 22, 21
-    Call SendKey(ControlKeyCode_Transmit, 1000)
-    obScreen.WaitForHostSettle 500, 2000
+    Call SendKey(ControlKeyCode_Transmit, 3000) ' MODIFIED: (1000*3=3000)
+    obScreen.WaitForHostSettle 1500, 6000       ' MODIFIED: (500*3=1500, 2000*3=6000)
     If Not VerifyScreen(SCREEN_INTERNAL_TXNS, 1, 19) Then
         Ws_Data.Range("H" & iRow).Value = "Not on IT"
         GoTo NextCase_Adjustment
     End If
     Debug.Print "ProcessSingle: On " & SCREEN_INTERNAL_TXNS
 
-    Call SendData("04", 22, 8, True, 1000)
-    obScreen.WaitForHostSettle 500, 2000
+    Call SendData("04", 22, 8, True, 3000) ' MODIFIED: (1000*3=3000)
+    obScreen.WaitForHostSettle 1500, 6000   ' MODIFIED: (500*3=1500, 2000*3=6000)
     If Not VerifyScreen(SCREEN_INTEREST_AMENDMENTS, 1, 27) Then
         If Not VerifyScreen("INTEREST DETAILS", 2, 27) Then
             Ws_Data.Range("H" & iRow).Value = "Not on IA scrn"
@@ -293,7 +294,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "ProcessSingle: Reached " & SCREEN_INTEREST_AMENDMENTS
 
-    Call WaitReady(200)
+    Call WaitReady(600) ' MODIFIED: (200*3=600)
     If Trim(obScreen.GetText(20, 2, 20)) = "ACCEPTED BY OPERATOR" Then
         Debug.Print "ProcessSingle: Screen already shows 'ACCEPTED BY OPERATOR' on entry. Skipping row."
         Ws_Data.Range("H" & iRow).Value = "Exception - Screen already accepted"
@@ -450,14 +451,14 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     Debug.Print "Data entry potentially complete"
 
-    Call WaitReady(100)
+    Call WaitReady(300) ' MODIFIED: (100*3=300)
     obScreen.PutText2 "CHARGEBACK", 18, 2
     Debug.Print "Input 'CHARGEBACK' at R18,C2"
     
     For k = 1 To 3
-        Call SendKey(ControlKeyCode_Transmit, 750)
+        Call SendKey(ControlKeyCode_Transmit, 2250) ' MODIFIED: (750*3=2250)
         If k = 1 Then
-            obScreen.WaitForHostSettle 500, 2000
+            obScreen.WaitForHostSettle 1500, 6000    ' MODIFIED: (500*3=1500, 2000*3=6000)
             If VerifyScreen("REASON CODE NOT ENTERED", 23, 4, 25) Then
                 Ws_Data.Range("H" & iRow).Value = "HostError: REASON CODE still not accepted"
                 Debug.Print "Host still reports REASON CODE NOT ENTERED after 1st Enter"
@@ -471,7 +472,7 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     Next k
     Debug.Print "ProcessSingle: Sent Enter x3"
 
-    Call WaitReady(500)
+    Call WaitReady(1500) ' MODIFIED: (500*3=1500)
     hostStatusMessage = Trim(obScreen.GetText(20, 2, 20))
     If hostStatusMessage = "ACCEPTED BY OPERATOR" Then
         Debug.Print "Amendment ACCEPTED BY OPERATOR for row " & iRow
@@ -483,9 +484,9 @@ Function ProcessSingleAdjustment(iRow As Long, Ws_Data As Worksheet) As Boolean
     End If
     
 PageDownAndExit_Adjustment:
-    Call SendKey(ControlKeyCode_Attention, 1500)
+    Call SendKey(ControlKeyCode_Attention, 4500) ' MODIFIED: (1500*3=4500)
     Debug.Print "ProcessSingle: Sent ControlKeyCode_Attention"
-    Call WaitReady(1000)
+    Call WaitReady(3000) ' MODIFIED: (1000*3=3000)
     
     If Not VerifyScreen(SCREEN_APP_MENU, 1, 28) Then
         Debug.Print "Did not return to App Menu. Current: " & Left(Trim(obScreen.GetText(1, 1, 80)), 50)
@@ -516,7 +517,7 @@ ErrorHandler_Adjustment:
 End Function
 
 '===============================================================================
-' CONNECTION SUB (No changes from your last provided version)
+' CONNECTION SUB (No changes needed here based on the request, it's for Reflection connection setup)
 '===============================================================================
 Sub ConnectExtra()
     Dim edpPathFromSheet As String, ws As Worksheet, currentAction As String
@@ -691,37 +692,136 @@ ConnectExtra_ErrorHandler_FinalMsg:
 End Sub
 
 '===============================================================================
-' HELPER FUNCTIONS
+' HELPER FUNCTIONS (Incorporating recent changes)
 '===============================================================================
-Private Sub WaitReady(Optional settleTimeMs As Long = 300, Optional timeoutMs As Long = 10000)
+
+'===============================================================================
+' VALIDATE_SCREEN_FOR_SECURITY (Based on their Validate_Screen, for internal use by security check)
+' This has a self-contained, simpler wait, with tripled values.
+'===============================================================================
+Private Function Validate_Screen_For_Security(strText As String, iRow As Integer, icol As Integer, iLen As Integer) As Boolean
+    If obScreen Is Nothing Then Validate_Screen_For_Security = False: Exit Function
+    
+    Dim loopStartTime As Date: loopStartTime = Now
+    Const CHECK_TIMEOUT_MS As Long = 15000 ' Timeout for this specific check (e.g., 5000 original * 3)
+
+    On Error Resume Next ' Basic error handling for this sub-operation
+    Do While obScreen.OIA.XStatus <> 0
+        If DateDiff("s", loopStartTime, Now) * 1000 > CHECK_TIMEOUT_MS Then
+            Debug.Print "Validate_Screen_For_Security: Timeout XStatus for: " & strText
+            Validate_Screen_For_Security = False
+            Exit Function
+        End If
+        obScreen.WaitForHostSettle 150, 60  ' MODIFIED: 3x of (50, 20) from "other code"
+        DoEvents
+        If Err.Number <> 0 Then
+            Debug.Print "Validate_Screen_For_Security: Error in XStatus loop: " & Err.Description
+            Set obScreen = Nothing
+            Validate_Screen_For_Security = False
+            Exit Function
+        End If
+        If obScreen Is Nothing Then Validate_Screen_For_Security = False: Exit Function ' Check if obScreen lost
+    Loop
+    If obScreen Is Nothing Then Validate_Screen_For_Security = False: Exit Function
+
+    'Check for text
+    If UCase(VBA.Trim(obScreen.GetText(iRow, icol, iLen))) = UCase(VBA.Trim(strText)) Then
+        Validate_Screen_For_Security = True
+    Else
+        Validate_Screen_For_Security = False
+    End If
+    If Err.Number <> 0 Then
+        Debug.Print "Validate_Screen_For_Security: Error GetText: " & Err.Description
+        Set obScreen = Nothing
+        Validate_Screen_For_Security = False
+    End If
+    On Error GoTo 0
+End Function
+
+'===============================================================================
+' HANDLE_SECURITY_SCREEN_IF_PRESENT (Based on their Check_SecurityScreen)
+'===============================================================================
+Private Sub Handle_Security_Screen_If_Present()
+    If obScreen Is Nothing Then Exit Sub
+
+    On Error Resume Next ' Basic error handling for this sub-operation
+    If Validate_Screen_For_Security("SECURITY REMINDER", 1, 29, 20) = True Then
+        Debug.Print "Handle_Security_Screen_If_Present: Security Reminder found, handling."
+        obScreen.PutText2 "Y", 22, 11
+        obScreen.SendControlKey ControlKeyCode_Transmit
+        
+        ' Wait for screen to settle after handling security screen
+        Dim loopStartTime As Date: loopStartTime = Now
+        Const AFTER_SECURITY_TIMEOUT_MS As Long = 15000 ' (e.g., 5000 original * 3)
+        
+        Do While obScreen.OIA.XStatus <> 0
+            If DateDiff("s", loopStartTime, Now) * 1000 > AFTER_SECURITY_TIMEOUT_MS Then
+                Debug.Print "Handle_Security_Screen_If_Present: Timeout after sending Y to security."
+                Exit Sub
+            End If
+            obScreen.WaitForHostSettle 150, 60  ' MODIFIED: 3x of (50, 20)
+            DoEvents
+            If Err.Number <> 0 Then
+                Debug.Print "Handle_Security_Screen_If_Present: Error in post-security XStatus loop: " & Err.Description
+                Set obScreen = Nothing
+                Exit Sub
+            End If
+            If obScreen Is Nothing Then Exit Sub ' Check if obScreen lost
+        Loop
+        If obScreen Is Nothing Then Exit Sub
+        
+        ' Final small settle after security screen handling (based on their commented out 500, 200 => 1500, 600)
+        ' Or a generic settle value like 900 (3x of 300)
+        obScreen.WaitForHostSettle 900, AFTER_SECURITY_TIMEOUT_MS
+        If Err.Number <> 0 Then
+            Debug.Print "Handle_Security_Screen_If_Present: Error in final settle: " & Err.Description
+            Set obScreen = Nothing
+        End If
+    End If
+    On Error GoTo 0
+End Sub
+
+Private Sub WaitReady(Optional settleTimeMs As Long = 900, Optional timeoutMs As Long = 30000) ' MODIFIED: Defaults (300*3=900, 10000*3=30000)
     If obScreen Is Nothing Then Exit Sub
     Dim startTime As Date: startTime = Now
     On Error Resume Next
+    
     Do While obScreen.OIA.XStatus <> 0
         If DateDiff("s", startTime, Now) * 1000 > timeoutMs Then
-            Debug.Print "WaitReady: Timeout XStatus."
-            Exit Do
+            Debug.Print "WaitReady: Timeout XStatus. Overall timeout " & timeoutMs & "ms exceeded."
+            Exit Do ' Changed from Exit Sub to allow final settle and security check if XStatus somehow becomes 0 right after timeout
         End If
-        obScreen.WaitForHostSettle 100, 50: DoEvents
+        ' MODIFIED: Using the 3x of (50,20) pattern from the "other code" for the XStatus check loop
+        obScreen.WaitForHostSettle 150, 60
+        DoEvents
         If Err.Number <> 0 Then
             Debug.Print "WaitReady: Error in XStatus loop: " & Err.Description
             Set obScreen = Nothing
             Exit Sub
         End If
+        If obScreen Is Nothing Then Exit Sub ' Check if obScreen lost
     Loop
     If obScreen Is Nothing Then Exit Sub
     
+    ' Final settle using the provided settleTimeMs. This is still useful.
     obScreen.WaitForHostSettle settleTimeMs, timeoutMs
     If Err.Number <> 0 Then
         Debug.Print "WaitReady: Error in final WaitForHostSettle: " & Err.Description
         Set obScreen = Nothing
+        Exit Sub
     End If
+    If obScreen Is Nothing Then Exit Sub
+
+    ' Call the security screen handler, similar to how their WaitForScreen calls Check_SecurityScreen
+    Call Handle_Security_Screen_If_Present
+    
     On Error GoTo 0
 End Sub
 
 Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As Long, Optional ByVal length As Long = 0) As Boolean
     If obScreen Is Nothing Then VerifyScreen = False: Exit Function
-    Call WaitReady(100)
+    Call WaitReady(300) ' Uses the modified WaitReady. (300 is 3x of original 100)
+                        ' The timeoutMs for this call will be the default 30000ms from WaitReady.
     If obScreen Is Nothing Then VerifyScreen = False: Exit Function
 
     If length = 0 Then
@@ -734,7 +834,7 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     If Err.Number <> 0 Then
         Debug.Print "VerifyScreen FAIL GetText R" & rowNum & "C" & colNum & ": " & Err.Description
         VerifyScreen = False
-        Set obScreen = Nothing
+        Set obScreen = Nothing ' Critical error if GetText fails
         Exit Function
     End If
     On Error GoTo 0
@@ -747,28 +847,26 @@ Private Function VerifyScreen(expectedText As String, rowNum As Long, colNum As 
     End If
 End Function
 
-Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 750)
+Private Sub SendData(data As String, rowNum As Long, colNum As Long, Optional sendTransmit As Boolean = True, Optional waitAfterMs As Long = 2250) ' MODIFIED: Default (750*3=2250)
     If obScreen Is Nothing Then Exit Sub
-    Call WaitReady(100)
+    Call WaitReady(300) ' Initial quick ready check (3x of 100) using modified WaitReady
     If obScreen Is Nothing Then Exit Sub
 
     obScreen.PutText2 data, rowNum, colNum
     If sendTransmit Then
         obScreen.SendControlKey ControlKeyCode_Transmit
-        Call WaitReady(waitAfterMs)
+        Call WaitReady(waitAfterMs) ' Uses the waitAfterMs parameter for settleTime in the modified WaitReady
     End If
 End Sub
 
-Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 750)
+Private Sub SendKey(keyCode As Long, Optional waitAfterMs As Long = 2250) ' MODIFIED: Default (750*3=2250)
     If obScreen Is Nothing Then Exit Sub
-    Call WaitReady(100)
+    Call WaitReady(300) ' Initial quick ready check (3x of 100) using modified WaitReady
     If obScreen Is Nothing Then Exit Sub
     
     obScreen.SendControlKey keyCode
-    Call WaitReady(waitAfterMs)
+    Call WaitReady(waitAfterMs) ' Uses the waitAfterMs parameter for settleTime in the modified WaitReady
 End Sub
-
-' ClearField subroutine is REMOVED
 
 Private Sub CleanUpReflectionObjects()
     Debug.Print "CleanUpReflectionObjects: Releasing..."
