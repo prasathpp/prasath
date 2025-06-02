@@ -3,8 +3,8 @@ Sub FormatAccountStatement()
     Dim wsInterest As Worksheet
     Dim wsDays As Worksheet
     Dim newWb As Workbook
-    Dim newWs As Worksheet         ' This will be the first sheet in newWb
-    Dim filteredWs As Worksheet    ' This will be the second, filtered sheet in newWb
+    Dim newWs As Worksheet         ' This will be the first sheet in newWb ("Raw Data")
+    Dim filteredWs As Worksheet    ' This will be the second, filtered sheet in newWb ("Filtered Data")
     Dim lastRowInterest As Long
     Dim lastRowCutRange As Long
     Dim col As Variant
@@ -85,7 +85,7 @@ Sub FormatAccountStatement()
     ' --- Create New Workbook and Process First Sheet (newWs) ---
     Set newWb = Workbooks.Add
     Set newWs = newWb.Sheets(1)
-    newWs.Name = "Raw Data" ' Give the first sheet a name
+    newWs.Name = "Raw Data"
 
     lastRowCutRange = 0
     For Each col In Array("O", "P", "Q", "R", "S", "T", "U", "V")
@@ -104,7 +104,7 @@ Sub FormatAccountStatement()
         Exit Sub
     End If
 
-    newWs.Activate ' Ensure it's active for FormatSortAccount if it relies on ActiveSheet implicitly
+    newWs.Activate
     Call FormatSortAccount(newWs)
 
     With newWs.Rows(1)
@@ -119,45 +119,57 @@ Sub FormatAccountStatement()
     Set filteredWs = newWb.Sheets.Add(After:=newWb.Sheets(newWb.Sheets.Count))
     filteredWs.Name = "Filtered Data"
 
-    ' Copy all data from the first new sheet (newWs) to the filtered sheet (filteredWs)
     newWs.Cells.Copy Destination:=filteredWs.Range("A1")
-    filteredWs.Activate ' Work on the filtered sheet
+    filteredWs.Activate
 
-    ' Find the last row of data on the filtered sheet (assuming Column A is a reliable indicator)
     lastRowFiltered = filteredWs.Cells(Rows.Count, "A").End(xlUp).Row
 
-    ' Loop backwards from the last row to the second row (to avoid issues when deleting rows)
-    ' Data headers are in row 1, actual data starts from row 2
-    If lastRowFiltered >= 2 Then ' Only proceed if there's data beyond headers
+    If lastRowFiltered >= 2 Then
         For r = lastRowFiltered To 2 Step -1
-            sumEFGH = 0 ' Reset sum for each row
-            ' Calculate sum of columns E, F, G, H for the current row
-            ' Using Application.WorksheetFunction.Sum is robust as it treats non-numeric text as 0
-            On Error Resume Next ' To handle potential errors if cells are completely un-summable (though Sum usually handles this)
+            sumEFGH = 0
+            On Error Resume Next
             sumEFGH = Application.WorksheetFunction.Sum(filteredWs.Range(filteredWs.Cells(r, "E"), filteredWs.Cells(r, "H")))
             On Error GoTo 0
-
-            ' If the sum is not greater than 0 (i.e., sum <= 0), delete the entire row
             If sumEFGH <= 0 Then
                 filteredWs.Rows(r).Delete
             End If
         Next r
     End If
 
-    ' Optional: Autofit columns in the filtered worksheet as well
+    ' --- Call ClearZeroValues on columns E:H of filteredWs ---
+    ' Re-determine lastRowFiltered as rows might have been deleted
+    lastRowFiltered = filteredWs.Cells(Rows.Count, "A").End(xlUp).Row ' Assuming Col A is reliable for row count
+
+    If lastRowFiltered >= 2 Then ' Check if there's data below the header
+        ' Ensure the filtered sheet is active before selection
+        filteredWs.Activate
+        ' Select the range E2 to H<lastRowFiltered>
+        filteredWs.Range("E2:H" & lastRowFiltered).Select
+        
+        ' Call your existing Sub
+        On Error Resume Next ' Optional: In case ClearZeroValues itself has an error
+        Call ClearZeroValues
+        On Error GoTo 0
+        
+        ' Clear the selection (good practice)
+        filteredWs.Range("A1").Select
+    End If
+    ' --- End of ClearZeroValues call ---
+
     filteredWs.Columns.AutoFit
     
-    ' Activate the first sheet of the new workbook before finishing, or the filtered sheet, as preferred
-    newWs.Activate 
-    ' filteredWs.Activate ' Uncomment if you want the filtered sheet to be active at the end
+    newWs.Activate
+    ' filteredWs.Activate ' Uncomment if you want the filtered sheet to be active
 
-    MsgBox "Process complete. New workbook created with 'Raw Data' and 'Filtered Data' sheets.", vbInformation
+    MsgBox "Process complete. New workbook created with 'Raw Data' and 'Filtered Data' sheets. Zeroes potentially cleared in 'Filtered Data'.", vbInformation
 
 End Sub
 
 
 ' --- RunMainProcess and FormatSortAccount subs remain unchanged ---
+' --- Assume ClearZeroValues sub already exists in a module ---
 
+' Example structure for RunMainProcess
 Sub RunMainProcess()
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
@@ -166,10 +178,9 @@ Sub RunMainProcess()
 
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
-    ' MsgBox "Main process complete.", vbInformation ' Message from FormatAccountStatement is now more specific
 End Sub
 
-
+' Example structure for FormatSortAccount
 Sub FormatSortAccount(ByVal targetWs As Worksheet)
     Dim lastRow As Long
     Dim i As Long
