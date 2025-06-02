@@ -1,159 +1,76 @@
-Sub SplitDataIntoMultipleWorkbooks()
+Sub FormatBankDetails()
+
     Dim ws As Worksheet
-    Dim wb As Workbook
-    Dim headerRange As Range
-    Dim totalRows As Long, dataRowsCount As Long
-    Dim rowsPerWorkbook As Long, extraRows As Long
-    Dim startRow As Long, endRow As Long
-    Dim splitCount As Long, numberOfSplits As Long
-    Dim savePath As String
-    Dim fileName As String
-    Dim splitFileName As String
-    Dim fd As Object ' For FileDialog
-    Dim filesCreated As Long
+    Dim lastRow As Long
+    Dim i As Long
+    Dim sortCodeValue As Variant
+    Dim accountValue As Variant
 
-    ' Set the active worksheet (current active sheet in the active workbook)
-    Set ws = ActiveSheet
+    ' --- Configuration ---
+    Set ws = ActiveSheet ' Or specify a sheet: Set ws = ThisWorkbook.Sheets("Sheet1")
 
-    ' Get the total number of rows of data, assuming the first row contains headers
-    totalRows = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    dataRowsCount = totalRows - 1 ' Number of actual data rows
+    ' Assuming headers are in row 1, data starts in row 2
+    Const START_ROW As Long = 2
 
-    ' Check if there's enough data to split (at least one row of data plus header)
-    If dataRowsCount < 1 Then
-        MsgBox "Not enough data to split. The sheet must contain at least one data row below the header.", vbExclamation
+    ' Define column letters (or you can use column numbers: 1 for A, 2 for B, etc.)
+    Const SORT_CODE_COLUMN As String = "A"
+    Const ACCOUNT_COLUMN As String = "B"
+    ' --- End Configuration ---
+
+    ' Turn off screen updating for faster execution
+    Application.ScreenUpdating = False
+
+    ' Find the last row with data in the Sort Code column (or Account, whichever might be longer)
+    ' This assumes column A (Sort Code) will reliably have data to the end.
+    ' If not, you might want to check both columns or a known reference column.
+    lastRow = ws.Cells(Rows.Count, SORT_CODE_COLUMN).End(xlUp).Row
+    If ws.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row > lastRow Then
+        lastRow = ws.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row
+    End If
+
+    ' Check if there's any data to process
+    If lastRow < START_ROW Then
+        MsgBox "No data found to process starting from row " & START_ROW & ".", vbInformation
+        Application.ScreenUpdating = True
         Exit Sub
     End If
 
-    ' Prompt user to input the number of splits
-    Dim tempSplits As Variant
-    tempSplits = InputBox("Enter the number of parts you want to split the data into (1 to " & dataRowsCount & "):", "Split Data")
+    ' Loop through each row from START_ROW to the lastRow
+    For i = START_ROW To lastRow
 
-    ' Validate the user input for number of splits
-    If Not IsNumeric(tempSplits) Then
-        MsgBox "Invalid input. Please enter a numeric value.", vbExclamation
-        Exit Sub
-    End If
+        ' --- Process Sort Code ---
+        sortCodeValue = ws.Cells(i, SORT_CODE_COLUMN).Value
 
-    numberOfSplits = CLng(tempSplits) ' Convert to Long
-
-    If numberOfSplits <= 0 Then
-        MsgBox "Invalid input. Please enter a positive number greater than zero for splits.", vbExclamation
-        Exit Sub
-    End If
-
-    ' Validate that numberOfSplits is not excessive
-    If numberOfSplits > dataRowsCount Then
-        MsgBox "The number of splits (" & numberOfSplits & ") cannot be greater than the number of data rows (" & dataRowsCount & "). " & _
-               "This would result in some empty split files. Please choose " & dataRowsCount & " or fewer splits.", vbExclamation
-        Exit Sub
-    End If
-
-    ' Define the header range (assuming headers are in the first row)
-    Set headerRange = ws.Rows(1)
-
-    ' Calculate rows per workbook and extra rows
-    rowsPerWorkbook = dataRowsCount \ numberOfSplits
-    extraRows = dataRowsCount Mod numberOfSplits
-
-    ' --- DYNAMIC FOLDER SELECTION ---
-    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
-    With fd
-        .Title = "Select a Folder to Save Split Files"
-        .AllowMultiSelect = False
-        .InitialFileName = Application.DefaultFilePath ' Optional: Start in default path
-        If .Show <> -1 Then ' -1 means a folder was selected
-            savePath = .SelectedItems(1)
+        ' Check if the cell is not empty
+        If Not IsEmpty(sortCodeValue) And Trim(CStr(sortCodeValue)) <> "" Then
+            ' Set the cell format to Text first to ensure leading zeros are kept
+            ws.Cells(i, SORT_CODE_COLUMN).NumberFormat = "@"
+            ' Format the value to be 6 digits with leading zeros
+            ws.Cells(i, SORT_CODE_COLUMN).Value = Format(sortCodeValue, "000000")
         Else
-            MsgBox "Folder selection cancelled. Exiting macro.", vbInformation
-            Set fd = Nothing
-            Exit Sub
-        End If
-    End With
-    Set fd = Nothing ' Release the FileDialog object
-
-    ' Ensure the path ends with a backslash
-    If Right(savePath, 1) <> Application.PathSeparator Then
-        savePath = savePath & Application.PathSeparator
-    End If
-    ' --- END DYNAMIC FOLDER SELECTION ---
-
-    ' Check if the directory path exists (FileDialog usually ensures this, but good for robustness)
-    If Dir(savePath, vbDirectory) = "" Then
-        MsgBox "The selected directory path does not exist or is invalid: " & savePath, vbExclamation
-        Exit Sub
-    End If
-
-    ' Get the base file name of the active workbook (without extension)
-    If InStrRev(ActiveWorkbook.Name, ".") > 0 Then
-        fileName = Left(ActiveWorkbook.Name, InStrRev(ActiveWorkbook.Name, ".") - 1)
-    Else
-        fileName = ActiveWorkbook.Name ' In case the workbook name has no extension
-    End If
-
-    startRow = 2 ' Data starts from row 2 (excluding the header)
-    filesCreated = 0
-
-    ' Split data into the specified number of workbooks
-    For splitCount = 1 To numberOfSplits
-        If startRow > totalRows Then ' All data has been processed
-            Exit For
+            ' Optional: Handle empty cells if needed (e.g., clear them or leave as is)
+            ' ws.Cells(i, SORT_CODE_COLUMN).ClearContents
         End If
 
-        ' Determine the end row for this split
-        endRow = startRow + rowsPerWorkbook - 1 ' Base number of rows for this split
-        If extraRows > 0 Then
-            endRow = endRow + 1 ' Add one of the extra rows
-            extraRows = extraRows - 1
-        End If
+        ' --- Process Account Number ---
+        accountValue = ws.Cells(i, ACCOUNT_COLUMN).Value
 
-        ' Ensure we don't exceed total rows (shouldn't happen if logic is correct, but safeguard)
-        If endRow > totalRows Then
-            endRow = totalRows
-        End If
-
-        ' Only proceed if there are actual rows to copy for this split
-        If startRow <= endRow Then
-            ' Create a new workbook for each split
-            Set wb = Workbooks.Add
-
-            ' Copy header to the new workbook
-            headerRange.Copy Destination:=wb.Sheets(1).Rows(1)
-            
-            ' Copy data to the new workbook
-            ws.Rows(startRow & ":" & endRow).Copy Destination:=wb.Sheets(1).Rows(2)
-
-            ' Construct the file name for each split workbook
-            splitFileName = savePath & fileName & "_part" & splitCount & ".xlsx"
-
-            ' Save the new workbook using the specified path and filename format
-            Application.DisplayAlerts = False ' Suppress overwrite prompts if file exists
-            wb.SaveAs fileName:=splitFileName, FileFormat:=xlOpenXMLWorkbook ' xlOpenXMLWorkbook for .xlsx
-            Application.DisplayAlerts = True
-            
-            wb.Close SaveChanges:=False ' Close without saving again as it's already saved
-            Set wb = Nothing ' Release workbook object
-
-            filesCreated = filesCreated + 1
-
-            ' Move to the next starting row
-            startRow = endRow + 1
-            
-            ' Optional: Reopen the saved workbook
-            ' If you need them open, uncomment the line below.
-            ' Be aware this can consume resources and slow down the macro for many splits.
-            ' Workbooks.Open fileName:=splitFileName
+        ' Check if the cell is not empty
+        If Not IsEmpty(accountValue) And Trim(CStr(accountValue)) <> "" Then
+            ' Set the cell format to Text first
+            ws.Cells(i, ACCOUNT_COLUMN).NumberFormat = "@"
+            ' Format the value to be 8 digits with leading zeros
+            ws.Cells(i, ACCOUNT_COLUMN).Value = Format(accountValue, "00000000")
         Else
-            ' This split iteration would result in an empty data section (e.g., if startRow > endRow).
-            ' This typically shouldn't happen with the current logic if numberOfSplits <= dataRowsCount.
-            ' If it does, we simply skip creating a file for this splitCount and loop to the next.
+            ' Optional: Handle empty cells
+            ' ws.Cells(i, ACCOUNT_COLUMN).ClearContents
         End If
-    Next splitCount
 
-    If filesCreated > 0 Then
-        MsgBox "Data has been successfully split into " & filesCreated & " workbooks and saved in:" & vbCrLf & savePath, vbInformation
-    Else
-        MsgBox "No files were created. Please check your data and split parameters.", vbWarning
-    End If
+    Next i
+
+    ' Turn screen updating back on
+    Application.ScreenUpdating = True
+
+    MsgBox "Formatting complete for " & (lastRow - START_ROW + 1) & " data rows!", vbInformation
 
 End Sub
