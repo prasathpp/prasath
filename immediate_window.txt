@@ -1,4 +1,62 @@
-Sub FormatBankDetails()
+Sub FormatAccountStatement()
+    Dim wb As Workbook
+    Dim wsInterest As Worksheet
+    Dim wsDays As Worksheet
+
+    Set wb = ActiveWorkbook
+    Set wsInterest = wb.Sheets("Interest calculated")
+    Set wsDays = wb.Sheets("Interst Days calculated")
+
+    ' Apply AutoFilter and sort by column B
+    With wsInterest
+        .AutoFilterMode = False
+        .Range("A1").AutoFilter
+    
+        .Range("A1").CurrentRegion.Sort _
+            Key1:=.Range("B1"), _
+            Order1:=xlAscending, _
+            header:=xlYes
+    End With
+
+
+
+    ' Copy specific columns from "Interst Days calculated"
+    wsDays.Range("E:F,H:H,AA:AA").Copy
+
+    ' Paste to column O in "Interest calculated"
+    wsInterest.Range("O1").PasteSpecial Paste:=xlPasteValues
+    Application.CutCopyMode = False
+
+    ' Remove duplicates in pasted data (columns O to R, based on column P)
+    wsInterest.Range("O1:R442").RemoveDuplicates Columns:=2, header:=xlYes
+
+    ' Copy columns C, J to L and paste to column S
+    With wsInterest
+        .Range("C:C,J:L").Copy
+        .Range("S1").PasteSpecial Paste:=xlPasteValues
+        Application.CutCopyMode = False
+
+        ' Format header row
+        With .Rows("1:1")
+            .WrapText = True
+            .Orientation = 0
+            .AddIndent = False
+            .IndentLevel = 0
+            .ShrinkToFit = False
+            .ReadingOrder = xlContext
+        End With
+
+        ' Rearranging columns: move S to W, T to S
+        .Columns("S:S").Cut
+        .Columns("W:W").Insert Shift:=xlToRight
+        .Columns("T:T").Cut
+        .Columns("S:S").Insert Shift:=xlToRight
+    End With
+End Sub
+
+
+
+Sub FormatSortAccount()
 
     Dim ws As Worksheet
     Dim lastRow As Long
@@ -74,3 +132,4 @@ Sub FormatBankDetails()
     MsgBox "Formatting complete for " & (lastRow - START_ROW + 1) & " data rows!", vbInformation
 
 End Sub
+
