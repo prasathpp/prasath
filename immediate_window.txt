@@ -8,21 +8,6 @@ Sub SplitDataIntoMultipleWorkbooks()
     Dim savePath As String
     Dim fileName As String
     Dim splitFileName As String
-    Dim fd As Object ' For FileDialog
-
-    ' Store initial application settings
-    Dim initialScreenUpdating As Boolean
-    Dim initialCalculation As XlCalculation
-    Dim initialDisplayAlerts As Boolean
-
-    initialScreenUpdating = Application.ScreenUpdating
-    initialCalculation = Application.Calculation
-    initialDisplayAlerts = Application.DisplayAlerts
-
-    ' Apply performance settings
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-    Application.DisplayAlerts = False ' Suppress alerts like "file already exists" during SaveAs and save prompts
 
     ' Set the active worksheet (current active sheet in the active workbook)
     Set ws = ActiveSheet
@@ -33,28 +18,16 @@ Sub SplitDataIntoMultipleWorkbooks()
     ' Check if there's enough data to split (at least one row of data plus header)
     If totalRows <= 1 Then
         MsgBox "Not enough data to split. Please ensure your data has multiple rows.", vbExclamation
-        GoTo CleanUpAndExit
+        Exit Sub
     End If
 
     ' Prompt user to input the number of splits
-    Dim userInput As String
-    userInput = InputBox("Enter the number of parts you want to split the data into:", "Split Data")
+    numberOfSplits = InputBox("Enter the number of parts you want to split the data into:", "Split Data")
 
     ' Validate the user input for number of splits
-    If userInput = "" Then ' User pressed Cancel or closed the InputBox
-        MsgBox "Operation cancelled by user.", vbInformation
-        GoTo CleanUpAndExit
-    End If
-    If Not IsNumeric(userInput) Then
-        MsgBox "Invalid input. Please enter a numeric value.", vbExclamation
-        GoTo CleanUpAndExit
-    End If
-
-    numberOfSplits = CLng(userInput) ' Convert to Long
-
-    If numberOfSplits <= 0 Then
+    If Not IsNumeric(numberOfSplits) Or numberOfSplits <= 0 Then
         MsgBox "Invalid input. Please enter a positive number greater than zero.", vbExclamation
-        GoTo CleanUpAndExit
+        Exit Sub
     End If
 
     ' Define the header range (assuming headers are in the first row)
@@ -65,44 +38,25 @@ Sub SplitDataIntoMultipleWorkbooks()
     extraRows = (totalRows - 1) Mod numberOfSplits      ' Determine leftover rows
 
     ' Check if rowsPerWorkbook is zero, which would cause issues
-    ' This can happen if numberOfSplits > (totalRows - 1)
-    If rowsPerWorkbook = 0 And (totalRows - 1) > 0 Then ' Ensure there's actually data to split
-        MsgBox "Not enough rows to split into " & numberOfSplits & " parts with at least one data row each. " & _
-               "Consider reducing the number of splits or ensure there is enough data.", vbExclamation
-        GoTo CleanUpAndExit
-    ElseIf (totalRows - 1) = 0 Then ' Only header row exists
-         MsgBox "No data rows to split (only header found).", vbExclamation
-        GoTo CleanUpAndExit
+    If rowsPerWorkbook = 0 Then
+        MsgBox "Not enough rows to split across " & numberOfSplits & " workbooks. There must be more data.", vbExclamation
+        Exit Sub
     End If
 
+    ' If rowsPerWorkbook is valid, proceed with the split
+    startRow = 2 ' Data starts from row 2 (excluding the header)
 
-    ' Prompt user to select the save path for the files
-    Set fd = Application.FileDialog(msoFileDialogFolderPicker)
-    fd.Title = "Select Folder to Save Split Files"
-    If fd.Show = -1 Then ' -1 means a folder was selected
-        savePath = fd.SelectedItems(1)
-        ' Ensure path ends with a separator
-        If Right(savePath, 1) <> Application.PathSeparator Then
-            savePath = savePath & Application.PathSeparator
-        End If
-    Else
-        MsgBox "No folder selected. Operation cancelled.", vbInformation
-        GoTo CleanUpAndExit
-    End If
-    Set fd = Nothing ' Release FileDialog object
-
-    ' Check if the directory path exists (still a good check even with FileDialog)
-    ' This can catch issues if the selected folder becomes inaccessible after selection.
+    ' Define the save path for the files
+    savePath = "Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Automation Files\May\"
+    
+    ' Check if the directory path exists, if not, show a message and exit
     If Dir(savePath, vbDirectory) = "" Then
-        MsgBox "The selected directory path does not exist or is inaccessible: " & savePath, vbExclamation
-        GoTo CleanUpAndExit
+        MsgBox "The specified directory path does not exist: " & savePath, vbExclamation
+        Exit Sub
     End If
 
     ' Get the base file name of the active workbook (without extension)
     fileName = Left(ActiveWorkbook.Name, InStrRev(ActiveWorkbook.Name, ".") - 1)
-
-    ' Data starts from row 2 (excluding the header)
-    startRow = 2
 
     ' Split data into the specified number of workbooks
     For splitCount = 1 To numberOfSplits
@@ -114,57 +68,34 @@ Sub SplitDataIntoMultipleWorkbooks()
             headerRange.Copy Destination:=wb.Sheets(1).Rows(1)
             
             ' Determine the end row for this split
-            endRow = startRow + rowsPerWorkbook - 1 ' Base end row
             If extraRows > 0 Then
-                endRow = endRow + 1         ' Add one of the extra rows
-                extraRows = extraRows - 1 ' Decrement count of extra rows
+                endRow = startRow + rowsPerWorkbook ' One extra row for this split
+                extraRows = extraRows - 1 ' Reduce the extra row count
+            Else
+                endRow = startRow + rowsPerWorkbook - 1
             End If
 
             ' Ensure we don't exceed total rows
             If endRow > totalRows Then endRow = totalRows
 
-            ' Only proceed if there are actual data rows to copy for this split
-            If startRow <= endRow Then
-                ' Copy data to the new workbook
-                ws.Rows(startRow & ":" & endRow).Copy Destination:=wb.Sheets(1).Rows(2)
+            ' Copy data to the new workbook
+            ws.Rows(startRow & ":" & endRow).Copy Destination:=wb.Sheets(1).Rows(2)
 
-                ' Construct the file name for each split workbook
-                splitFileName = savePath & fileName & "_part" & splitCount & ".xlsx"
+            ' Construct the file name for each split workbook
+            splitFileName = savePath & fileName & "_part" & splitCount & ".xlsx"
 
-                ' Save the new workbook using the specified path and filename format
-                ' Application.DisplayAlerts = False will suppress overwrite prompts
-                wb.SaveAs fileName:=splitFileName
-                wb.Close SaveChanges:=False ' Already saved, no need for changes prompt
+            ' Save the new workbook using the specified path and filename format
+            wb.SaveAs fileName:=splitFileName
+            wb.Close SaveChanges:=False
 
-                ' Reopen the saved workbook so all split files will be visible
-                Workbooks.Open fileName:=splitFileName
-            Else
-                ' This case might occur if rowsPerWorkbook is 0 and it wasn't caught,
-                ' or if logic somehow leads to startRow > endRow for the last split
-                ' when it shouldn't have any rows. We can close the empty workbook.
-                wb.Close SaveChanges:=False
-            End If
-            
             ' Move to the next starting row
             startRow = endRow + 1
-        Else
-            ' No more data rows to process, break loop if numberOfSplits was too high
-            ' for the actual remaining data.
-            Exit For
+            
+            ' Reopen the saved workbook so all split files will be visible
+            Workbooks.Open fileName:=splitFileName
         End If
     Next splitCount
 
-    MsgBox "Data has been successfully split into " & Application.Workbooks.Count -1 & " workbooks (or fewer if data ran out), saved, and opened in the specified folder: " & savePath, vbInformation
-
-CleanUpAndExit:
-    ' Restore initial application settings
-    Application.ScreenUpdating = initialScreenUpdating
-    Application.Calculation = initialCalculation
-    Application.DisplayAlerts = initialDisplayAlerts
-
-    ' Release object variables
-    Set ws = Nothing
-    Set wb = Nothing
-    Set headerRange = Nothing
-    Set fd = Nothing ' Ensure fd is cleared if exit happened before its release
+    MsgBox "Data has been successfully split into " & numberOfSplits & " workbooks, saved, and opened in the specified folder!", vbInformation
 End Sub
+
