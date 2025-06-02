@@ -1,15 +1,100 @@
-Hi Rega,
+Sub SplitDataIntoMultipleWorkbooks()
+    Dim ws As Worksheet
+    Dim wb As Workbook
+    Dim headerRange As Range
+    Dim totalRows As Long, rowsPerWorkbook As Long, extraRows As Long
+    Dim startRow As Long, endRow As Long
+    Dim splitCount As Long, numberOfSplits As Long
+    Dim savePath As String
+    Dim fileName As String
+    Dim splitFileName As String
 
-I wanted to share that I’ve developed a VBA macro automation to handle interest amendments in the back office, a process that is currently managed manually by four team members daily.
+    ' Set the active worksheet (current active sheet in the active workbook)
+    Set ws = ActiveSheet
 
-The tool processes each account in just 3–4 seconds, compared to the 20+ seconds currently taken manually. It also reduces the risk of human error to near zero, ensuring accuracy and consistency.
+    ' Get the total number of rows of data, assuming the first row contains headers
+    totalRows = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
 
-While the SCE team is in the early stages of developing an RPA solution for this, the VBA tool is already fully functional and could be considered as an immediate solution to deliver significant time savings and efficiency.
+    ' Check if there's enough data to split (at least one row of data plus header)
+    If totalRows <= 1 Then
+        MsgBox "Not enough data to split. Please ensure your data has multiple rows.", vbExclamation
+        Exit Sub
+    End If
 
-I’ve also begun working on expanding this tool to cover charge amendments, provided we have similar structured data inputs as we do for interest adjustments. That enhancement is currently in progress.
+    ' Prompt user to input the number of splits
+    numberOfSplits = InputBox("Enter the number of parts you want to split the data into:", "Split Data")
 
-Please feel free to share this with the relevant stakeholders for review and potential approval for official business use. I’d be happy to provide a demo or walkthrough if needed.
+    ' Validate the user input for number of splits
+    If Not IsNumeric(numberOfSplits) Or numberOfSplits <= 0 Then
+        MsgBox "Invalid input. Please enter a positive number greater than zero.", vbExclamation
+        Exit Sub
+    End If
 
-Looking forward to your thoughts.
+    ' Define the header range (assuming headers are in the first row)
+    Set headerRange = ws.Rows(1)
 
-Best regards,
+    ' Calculate rows per workbook and extra rows if any (excluding header)
+    rowsPerWorkbook = (totalRows - 1) \ numberOfSplits ' Determine rows per workbook
+    extraRows = (totalRows - 1) Mod numberOfSplits      ' Determine leftover rows
+
+    ' Check if rowsPerWorkbook is zero, which would cause issues
+    If rowsPerWorkbook = 0 Then
+        MsgBox "Not enough rows to split across " & numberOfSplits & " workbooks. There must be more data.", vbExclamation
+        Exit Sub
+    End If
+
+    ' If rowsPerWorkbook is valid, proceed with the split
+    startRow = 2 ' Data starts from row 2 (excluding the header)
+
+    ' Define the save path for the files
+    savePath = "Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Automation Files\May\"
+    
+    ' Check if the directory path exists, if not, show a message and exit
+    If Dir(savePath, vbDirectory) = "" Then
+        MsgBox "The specified directory path does not exist: " & savePath, vbExclamation
+        Exit Sub
+    End If
+
+    ' Get the base file name of the active workbook (without extension)
+    fileName = Left(ActiveWorkbook.Name, InStrRev(ActiveWorkbook.Name, ".") - 1)
+
+    ' Split data into the specified number of workbooks
+    For splitCount = 1 To numberOfSplits
+        If startRow <= totalRows Then
+            ' Create a new workbook for each split
+            Set wb = Workbooks.Add
+
+            ' Copy header to the new workbook
+            headerRange.Copy Destination:=wb.Sheets(1).Rows(1)
+            
+            ' Determine the end row for this split
+            If extraRows > 0 Then
+                endRow = startRow + rowsPerWorkbook ' One extra row for this split
+                extraRows = extraRows - 1 ' Reduce the extra row count
+            Else
+                endRow = startRow + rowsPerWorkbook - 1
+            End If
+
+            ' Ensure we don't exceed total rows
+            If endRow > totalRows Then endRow = totalRows
+
+            ' Copy data to the new workbook
+            ws.Rows(startRow & ":" & endRow).Copy Destination:=wb.Sheets(1).Rows(2)
+
+            ' Construct the file name for each split workbook
+            splitFileName = savePath & fileName & "_part" & splitCount & ".xlsx"
+
+            ' Save the new workbook using the specified path and filename format
+            wb.SaveAs fileName:=splitFileName
+            wb.Close SaveChanges:=False
+
+            ' Move to the next starting row
+            startRow = endRow + 1
+            
+            ' Reopen the saved workbook so all split files will be visible
+            Workbooks.Open fileName:=splitFileName
+        End If
+    Next splitCount
+
+    MsgBox "Data has been successfully split into " & numberOfSplits & " workbooks, saved, and opened in the specified folder!", vbInformation
+End Sub
