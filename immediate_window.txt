@@ -1,10 +1,3 @@
-Error applying sensitivity label to 'Book14': Wrong number of arguments or invalid property assignment (LabelName: Restricted, LabelID: b59aeb30-a57c-43c8-b724-82722089b0f7, SiteID: 7c917db0-71f2-438e-9554-388ffcab8764)
-Error applying sensitivity label to 'Book15': Wrong number of arguments or invalid property assignment (LabelName: Restricted, LabelID: b59aeb30-a57c-43c8-b724-82722089b0f7, SiteID: 7c917db0-71f2-438e-9554-388ffcab8764)
-Error applying sensitivity label to 'Book16': Wrong number of arguments or invalid property assignment (LabelName: Restricted, LabelID: b59aeb30-a57c-43c8-b724-82722089b0f7, SiteID: 7c917db0-71f2-438e-9554-388ffcab8764)
-Error applying sensitivity label to 'Book17': Wrong number of arguments or invalid property assignment (LabelName: Restricted, LabelID: b59aeb30-a57c-43c8-b724-82722089b0f7, SiteID: 7c917db0-71f2-438e-9554-388ffcab8764)
-
-
-
 Option Explicit ' Enforces variable declaration, good practice!
 
 ' --- CONFIGURATION FOR SENSITIVITY LABELS ---
@@ -54,30 +47,27 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
         If SENSITIVITY_LABEL_ID = "YOUR_LABEL_ID_HERE" Or SENSITIVITY_LABEL_ID = "" Or _
            SENSITIVITY_SITE_ID = "YOUR_SITE_ID_HERE" Or SENSITIVITY_SITE_ID = "" Or _
            SENSITIVITY_LABEL_NAME_TO_APPLY = "" Or _
-           SENSITIVITY_LABEL_ID = "b59aeb30-a57c-43c8-b724-82722089b0f7" And SENSITIVITY_LABEL_NAME_TO_APPLY = "Restricted" And SENSITIVITY_LABEL_ID = "YOUR_LABEL_ID_HERE" Then ' Check for unconfigured defaults
+           (SENSITIVITY_LABEL_ID = "b59aeb30-a57c-43c8-b724-82722089b0f7" And SENSITIVITY_LABEL_NAME_TO_APPLY = "Restricted" And SENSITIVITY_SITE_ID = "7c917db0-71f2-438e-9554-388ffcab8764" And SENSITIVITY_LABEL_ID = "YOUR_LABEL_ID_HERE") Then ' Complex check to see if it's still the very first default placeholder
             MsgBox "Sensitivity label automation is enabled (AUTO_APPLY_SENSITIVITY_LABEL = True), " & _
                    "but one or more required label constants (Name, ID, SiteID) appear to be " & _
                    "default placeholders or potentially incomplete." & vbCrLf & vbCrLf & _
                    "Please verify these constants at the top of the VBA module are correct for your organization." & vbCrLf & _
                    "If they are already correct, you can ignore this message. " & _
                    "Sensitivity labels will be attempted for this run.", vbExclamation, "Verify Label Configuration"
-            ' We will still attempt, but warn the user to double-check the constants.
         End If
     End If
 
     ' --- Get Source Data ---
-    ' Use ThisWorkbook if the macro is in the same workbook as the data.
-    Set srcWB = ActiveWorkbook ' Or ActiveWorkbook if appropriate for your setup
+    Set srcWB = ActiveWorkbook ' User changed to ActiveWorkbook
     
     On Error Resume Next
-    Set srcWS = srcWB.ActiveSheet ' Assumes data is on the active sheet of the workbook containing the macro
+    Set srcWS = srcWB.ActiveSheet
     On Error GoTo 0
     If srcWS Is Nothing Then
         MsgBox "Could not determine the source worksheet. Please ensure a sheet is active in the workbook containing this macro.", vbCritical
         GoTo CleanUpAndExit
     End If
 
-    ' Get the total number of rows of data, assuming headers in row 1
     totalRows = srcWS.Cells(srcWS.Rows.Count, 1).End(xlUp).Row
 
     If totalRows <= 1 Then
@@ -85,10 +75,9 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
         GoTo CleanUpAndExit
     End If
 
-    ' --- Get User Input for Number of Splits ---
-    splitsInput = Application.InputBox("Enter the number of parts you want to split the data into:", "Split Data", Type:=1) ' Type:=1 ensures a number
+    splitsInput = Application.InputBox("Enter the number of parts you want to split the data into:", "Split Data", Type:=1)
     
-    If VarType(splitsInput) = vbBoolean And splitsInput = False Then ' User pressed Cancel
+    If VarType(splitsInput) = vbBoolean And splitsInput = False Then
         MsgBox "Operation cancelled by user.", vbInformation
         GoTo CleanUpAndExit
     End If
@@ -99,10 +88,8 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
     End If
     numberOfSplits = CLng(splitsInput)
 
-    ' Define the header range (assuming headers are in the first row)
     Set headerRange = srcWS.Rows(1)
 
-    ' Calculate rows per workbook and extra rows if any (excluding header)
     rowsPerWorkbook = (totalRows - 1) \ numberOfSplits
     extraRows = (totalRows - 1) Mod numberOfSplits
 
@@ -112,12 +99,11 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
         GoTo CleanUpAndExit
     End If
 
-    ' --- Get Save Path from User ---
     Set fldr = Application.FileDialog(msoFileDialogFolderPicker)
     With fldr
         .Title = "Select a Folder to Save the Split Files"
         .AllowMultiSelect = False
-        If .Show <> -1 Then ' -1 means OK was pressed
+        If .Show <> -1 Then
             MsgBox "Operation cancelled by user (folder selection).", vbInformation
             GoTo CleanUpAndExit
         End If
@@ -135,14 +121,11 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
     End If
 
     baseFileName = Left(srcWB.Name, InStrRev(srcWB.Name, ".") - 1)
-
-    ' --- Start Splitting ---
-    startRow = 2 ' Data starts from row 2
+    startRow = 2
 
     For splitCount = 1 To numberOfSplits
         If startRow <= totalRows Then
             Set newWB = Workbooks.Add
-
             headerRange.Copy Destination:=newWB.Sheets(1).Rows(1)
             
             endRow = startRow + rowsPerWorkbook - 1
@@ -155,34 +138,57 @@ Sub SplitDataIntoMultipleWorkbooks_Improved()
             If startRow > endRow Then Exit For
 
             srcWS.Rows(startRow & ":" & endRow).Copy Destination:=newWB.Sheets(1).Rows(2)
-
             splitFileName = savePath & baseFileName & "_part" & splitCount & ".xlsx"
 
             ' --- Attempt to Apply Sensitivity Label BEFORE SaveAs ---
             If attemptLabelApplicationThisRun Then
-                On Error Resume Next
-                Dim sl As Object ' Represents the SensitivityLabel object
+                On Error Resume Next ' Local error handling for label application
+                Dim sl As Object      ' Represents the Workbook.SensitivityLabel object
+                Dim lblInfo As Object ' Represents the LabelInfo object
+                
                 Set sl = newWB.SensitivityLabel
                 
                 If Err.Number = 0 And Not sl Is Nothing Then
-                    sl.SetLabel SENSITIVITY_LABEL_ID, SENSITIVITY_LABEL_NAME_TO_APPLY, SENSITIVITY_SITE_ID
-                    If Err.Number <> 0 Then
-                        Debug.Print "Error applying sensitivity label to '" & newWB.Name & "': " & Err.Description & _
-                                    " (LabelName: " & SENSITIVITY_LABEL_NAME_TO_APPLY & ", LabelID: " & SENSITIVITY_LABEL_ID & ", SiteID: " & SENSITIVITY_SITE_ID & ")"
-                        ' Optionally inform user once if it fails consistently.
-                        ' Example: If Not labelErrorOccurredThen ... MsgBox ... labelErrorOccurredThen = True
+                    ' Successfully got the SensitivityLabel object
+                    Set lblInfo = sl.CreateLabelInfo() ' Create a LabelInfo object
+                    
+                    If Err.Number = 0 And Not lblInfo Is Nothing Then
+                        With lblInfo
+                            .LabelId = SENSITIVITY_LABEL_ID
+                            .LabelName = SENSITIVITY_LABEL_NAME_TO_APPLY
+                            .SiteId = SENSITIVITY_SITE_ID
+                            .AssignmentMethod = 2 ' msoAssignmentMethodPrivileged (2 = automatic/programmatic assignment)
+                            ' Other properties like .ActionId, .ContentBits, .IsEnabled, .Justification can be set if needed by your org
+                        End With
+                        
+                        sl.SetLabel lblInfo ' Apply the label using the LabelInfo object
+                        
+                        If Err.Number <> 0 Then
+                            Debug.Print "Error applying sensitivity label to '" & newWB.Name & "' using LabelInfo: " & Err.Description & _
+                                        " (LabelName: " & SENSITIVITY_LABEL_NAME_TO_APPLY & ", LabelID: " & SENSITIVITY_LABEL_ID & ", SiteID: " & SENSITIVITY_SITE_ID & ")"
+                            Err.Clear ' Clear the error for this attempt
+                        End If
+                    Else
+                        Debug.Print "Error creating LabelInfo object for '" & newWB.Name & "'. Error: " & Err.Description
+                        Err.Clear ' Clear the error
+                        If attemptLabelApplicationThisRun Then
+                            MsgBox "Could not create LabelInfo object for sensitivity labeling on workbook '" & newWB.Name & "'. " & _
+                                   "This might be due to your Excel version or policies." & vbCrLf & vbCrLf & _
+                                   "Labels will not be applied automatically for the remainder of this operation.", vbInformation, "Sensitivity Label Feature Note"
+                            attemptLabelApplicationThisRun = False ' Stop trying for subsequent files
+                        End If
                     End If
                 Else
                     Debug.Print "SensitivityLabel object not available or errored for '" & newWB.Name & "'. Error: " & Err.Description
-                    If attemptLabelApplicationThisRun Then ' Show message only once per run if feature itself is unavailable
+                    If attemptLabelApplicationThisRun Then
                         MsgBox "Could not access the SensitivityLabel feature on workbook '" & newWB.Name & "'. This might be due to your Excel version, " & _
                                "security policies, or incorrect label configuration (IDs/Name)." & vbCrLf & vbCrLf & _
                                "Labels will not be applied automatically for the remainder of this operation.", vbInformation, "Sensitivity Label Feature Note"
-                        attemptLabelApplicationThisRun = False ' Stop trying for subsequent files in this run
+                        attemptLabelApplicationThisRun = False ' Stop trying for subsequent files
                     End If
                     Err.Clear
                 End If
-                On Error GoTo 0 ' Reset main error handler for other errors
+                On Error GoTo 0 ' Reset main error handler
             End If
 
             newWB.SaveAs Filename:=splitFileName, FileFormat:=xlOpenXMLWorkbook
@@ -207,4 +213,3 @@ CleanUpAndExit:
     Set headerRange = Nothing
     Set fldr = Nothing
 End Sub
-
