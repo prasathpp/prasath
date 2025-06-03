@@ -503,7 +503,10 @@ NextCase_Adjustment:
         Ws_Data.Range("H" & iRow).Value = "Error or Incomplete"
     End If
     Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
-    Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+    With Ws_Data.Range("J" & iRow)
+        .Value = Now ' Store the actual date/time serial number
+        .NumberFormat = "dd/mm/yyyy hh:mm:ss" ' Apply the desired display format
+    End With
     Exit Function
 
 ErrorHandler_Adjustment:
@@ -511,7 +514,10 @@ ErrorHandler_Adjustment:
     Debug.Print "---!!! VBA Error in ProcessSingleAdjustment for row " & iRow & ": " & Err.Description & " (Line: " & Erl & ") !!!---"
     On Error Resume Next
     Ws_Data.Range("I" & iRow).Value = UCase(Environ("username"))
-    Ws_Data.Range("J" & iRow).Value = Format(Now, "DD/MM/YYYY HH:MM:SS")
+    With Ws_Data.Range("J" & iRow)
+        .Value = Now ' Store the actual date/time serial number
+        .NumberFormat = "dd/mm/yyyy hh:mm:ss" ' Apply the desired display format
+    End With
     On Error GoTo 0
     ProcessSingleAdjustment = False
 End Function
