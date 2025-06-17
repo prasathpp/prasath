@@ -79,11 +79,11 @@ Sub DRS_transactions_Restructured_Corrected()
             Debug.Print "     formattedDate from ws Col B: '" & formattedDate & "'"
             
             Dim transactionDescription As String
-            transactionDescription = originalSheet.Cells(i, "C").Text ' Original Col C
+            transactionDescription = originalSheet.Cells(i, "D").Text ' Original Col C
             Debug.Print "     transactionDescription from originalSheet Col C: '" & transactionDescription & "'"
 
             Dim transactionAmount As Variant
-            transactionAmount = originalSheet.Cells(i, "D").Value ' Original Col D
+            transactionAmount = originalSheet.Cells(i, "E").Value ' Original Col D
             Debug.Print "     transactionAmount from originalSheet Col D: '" & transactionAmount & "'"
 
             Dim cardTypeSource As String
