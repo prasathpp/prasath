@@ -1,11 +1,144 @@
-1. originalSheet Name: Sheet61
-   originalSheet used rows in Col A (initial): 1
-2. ws (temp sheet) Name: Sheet61 (2)
-3. lastRowForDateProcessing on ws (from original Col A data): 15
-   Proceeding with date formatting on ws.
-4. finalSheet Name: DRS_Final_Output
-5. Headers added to finalSheet.
-6. mainLastRow calculated from originalSheet Col A: 1
-7. SKIPPING main data population loop. mainLastRow (1) is less than 2.
---- Macro End ---
+Sub DRS_transactions_Restructured_Corrected()
+    Dim originalSheet As Worksheet
+    Dim ws As Worksheet ' Temporary sheet for date processing
+    Dim finalSheet As Worksheet
+    Dim i As Long
+    Dim lastRowForDateProcessing As Long
+    ' Dim mainLastRow As Long ' We will use lastRowForDateProcessing instead
 
+    Application.ScreenUpdating = False ' Turn off screen updating for performance
+
+    Set originalSheet = ActiveSheet
+    Debug.Print "1. originalSheet Name: " & originalSheet.Name
+    Debug.Print "   originalSheet used rows in Col A (initial before copy): " & originalSheet.Cells(originalSheet.Rows.Count, "A").End(xlUp).Row
+
+
+    ' 1. DUPLICATE ORIGINAL SHEET FOR DATE PROCESSING
+    originalSheet.Copy After:=originalSheet
+    Set ws = ActiveSheet ' The copied sheet becomes the active sheet (ws)
+    Debug.Print "2. ws (temp sheet) Name: " & ws.Name
+
+    ' 2. PROCESS DATES ON THE TEMPORARY SHEET (ws)
+    ws.Range("A1").Insert Shift:=xlToRight ' Original Col A is now ws Col B
+    ws.Cells.ClearFormats
+
+    ' This lastRowForDateProcessing is based on the data that WAS in originalSheet Col A
+    lastRowForDateProcessing = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+    Debug.Print "3. lastRowForDateProcessing on ws (derived from originalSheet's original Col A data): " & lastRowForDateProcessing
+
+    If lastRowForDateProcessing >= 2 Then
+        Debug.Print "   Proceeding with date formatting on ws."
+        For i = 2 To lastRowForDateProcessing
+            If IsDate(ws.Cells(i, "B").Value) Or IsNumeric(ws.Cells(i, "B").Value) Then
+                ws.Cells(i, "B").NumberFormat = "@"
+                ws.Cells(i, "B").Value = Format(ws.Cells(i, "B").Value, "yyyy-mm-dd 00:00:00")
+            End If
+        Next i
+    Else
+        Debug.Print "   Skipping date formatting on ws, not enough rows (lastRowForDateProcessing < 2)."
+    End If
+
+    ' 3. CREATE THE FINAL OUTPUT SHEET
+    Set finalSheet = ActiveWorkbook.Sheets.Add(After:=ws)
+    finalSheet.Name = "DRS_Final_Output"
+    Debug.Print "4. finalSheet Name: " & finalSheet.Name
+
+    ' 4. FORMAT ENTIRE finalSheet AS TEXT
+    finalSheet.Cells.NumberFormat = "@"
+
+    ' 5. ADD HEADERS TO finalSheet
+    Dim headers As Variant
+    headers = Array("Card Type", "File Date", "Nwb Sort Code", "Nwb Account Number", "CIN", _
+                    "Card Number", "Account Number", "Case Number", "ORG", "Logo", _
+                    "Acquirer Reference Number", "Transaction Date", "Transaction Description", _
+                    "Transaction Code", "Transaction Amount", "Plan Number", "Plan Sequence Number", _
+                    "Currency Code", "Adjustment Type", "Adjustment Amount", "Effective Date", _
+                    "Phase", "Transaction Status", "Agent Id", "Transaction Identification Number", _
+                    "Corrected Tran Amt", "Correct Dispute Amt")
+    
+    Dim col As Long
+    For col = 0 To UBound(headers)
+        finalSheet.Cells(1, col + 1).Value = headers(col)
+    Next col
+    Debug.Print "5. Headers added to finalSheet."
+
+    ' 6. DETERMINE MAIN LAST ROW FOR DATA POPULATION
+    '    WE WILL USE lastRowForDateProcessing determined from ws (which reflects originalSheet's initial state)
+    Debug.Print "6. Using lastRowForDateProcessing (" & lastRowForDateProcessing & ") for main data loop."
+
+    ' 7. POPULATE finalSheet WITH DATA
+    '    The loop will now go up to lastRowForDateProcessing
+    If lastRowForDateProcessing >= 2 Then
+        Debug.Print "7. Starting main data population loop from row 2 to " & lastRowForDateProcessing
+        For i = 2 To lastRowForDateProcessing ' Use lastRowForDateProcessing
+            Debug.Print "   Processing row: " & i
+            
+            Dim formattedDate As String
+            ' Get pre-formatted date from ws (ws Col B = originalSheet Col A, now processed)
+            formattedDate = ws.Cells(i, "B").Value ' Already checked i <= lastRowForDateProcessing by loop condition
+            Debug.Print "     formattedDate from ws Col B: '" & formattedDate & "'"
+            
+            Dim transactionDescription As String
+            transactionDescription = originalSheet.Cells(i, "C").Text ' Original Col C
+            Debug.Print "     transactionDescription from originalSheet Col C: '" & transactionDescription & "'"
+
+            Dim transactionAmount As Variant
+            transactionAmount = originalSheet.Cells(i, "D").Value ' Original Col D
+            Debug.Print "     transactionAmount from originalSheet Col D: '" & transactionAmount & "'"
+
+            Dim cardTypeSource As String
+            cardTypeSource = LCase(originalSheet.Cells(i, "I").Value) ' Original Col I
+            Debug.Print "     cardTypeSource from originalSheet Col I: '" & cardTypeSource & "'"
+
+            Dim nwbSortCode As String
+            nwbSortCode = originalSheet.Cells(i, "J").Text ' Original Col J
+            Debug.Print "     nwbSortCode from originalSheet Col J: '" & nwbSortCode & "'"
+
+            Dim nwbAccountNumber As String
+            nwbAccountNumber = originalSheet.Cells(i, "K").Text ' Original Col K
+            Debug.Print "     nwbAccountNumber from originalSheet Col K: '" & nwbAccountNumber & "'"
+
+            Dim caseNumber As String
+            caseNumber = originalSheet.Cells(i, "L").Text ' Original Col L
+            Debug.Print "     caseNumber from originalSheet Col L: '" & caseNumber & "'"
+
+            ' --- Map data to finalSheet columns ---
+            If InStr(cardTypeSource, "m") > 0 Then
+                finalSheet.Cells(i, "A").Value = "MASTERCARD"
+            ElseIf InStr(cardTypeSource, "v") > 0 Then
+                finalSheet.Cells(i, "A").Value = "VISACARD"
+            Else
+                finalSheet.Cells(i, "A").Value = ""
+            End If
+            finalSheet.Cells(i, "C").Value = nwbSortCode
+            finalSheet.Cells(i, "D").Value = nwbAccountNumber
+            finalSheet.Cells(i, "H").Value = caseNumber
+            finalSheet.Cells(i, "L").Value = formattedDate
+            finalSheet.Cells(i, "M").Value = transactionDescription
+            finalSheet.Cells(i, "O").Value = transactionAmount
+            finalSheet.Cells(i, "T").Value = transactionAmount
+            finalSheet.Cells(i, "U").Value = formattedDate
+        Next i
+        Debug.Print "   Finished main data population loop."
+    Else
+        Debug.Print "7. SKIPPING main data population loop. lastRowForDateProcessing (" & lastRowForDateProcessing & ") is less than 2."
+    End If
+
+    ' 8. FINAL TOUCHES ON finalSheet
+    finalSheet.Cells.EntireColumn.AutoFit
+    If finalSheet.FilterMode Then ' Clear any autofilters if they were accidentally applied
+        finalSheet.ShowAllData
+    End If
+    finalSheet.Activate
+    finalSheet.Range("A1").Select
+
+    ' 9. CLEANUP: Delete the temporary sheet (ws)
+    Application.DisplayAlerts = False
+    ws.Delete
+    Application.DisplayAlerts = True
+
+    Application.ScreenUpdating = True
+
+    MsgBox "DRS Transactions processing complete. Output is on sheet: " & finalSheet.Name, vbInformation
+    Debug.Print "--- Macro End ---"
+End Sub
