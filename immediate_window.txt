@@ -1,4 +1,4 @@
-Sub DRS_transactions_Restructured()
+Sub DRS_transactions_Restructured_Debug()
     Dim originalSheet As Worksheet
     Dim ws As Worksheet ' Temporary sheet for date processing
     Dim finalSheet As Worksheet
@@ -9,30 +9,38 @@ Sub DRS_transactions_Restructured()
     Application.ScreenUpdating = False ' Turn off screen updating for performance
 
     Set originalSheet = ActiveSheet
+    Debug.Print "1. originalSheet Name: " & originalSheet.Name
+    Debug.Print "   originalSheet used rows in Col A (initial): " & originalSheet.Cells(originalSheet.Rows.Count, "A").End(xlUp).Row
+
 
     ' 1. DUPLICATE ORIGINAL SHEET FOR DATE PROCESSING
     originalSheet.Copy After:=originalSheet
     Set ws = ActiveSheet ' The copied sheet becomes the active sheet (ws)
+    Debug.Print "2. ws (temp sheet) Name: " & ws.Name
 
     ' 2. PROCESS DATES ON THE TEMPORARY SHEET (ws)
-    ' Insert a cell at A1 on ws and shift right (original Col A becomes ws Col B)
     ws.Range("A1").Insert Shift:=xlToRight
-    ws.Cells.ClearFormats ' Clear formats on ws
+    ws.Cells.ClearFormats
 
     lastRowForDateProcessing = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row ' Last row in ws Col B (original Col A)
+    Debug.Print "3. lastRowForDateProcessing on ws (from original Col A data): " & lastRowForDateProcessing
 
-    If lastRowForDateProcessing >= 2 Then ' Assuming row 1 is a header
+    If lastRowForDateProcessing >= 2 Then
+        Debug.Print "   Proceeding with date formatting on ws."
         For i = 2 To lastRowForDateProcessing
             If IsDate(ws.Cells(i, "B").Value) Or IsNumeric(ws.Cells(i, "B").Value) Then
-                ws.Cells(i, "B").NumberFormat = "@" ' Set cell to text format first
+                ws.Cells(i, "B").NumberFormat = "@"
                 ws.Cells(i, "B").Value = Format(ws.Cells(i, "B").Value, "yyyy-mm-dd 00:00:00")
             End If
         Next i
+    Else
+        Debug.Print "   Skipping date formatting on ws, not enough rows (lastRowForDateProcessing < 2)."
     End If
 
     ' 3. CREATE THE FINAL OUTPUT SHEET
     Set finalSheet = ActiveWorkbook.Sheets.Add(After:=ws)
-    finalSheet.Name = "DRS_Final_Output" ' You can change this name if needed
+    finalSheet.Name = "DRS_Final_Output"
+    Debug.Print "4. finalSheet Name: " & finalSheet.Name
 
     ' 4. FORMAT ENTIRE finalSheet AS TEXT
     finalSheet.Cells.NumberFormat = "@"
@@ -51,43 +59,52 @@ Sub DRS_transactions_Restructured()
     For col = 0 To UBound(headers)
         finalSheet.Cells(1, col + 1).Value = headers(col)
     Next col
+    Debug.Print "5. Headers added to finalSheet."
 
     ' 6. DETERMINE MAIN LAST ROW FOR DATA POPULATION (from originalSheet)
-    ' Assuming Column A of originalSheet is a reliable indicator of data rows
     mainLastRow = originalSheet.Cells(originalSheet.Rows.Count, "A").End(xlUp).Row
+    Debug.Print "6. mainLastRow calculated from originalSheet Col A: " & mainLastRow
 
     ' 7. POPULATE finalSheet WITH DATA
-    If mainLastRow >= 2 Then ' Assuming row 1 is headers
+    If mainLastRow >= 2 Then
+        Debug.Print "7. Starting main data population loop from row 2 to " & mainLastRow
         For i = 2 To mainLastRow
-            ' --- Source Data Points for current row i ---
+            Debug.Print "   Processing row: " & i
+            
             Dim formattedDate As String
-            ' Get pre-formatted date from ws (ws Col B = originalSheet Col A)
-            If i <= lastRowForDateProcessing Then ' Ensure we don't read beyond processed dates on ws
-                 formattedDate = ws.Cells(i, "B").Value
+            If i <= lastRowForDateProcessing Then
+                 formattedDate = ws.Cells(i, "B").Value ' ws Col B = originalSheet Col A processed
+                 Debug.Print "     formattedDate from ws Col B: '" & formattedDate & "'"
             Else
                  formattedDate = "" ' Or handle as error/default
+                 Debug.Print "     formattedDate: EMPTY (i > lastRowForDateProcessing)"
             End If
             
             Dim transactionDescription As String
             transactionDescription = originalSheet.Cells(i, "C").Text ' Original Col C
+            Debug.Print "     transactionDescription from originalSheet Col C: '" & transactionDescription & "'"
 
             Dim transactionAmount As Variant
             transactionAmount = originalSheet.Cells(i, "D").Value ' Original Col D
+            Debug.Print "     transactionAmount from originalSheet Col D: '" & transactionAmount & "'"
 
             Dim cardTypeSource As String
             cardTypeSource = LCase(originalSheet.Cells(i, "I").Value) ' Original Col I
+            Debug.Print "     cardTypeSource from originalSheet Col I: '" & cardTypeSource & "'"
 
             Dim nwbSortCode As String
             nwbSortCode = originalSheet.Cells(i, "J").Text ' Original Col J
+            Debug.Print "     nwbSortCode from originalSheet Col J: '" & nwbSortCode & "'"
 
             Dim nwbAccountNumber As String
             nwbAccountNumber = originalSheet.Cells(i, "K").Text ' Original Col K
+            Debug.Print "     nwbAccountNumber from originalSheet Col K: '" & nwbAccountNumber & "'"
 
             Dim caseNumber As String
             caseNumber = originalSheet.Cells(i, "L").Text ' Original Col L
+            Debug.Print "     caseNumber from originalSheet Col L: '" & caseNumber & "'"
 
             ' --- Map data to finalSheet columns ---
-            ' Column A: Card Type (from originalSheet Col I)
             If InStr(cardTypeSource, "m") > 0 Then
                 finalSheet.Cells(i, "A").Value = "MASTERCARD"
             ElseIf InStr(cardTypeSource, "v") > 0 Then
@@ -95,34 +112,18 @@ Sub DRS_transactions_Restructured()
             Else
                 finalSheet.Cells(i, "A").Value = ""
             End If
-
-            ' Column C: Nwb Sort Code (from originalSheet Col J)
             finalSheet.Cells(i, "C").Value = nwbSortCode
-
-            ' Column D: Nwb Account Number (from originalSheet Col K)
             finalSheet.Cells(i, "D").Value = nwbAccountNumber
-
-            ' Column H: Case Number (from originalSheet Col L)
             finalSheet.Cells(i, "H").Value = caseNumber
-            
-            ' Column L: Transaction Date (from originalSheet Col A, processed)
             finalSheet.Cells(i, "L").Value = formattedDate
-
-            ' Column M: Transaction Description (from originalSheet Col C)
             finalSheet.Cells(i, "M").Value = transactionDescription
-
-            ' Column O: Transaction Amount (from originalSheet Col D)
             finalSheet.Cells(i, "O").Value = transactionAmount
-
-            ' Column T: Adjustment Amount (from originalSheet Col D)
-            finalSheet.Cells(i, "T").Value = transactionAmount ' Same as Transaction Amount
-
-            ' Column U: Effective Date (from originalSheet Col A, processed)
-            finalSheet.Cells(i, "U").Value = formattedDate ' Same as Transaction Date
-            
-            ' Other columns B, E, F, G, I, J, K, N, P, Q, R, S, V, W, X, Y, Z, AA are currently not mapped
-            ' and will remain blank (or whatever default value Excel gives to text-formatted blank cells)
+            finalSheet.Cells(i, "T").Value = transactionAmount
+            finalSheet.Cells(i, "U").Value = formattedDate
         Next i
+        Debug.Print "   Finished main data population loop."
+    Else
+        Debug.Print "7. SKIPPING main data population loop. mainLastRow (" & mainLastRow & ") is less than 2."
     End If
 
     ' 8. FINAL TOUCHES ON finalSheet
@@ -135,8 +136,8 @@ Sub DRS_transactions_Restructured()
     ws.Delete
     Application.DisplayAlerts = True
 
-    Application.ScreenUpdating = True ' Turn screen updating back on
+    Application.ScreenUpdating = True
 
     MsgBox "DRS Transactions processing complete. Output is on sheet: " & finalSheet.Name, vbInformation
-
+    Debug.Print "--- Macro End ---"
 End Sub
