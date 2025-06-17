@@ -1,216 +1,90 @@
-Sub FormatAccountStatement()
-    Dim wb As Workbook
-    Dim wsInterest As Worksheet
-    Dim wsDays As Worksheet
-    Dim newWb As Workbook
-    Dim newWs As Worksheet         ' This will be the first sheet in newWb ("Raw Data")
-    Dim filteredWs As Worksheet    ' This will be the second, filtered sheet in newWb ("Filtered Data")
-    Dim lastRowInterest As Long
-    Dim lastRowCutRange As Long
-    Dim col As Variant
-    Dim r As Long
-    Dim sumEFGH As Double
-    Dim lastRowFiltered As Long
-
-    ' --- Initial Setup & Original Workbook Operations ---
-    Set wb = ActiveWorkbook
-    On Error Resume Next
-    Set wsInterest = wb.Sheets("Interest calculated")
-    Set wsDays = wb.Sheets("Interst Days calculated")
-    On Error GoTo 0
-
-    If wsInterest Is Nothing Then
-        MsgBox "Sheet 'Interest calculated' not found!", vbExclamation
-        Exit Sub
-    End If
-    If wsDays Is Nothing Then
-        MsgBox "Sheet 'Interst Days calculated' not found!", vbExclamation
-        Exit Sub
-    End If
-
-    With wsInterest
-        .AutoFilterMode = False
-        If .FilterMode Then .ShowAllData
-        If .Cells(Rows.Count, "A").End(xlUp).Row > 1 Then
-            .Range("A1").AutoFilter
-            .AutoFilter.Sort.SortFields.Clear
-            .AutoFilter.Sort.SortFields.Add Key:=.Range("B1"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
-            With .AutoFilter.Sort
-                .header = xlYes
-                .MatchCase = False
-                .Orientation = xlTopToBottom
-                .SortMethod = xlPinYin
-                .Apply
-            End With
-        End If
-    End With
-
-    wsDays.Range("E:F,H:H,AA:AA").Copy
-    wsInterest.Range("O1").PasteSpecial Paste:=xlPasteValues
-    Application.CutCopyMode = False
-
-    lastRowInterest = wsInterest.Cells(Rows.Count, "O").End(xlUp).Row
-    If lastRowInterest < 1 Then lastRowInterest = 1
-
-    If lastRowInterest > 1 Then
-        wsInterest.Range("O1:R" & lastRowInterest).RemoveDuplicates Columns:=2, header:=xlYes
-    End If
-
-    With wsInterest
-        .Range("C:C,J:L").Copy
-        .Range("S1").PasteSpecial Paste:=xlPasteValues
-        Application.CutCopyMode = False
-
-        With .Rows("1:1")
-            .WrapText = True
-            .Font.Bold = False
-            .Orientation = 0
-            .AddIndent = False
-            .IndentLevel = 0
-            .ShrinkToFit = False
-            .ReadingOrder = xlContext
-        End With
-
-        If Not .Columns("S").EntireColumn.Hidden And Application.WorksheetFunction.CountA(.Columns("S")) > 0 Then
-            .Columns("S:S").Cut
-            .Columns("W:W").Insert Shift:=xlToRight
-        End If
-        If Not .Columns("T").EntireColumn.Hidden And Application.WorksheetFunction.CountA(.Columns("T")) > 0 Then
-            .Columns("T:T").Cut
-            .Columns("S:S").Insert Shift:=xlToRight
-        End If
-        Application.CutCopyMode = False
-    End With
-
-    ' --- Create New Workbook and Process First Sheet (newWs) ---
-    Set newWb = Workbooks.Add
-    Set newWs = newWb.Sheets(1)
-    newWs.Name = "Raw Data"
-
-    lastRowCutRange = 0
-    For Each col In Array("O", "P", "Q", "R", "S", "T", "U", "V")
-        If wsInterest.Cells(Rows.Count, col).End(xlUp).Row > lastRowCutRange Then
-            lastRowCutRange = wsInterest.Cells(Rows.Count, col).End(xlUp).Row
-        End If
-    Next col
-
-    If lastRowCutRange >= 1 Then
-        wsInterest.Range("O1:V" & lastRowCutRange).Cut Destination:=newWs.Range("A1")
-    Else
-        MsgBox "No data found in columns O:V of 'Interest calculated' sheet to move.", vbInformation
-        newWb.Close SaveChanges:=False
-        Set newWb = Nothing
-        Set newWs = Nothing
-        Exit Sub
-    End If
-
-    newWs.Activate
-    Call FormatSortAccount(newWs)
-
-    With newWs.Rows(1)
-        .WrapText = True
-        .Font.Bold = True
-        .HorizontalAlignment = xlCenter
-        .VerticalAlignment = xlCenter
-    End With
-    newWs.Columns.AutoFit
-
-    ' --- Create Second Sheet in newWb and Filter Data ---
-    Set filteredWs = newWb.Sheets.Add(After:=newWb.Sheets(newWb.Sheets.Count))
-    filteredWs.Name = "Filtered Data"
-
-    newWs.Cells.Copy Destination:=filteredWs.Range("A1")
-    filteredWs.Activate
-
-    lastRowFiltered = filteredWs.Cells(Rows.Count, "A").End(xlUp).Row
-
-    If lastRowFiltered >= 2 Then
-        For r = lastRowFiltered To 2 Step -1
-            sumEFGH = 0
-            On Error Resume Next
-            sumEFGH = Application.WorksheetFunction.Sum(filteredWs.Range(filteredWs.Cells(r, "E"), filteredWs.Cells(r, "H")))
-            On Error GoTo 0
-            If sumEFGH <= 0 Then
-                filteredWs.Rows(r).Delete
-            End If
-        Next r
-    End If
-
-    ' --- Call ClearZeroValues on columns E:H of filteredWs ---
-    ' Re-determine lastRowFiltered as rows might have been deleted
-    lastRowFiltered = filteredWs.Cells(Rows.Count, "A").End(xlUp).Row ' Assuming Col A is reliable for row count
-
-    If lastRowFiltered >= 2 Then ' Check if there's data below the header
-        ' Ensure the filtered sheet is active before selection
-        filteredWs.Activate
-        ' Select the range E2 to H<lastRowFiltered>
-        filteredWs.Range("E2:H" & lastRowFiltered).Select
-        
-        ' Call your existing Sub
-        On Error Resume Next ' Optional: In case ClearZeroValues itself has an error
-        Call ClearZeroValues
-        On Error GoTo 0
-        
-        ' Clear the selection (good practice)
-        filteredWs.Range("A1").Select
-    End If
-    ' --- End of ClearZeroValues call ---
-
-    filteredWs.Columns.AutoFit
-    
-    newWs.Activate
-    ' filteredWs.Activate ' Uncomment if you want the filtered sheet to be active
-
-    MsgBox "Process complete. New workbook created with 'Raw Data' and 'Filtered Data' sheets. Zeroes potentially cleared in 'Filtered Data'.", vbInformation
-
-End Sub
 
 
-' --- RunMainProcess and FormatSortAccount subs remain unchanged ---
-' --- Assume ClearZeroValues sub already exists in a module ---
+Sub DRS_transactions()
+    Dim originalSheet As Worksheet
+    Set originalSheet = ActiveSheet
 
-' Example structure for RunMainProcess
-Sub RunMainProcess()
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
+    ' Duplicate the active sheet to preserve the original
+    originalSheet.Copy After:=originalSheet
+    Dim ws As Worksheet
+    Set ws = ActiveSheet ' The copied sheet becomes the active sheet
 
-    Call FormatAccountStatement
+    ' Insert a cell at A1 and shift right
+    ws.Range("A1").Insert Shift:=xlToRight
 
-    Application.DisplayAlerts = True
-    Application.ScreenUpdating = True
-End Sub
+    ' Clear all formats on the sheet
+    ws.Cells.ClearFormats
 
-' Example structure for FormatSortAccount
-Sub FormatSortAccount(ByVal targetWs As Worksheet)
+    ' Convert column B values to text in yyyy-mm-dd 00:00:00 format
     Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
+
     Dim i As Long
-    Dim sortCodeValue As Variant
-    Dim accountValue As Variant
-
-    Const START_ROW As Long = 2
-    Const SORT_CODE_COLUMN As String = "A"
-    Const ACCOUNT_COLUMN As String = "B"
-
-    lastRow = targetWs.Cells(Rows.Count, SORT_CODE_COLUMN).End(xlUp).Row
-    If targetWs.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row > lastRow Then
-        lastRow = targetWs.Cells(Rows.Count, ACCOUNT_COLUMN).End(xlUp).Row
-    End If
-
-    If lastRow < START_ROW Then
-        Exit Sub
-    End If
-
-    For i = START_ROW To lastRow
-        sortCodeValue = targetWs.Cells(i, SORT_CODE_COLUMN).Value
-        If Not IsEmpty(sortCodeValue) And Trim(CStr(sortCodeValue)) <> "" Then
-            targetWs.Cells(i, SORT_CODE_COLUMN).NumberFormat = "@"
-            targetWs.Cells(i, SORT_CODE_COLUMN).Value = Format(sortCodeValue, "000000")
-        End If
-
-        accountValue = targetWs.Cells(i, ACCOUNT_COLUMN).Value
-        If Not IsEmpty(accountValue) And Trim(CStr(accountValue)) <> "" Then
-            targetWs.Cells(i, ACCOUNT_COLUMN).NumberFormat = "@"
-            targetWs.Cells(i, ACCOUNT_COLUMN).Value = Format(accountValue, "00000000")
+    For i = 1 To lastRow
+        If IsDate(ws.Cells(i, "B").Value) Or IsNumeric(ws.Cells(i, "B").Value) Then
+            ws.Cells(i, "B").NumberFormat = "@"
+            ws.Cells(i, "B").Value = Format(ws.Cells(i, "B").Value, "yyyy-mm-dd 00:00:00")
         End If
     Next i
+
+    ' Copy ranges B:B and D:E
+    Dim copyRange As Range
+    Set copyRange = Union(ws.Range("B:B"), ws.Range("D:E"))
+    copyRange.Copy
+
+    ' Add a new sheet and paste the copied data
+    Dim newSheet As Worksheet
+    Set newSheet = ActiveWorkbook.Sheets.Add(After:=ws)
+    newSheet.Range("A1").PasteSpecial Paste:=xlPasteAll
+
+    ' Format column A in the new sheet as text
+    newSheet.Columns("A:A").NumberFormat = "@"
+
+    ' Determine last column and row in the new sheet
+    Dim cardTypeCol As Long
+    cardTypeCol = newSheet.Cells(1, newSheet.Columns.Count).End(xlToLeft).Column + 1
+    Dim newLastRow As Long
+    newLastRow = newSheet.Cells(newSheet.Rows.Count, "A").End(xlUp).Row
+
+    ' Add headers
+    newSheet.Cells(1, cardTypeCol).Value = "Card Type"
+    newSheet.Cells(1, cardTypeCol + 1).Value = "Nwb Sort Code"
+    newSheet.Cells(1, cardTypeCol + 2).Value = "Nwb Account Number"
+    newSheet.Cells(1, cardTypeCol + 3).Value = "Case Number"
+
+    ' Loop through each row and populate new columns
+    For i = 2 To newLastRow
+        Dim cardValue As String
+        cardValue = LCase(originalSheet.Cells(i, 9).Value) ' Column F
+
+        If InStr(cardValue, "m") > 0 Then
+            newSheet.Cells(i, cardTypeCol).Value = "MASTERCARD"
+        ElseIf InStr(cardValue, "v") > 0 Then
+            newSheet.Cells(i, cardTypeCol).Value = "VISACARD"
+        Else
+            newSheet.Cells(i, cardTypeCol).Value = ""
+        End If
+
+        ' Copy Sort Code and Account Number as text
+        newSheet.Cells(i, cardTypeCol + 1).NumberFormat = "@"
+        newSheet.Cells(i, cardTypeCol + 1).Value = originalSheet.Cells(i, "J").Text
+
+        newSheet.Cells(i, cardTypeCol + 2).NumberFormat = "@"
+        newSheet.Cells(i, cardTypeCol + 2).Value = originalSheet.Cells(i, "K").Text
+        
+        newSheet.Cells(i, cardTypeCol + 3).NumberFormat = "@"
+        newSheet.Cells(i, cardTypeCol + 3).Value = originalSheet.Cells(i, "L").Text
+    Next i
+
+    ' AutoFit all columns in the new sheet
+    newSheet.Cells.EntireColumn.AutoFit
+
+    ' Select A1 in the new sheet
+    newSheet.Range("A1").Select
+
+    ' Delete the copied sheet (not the original)
+    Application.DisplayAlerts = False
+    ws.Delete
+    Application.DisplayAlerts = True
 End Sub
+
