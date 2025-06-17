@@ -1,27 +1,142 @@
-Card Type
-File Date
-Nwb Sort Code
-Nwb Account Number
-CIN
-Card Number
-Account Number
-Case Number
-ORG
-Logo
-Acquirer Reference Number
-Transaction Date
-Transaction Description
-Transaction Code
-Transaction Amount
-Plan Number
-Plan Sequence Number
-Currency Code
-Adjustment Type
-Adjustment Amount
-Effective Date
-Phase
-Transaction Status
-Agent Id
-Transaction Identification Number
-Corrected Tran Amt	
-Correct Dispute Amtthese are the column headers that should be in the output sheet, from column A onwards.entire sheet must be in text format.the columns in our current outputs should be in the following headers:Column A of current output in Transaction Date and Transaction Date columnscolumn B in Transaction Description columncolumn C in Transaction Amount and Adjustment Amountcolumn D in Card Typecolumn E in Nwb Sort Codecolumn F in Nwb Account Numbercolumn G in Case Number.make the changes and restructure the code if you needed.
+Sub DRS_transactions_Restructured()
+    Dim originalSheet As Worksheet
+    Dim ws As Worksheet ' Temporary sheet for date processing
+    Dim finalSheet As Worksheet
+    Dim i As Long
+    Dim lastRowForDateProcessing As Long
+    Dim mainLastRow As Long
+
+    Application.ScreenUpdating = False ' Turn off screen updating for performance
+
+    Set originalSheet = ActiveSheet
+
+    ' 1. DUPLICATE ORIGINAL SHEET FOR DATE PROCESSING
+    originalSheet.Copy After:=originalSheet
+    Set ws = ActiveSheet ' The copied sheet becomes the active sheet (ws)
+
+    ' 2. PROCESS DATES ON THE TEMPORARY SHEET (ws)
+    ' Insert a cell at A1 on ws and shift right (original Col A becomes ws Col B)
+    ws.Range("A1").Insert Shift:=xlToRight
+    ws.Cells.ClearFormats ' Clear formats on ws
+
+    lastRowForDateProcessing = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row ' Last row in ws Col B (original Col A)
+
+    If lastRowForDateProcessing >= 2 Then ' Assuming row 1 is a header
+        For i = 2 To lastRowForDateProcessing
+            If IsDate(ws.Cells(i, "B").Value) Or IsNumeric(ws.Cells(i, "B").Value) Then
+                ws.Cells(i, "B").NumberFormat = "@" ' Set cell to text format first
+                ws.Cells(i, "B").Value = Format(ws.Cells(i, "B").Value, "yyyy-mm-dd 00:00:00")
+            End If
+        Next i
+    End If
+
+    ' 3. CREATE THE FINAL OUTPUT SHEET
+    Set finalSheet = ActiveWorkbook.Sheets.Add(After:=ws)
+    finalSheet.Name = "DRS_Final_Output" ' You can change this name if needed
+
+    ' 4. FORMAT ENTIRE finalSheet AS TEXT
+    finalSheet.Cells.NumberFormat = "@"
+
+    ' 5. ADD HEADERS TO finalSheet
+    Dim headers As Variant
+    headers = Array("Card Type", "File Date", "Nwb Sort Code", "Nwb Account Number", "CIN", _
+                    "Card Number", "Account Number", "Case Number", "ORG", "Logo", _
+                    "Acquirer Reference Number", "Transaction Date", "Transaction Description", _
+                    "Transaction Code", "Transaction Amount", "Plan Number", "Plan Sequence Number", _
+                    "Currency Code", "Adjustment Type", "Adjustment Amount", "Effective Date", _
+                    "Phase", "Transaction Status", "Agent Id", "Transaction Identification Number", _
+                    "Corrected Tran Amt", "Correct Dispute Amt")
+    
+    Dim col As Long
+    For col = 0 To UBound(headers)
+        finalSheet.Cells(1, col + 1).Value = headers(col)
+    Next col
+
+    ' 6. DETERMINE MAIN LAST ROW FOR DATA POPULATION (from originalSheet)
+    ' Assuming Column A of originalSheet is a reliable indicator of data rows
+    mainLastRow = originalSheet.Cells(originalSheet.Rows.Count, "A").End(xlUp).Row
+
+    ' 7. POPULATE finalSheet WITH DATA
+    If mainLastRow >= 2 Then ' Assuming row 1 is headers
+        For i = 2 To mainLastRow
+            ' --- Source Data Points for current row i ---
+            Dim formattedDate As String
+            ' Get pre-formatted date from ws (ws Col B = originalSheet Col A)
+            If i <= lastRowForDateProcessing Then ' Ensure we don't read beyond processed dates on ws
+                 formattedDate = ws.Cells(i, "B").Value
+            Else
+                 formattedDate = "" ' Or handle as error/default
+            End If
+            
+            Dim transactionDescription As String
+            transactionDescription = originalSheet.Cells(i, "C").Text ' Original Col C
+
+            Dim transactionAmount As Variant
+            transactionAmount = originalSheet.Cells(i, "D").Value ' Original Col D
+
+            Dim cardTypeSource As String
+            cardTypeSource = LCase(originalSheet.Cells(i, "I").Value) ' Original Col I
+
+            Dim nwbSortCode As String
+            nwbSortCode = originalSheet.Cells(i, "J").Text ' Original Col J
+
+            Dim nwbAccountNumber As String
+            nwbAccountNumber = originalSheet.Cells(i, "K").Text ' Original Col K
+
+            Dim caseNumber As String
+            caseNumber = originalSheet.Cells(i, "L").Text ' Original Col L
+
+            ' --- Map data to finalSheet columns ---
+            ' Column A: Card Type (from originalSheet Col I)
+            If InStr(cardTypeSource, "m") > 0 Then
+                finalSheet.Cells(i, "A").Value = "MASTERCARD"
+            ElseIf InStr(cardTypeSource, "v") > 0 Then
+                finalSheet.Cells(i, "A").Value = "VISACARD"
+            Else
+                finalSheet.Cells(i, "A").Value = ""
+            End If
+
+            ' Column C: Nwb Sort Code (from originalSheet Col J)
+            finalSheet.Cells(i, "C").Value = nwbSortCode
+
+            ' Column D: Nwb Account Number (from originalSheet Col K)
+            finalSheet.Cells(i, "D").Value = nwbAccountNumber
+
+            ' Column H: Case Number (from originalSheet Col L)
+            finalSheet.Cells(i, "H").Value = caseNumber
+            
+            ' Column L: Transaction Date (from originalSheet Col A, processed)
+            finalSheet.Cells(i, "L").Value = formattedDate
+
+            ' Column M: Transaction Description (from originalSheet Col C)
+            finalSheet.Cells(i, "M").Value = transactionDescription
+
+            ' Column O: Transaction Amount (from originalSheet Col D)
+            finalSheet.Cells(i, "O").Value = transactionAmount
+
+            ' Column T: Adjustment Amount (from originalSheet Col D)
+            finalSheet.Cells(i, "T").Value = transactionAmount ' Same as Transaction Amount
+
+            ' Column U: Effective Date (from originalSheet Col A, processed)
+            finalSheet.Cells(i, "U").Value = formattedDate ' Same as Transaction Date
+            
+            ' Other columns B, E, F, G, I, J, K, N, P, Q, R, S, V, W, X, Y, Z, AA are currently not mapped
+            ' and will remain blank (or whatever default value Excel gives to text-formatted blank cells)
+        Next i
+    End If
+
+    ' 8. FINAL TOUCHES ON finalSheet
+    finalSheet.Cells.EntireColumn.AutoFit
+    finalSheet.Activate
+    finalSheet.Range("A1").Select
+
+    ' 9. CLEANUP: Delete the temporary sheet (ws)
+    Application.DisplayAlerts = False
+    ws.Delete
+    Application.DisplayAlerts = True
+
+    Application.ScreenUpdating = True ' Turn screen updating back on
+
+    MsgBox "DRS Transactions processing complete. Output is on sheet: " & finalSheet.Name, vbInformation
+
+End Sub
