@@ -1,10 +1,9 @@
-Sub DRS_transactions_Restructured_Corrected()
+Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
     Dim originalSheet As Worksheet
     Dim ws As Worksheet ' Temporary sheet for date processing
     Dim finalSheet As Worksheet
     Dim i As Long
     Dim lastRowForDateProcessing As Long
-    ' Dim mainLastRow As Long ' We will use lastRowForDateProcessing instead
 
     Application.ScreenUpdating = False ' Turn off screen updating for performance
 
@@ -22,7 +21,6 @@ Sub DRS_transactions_Restructured_Corrected()
     ws.Range("A1").Insert Shift:=xlToRight ' Original Col A is now ws Col B
     ws.Cells.ClearFormats
 
-    ' This lastRowForDateProcessing is based on the data that WAS in originalSheet Col A
     lastRowForDateProcessing = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
     Debug.Print "3. lastRowForDateProcessing on ws (derived from originalSheet's original Col A data): " & lastRowForDateProcessing
 
@@ -40,7 +38,7 @@ Sub DRS_transactions_Restructured_Corrected()
 
     ' 3. CREATE THE FINAL OUTPUT SHEET
     Set finalSheet = ActiveWorkbook.Sheets.Add(After:=ws)
-    finalSheet.Name = "DRS_Final_Output"
+    finalSheet.Name = "DRS_Final_Output" ' You can change this
     Debug.Print "4. finalSheet Name: " & finalSheet.Name
 
     ' 4. FORMAT ENTIRE finalSheet AS TEXT
@@ -62,29 +60,35 @@ Sub DRS_transactions_Restructured_Corrected()
     Next col
     Debug.Print "5. Headers added to finalSheet."
 
-    ' 6. DETERMINE MAIN LAST ROW FOR DATA POPULATION
-    '    WE WILL USE lastRowForDateProcessing determined from ws (which reflects originalSheet's initial state)
     Debug.Print "6. Using lastRowForDateProcessing (" & lastRowForDateProcessing & ") for main data loop."
 
     ' 7. POPULATE finalSheet WITH DATA
-    '    The loop will now go up to lastRowForDateProcessing
     If lastRowForDateProcessing >= 2 Then
         Debug.Print "7. Starting main data population loop from row 2 to " & lastRowForDateProcessing
-        For i = 2 To lastRowForDateProcessing ' Use lastRowForDateProcessing
+        For i = 2 To lastRowForDateProcessing
             Debug.Print "   Processing row: " & i
             
             Dim formattedDate As String
-            ' Get pre-formatted date from ws (ws Col B = originalSheet Col A, now processed)
-            formattedDate = ws.Cells(i, "B").Value ' Already checked i <= lastRowForDateProcessing by loop condition
+            formattedDate = ws.Cells(i, "B").Value
             Debug.Print "     formattedDate from ws Col B: '" & formattedDate & "'"
             
             Dim transactionDescription As String
-            transactionDescription = originalSheet.Cells(i, "D").Text ' Original Col C
-            Debug.Print "     transactionDescription from originalSheet Col C: '" & transactionDescription & "'"
+            transactionDescription = originalSheet.Cells(i, "D").Text ' Data from Original Sheet Column D
+            Debug.Print "     transactionDescription from originalSheet Col D: '" & transactionDescription & "'"
 
-            Dim transactionAmount As Variant
-            transactionAmount = originalSheet.Cells(i, "E").Value ' Original Col D
-            Debug.Print "     transactionAmount from originalSheet Col D: '" & transactionAmount & "'"
+            Dim transactionAmountRaw As Variant
+            transactionAmountRaw = originalSheet.Cells(i, "E").Value ' Data from Original Sheet Column E
+            Debug.Print "     transactionAmountRaw from originalSheet Col E: '" & transactionAmountRaw & "'"
+
+            Dim amountToWriteAsText As String
+            If IsNumeric(transactionAmountRaw) Then
+                ' Format as a string with two decimal places (e.g., 100 -> "100.00", 123.45 -> "123.45")
+                amountToWriteAsText = Format(transactionAmountRaw, "0.00")
+            Else
+                ' If not numeric (e.g., empty, error, or actual text), result in an empty string
+                amountToWriteAsText = ""
+            End If
+            Debug.Print "     amountToWriteAsText for O & T: '" & amountToWriteAsText & "'"
 
             Dim cardTypeSource As String
             cardTypeSource = LCase(originalSheet.Cells(i, "I").Value) ' Original Col I
@@ -113,11 +117,11 @@ Sub DRS_transactions_Restructured_Corrected()
             finalSheet.Cells(i, "C").Value = nwbSortCode
             finalSheet.Cells(i, "D").Value = nwbAccountNumber
             finalSheet.Cells(i, "H").Value = caseNumber
-            finalSheet.Cells(i, "L").Value = formattedDate
-            finalSheet.Cells(i, "M").Value = transactionDescription
-            finalSheet.Cells(i, "O").Value = transactionAmount
-            finalSheet.Cells(i, "T").Value = transactionAmount
-            finalSheet.Cells(i, "U").Value = formattedDate
+            finalSheet.Cells(i, "L").Value = formattedDate             ' Transaction Date
+            finalSheet.Cells(i, "M").Value = transactionDescription    ' Transaction Description
+            finalSheet.Cells(i, "O").Value = amountToWriteAsText        ' Transaction Amount
+            finalSheet.Cells(i, "T").Value = amountToWriteAsText        ' Adjustment Amount
+            finalSheet.Cells(i, "U").Value = formattedDate             ' Effective Date
         Next i
         Debug.Print "   Finished main data population loop."
     Else
@@ -126,7 +130,7 @@ Sub DRS_transactions_Restructured_Corrected()
 
     ' 8. FINAL TOUCHES ON finalSheet
     finalSheet.Cells.EntireColumn.AutoFit
-    If finalSheet.FilterMode Then ' Clear any autofilters if they were accidentally applied
+    If finalSheet.FilterMode Then
         finalSheet.ShowAllData
     End If
     finalSheet.Activate
