@@ -1,90 +1,27 @@
-
-
-Sub DRS_transactions()
-    Dim originalSheet As Worksheet
-    Set originalSheet = ActiveSheet
-
-    ' Duplicate the active sheet to preserve the original
-    originalSheet.Copy After:=originalSheet
-    Dim ws As Worksheet
-    Set ws = ActiveSheet ' The copied sheet becomes the active sheet
-
-    ' Insert a cell at A1 and shift right
-    ws.Range("A1").Insert Shift:=xlToRight
-
-    ' Clear all formats on the sheet
-    ws.Cells.ClearFormats
-
-    ' Convert column B values to text in yyyy-mm-dd 00:00:00 format
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
-
-    Dim i As Long
-    For i = 1 To lastRow
-        If IsDate(ws.Cells(i, "B").Value) Or IsNumeric(ws.Cells(i, "B").Value) Then
-            ws.Cells(i, "B").NumberFormat = "@"
-            ws.Cells(i, "B").Value = Format(ws.Cells(i, "B").Value, "yyyy-mm-dd 00:00:00")
-        End If
-    Next i
-
-    ' Copy ranges B:B and D:E
-    Dim copyRange As Range
-    Set copyRange = Union(ws.Range("B:B"), ws.Range("D:E"))
-    copyRange.Copy
-
-    ' Add a new sheet and paste the copied data
-    Dim newSheet As Worksheet
-    Set newSheet = ActiveWorkbook.Sheets.Add(After:=ws)
-    newSheet.Range("A1").PasteSpecial Paste:=xlPasteAll
-
-    ' Format column A in the new sheet as text
-    newSheet.Columns("A:A").NumberFormat = "@"
-
-    ' Determine last column and row in the new sheet
-    Dim cardTypeCol As Long
-    cardTypeCol = newSheet.Cells(1, newSheet.Columns.Count).End(xlToLeft).Column + 1
-    Dim newLastRow As Long
-    newLastRow = newSheet.Cells(newSheet.Rows.Count, "A").End(xlUp).Row
-
-    ' Add headers
-    newSheet.Cells(1, cardTypeCol).Value = "Card Type"
-    newSheet.Cells(1, cardTypeCol + 1).Value = "Nwb Sort Code"
-    newSheet.Cells(1, cardTypeCol + 2).Value = "Nwb Account Number"
-    newSheet.Cells(1, cardTypeCol + 3).Value = "Case Number"
-
-    ' Loop through each row and populate new columns
-    For i = 2 To newLastRow
-        Dim cardValue As String
-        cardValue = LCase(originalSheet.Cells(i, 9).Value) ' Column F
-
-        If InStr(cardValue, "m") > 0 Then
-            newSheet.Cells(i, cardTypeCol).Value = "MASTERCARD"
-        ElseIf InStr(cardValue, "v") > 0 Then
-            newSheet.Cells(i, cardTypeCol).Value = "VISACARD"
-        Else
-            newSheet.Cells(i, cardTypeCol).Value = ""
-        End If
-
-        ' Copy Sort Code and Account Number as text
-        newSheet.Cells(i, cardTypeCol + 1).NumberFormat = "@"
-        newSheet.Cells(i, cardTypeCol + 1).Value = originalSheet.Cells(i, "J").Text
-
-        newSheet.Cells(i, cardTypeCol + 2).NumberFormat = "@"
-        newSheet.Cells(i, cardTypeCol + 2).Value = originalSheet.Cells(i, "K").Text
-        
-        newSheet.Cells(i, cardTypeCol + 3).NumberFormat = "@"
-        newSheet.Cells(i, cardTypeCol + 3).Value = originalSheet.Cells(i, "L").Text
-    Next i
-
-    ' AutoFit all columns in the new sheet
-    newSheet.Cells.EntireColumn.AutoFit
-
-    ' Select A1 in the new sheet
-    newSheet.Range("A1").Select
-
-    ' Delete the copied sheet (not the original)
-    Application.DisplayAlerts = False
-    ws.Delete
-    Application.DisplayAlerts = True
-End Sub
-
+Card Type
+File Date
+Nwb Sort Code
+Nwb Account Number
+CIN
+Card Number
+Account Number
+Case Number
+ORG
+Logo
+Acquirer Reference Number
+Transaction Date
+Transaction Description
+Transaction Code
+Transaction Amount
+Plan Number
+Plan Sequence Number
+Currency Code
+Adjustment Type
+Adjustment Amount
+Effective Date
+Phase
+Transaction Status
+Agent Id
+Transaction Identification Number
+Corrected Tran Amt	
+Correct Dispute Amtthese are the column headers that should be in the output sheet, from column A onwards.entire sheet must be in text format.the columns in our current outputs should be in the following headers:Column A of current output in Transaction Date and Transaction Date columnscolumn B in Transaction Description columncolumn C in Transaction Amount and Adjustment Amountcolumn D in Card Typecolumn E in Nwb Sort Codecolumn F in Nwb Account Numbercolumn G in Case Number.make the changes and restructure the code if you needed.
