@@ -1,4 +1,4 @@
-Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
+Sub DRS_transactions_Restructured()
     Dim originalSheet As Worksheet
     Dim ws As Worksheet ' Temporary sheet for date processing
     Dim finalSheet As Worksheet
@@ -38,7 +38,7 @@ Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
 
     ' 3. CREATE THE FINAL OUTPUT SHEET
     Set finalSheet = ActiveWorkbook.Sheets.Add(After:=ws)
-    finalSheet.Name = "DRS_Final_Output" ' You can change this
+    ' finalSheet.Name = "DRS_Final_Output" ' You can change this
     Debug.Print "4. finalSheet Name: " & finalSheet.Name
 
     ' 4. FORMAT ENTIRE finalSheet AS TEXT
@@ -105,6 +105,10 @@ Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
             Dim caseNumber As String
             caseNumber = originalSheet.Cells(i, "L").Text ' Original Col L
             Debug.Print "     caseNumber from originalSheet Col L: '" & caseNumber & "'"
+            
+            Dim fileDate As String
+            fileDate = originalSheet.Cells(i, "M").Text ' Original Col M
+            Debug.Print "     fileDate from originalSheet Col M: '" & fileDate & "'"
 
             ' --- Map data to finalSheet columns ---
             If InStr(cardTypeSource, "m") > 0 Then
@@ -114,6 +118,7 @@ Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
             Else
                 finalSheet.Cells(i, "A").Value = ""
             End If
+            finalSheet.Cells(i, "B").Value = Format(fileDate, "yyyy-mm-dd")
             finalSheet.Cells(i, "C").Value = nwbSortCode
             finalSheet.Cells(i, "D").Value = nwbAccountNumber
             finalSheet.Cells(i, "H").Value = caseNumber
@@ -129,7 +134,7 @@ Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
     End If
 
     ' 8. FINAL TOUCHES ON finalSheet
-    finalSheet.Cells.EntireColumn.AutoFit
+    finalSheet.Cells.EntireColumn.ColumnWidth = 8.43
     If finalSheet.FilterMode Then
         finalSheet.ShowAllData
     End If
@@ -143,6 +148,6 @@ Sub DRS_transactions_Restructured_Corrected_V2() ' Renamed to V2 for clarity
 
     Application.ScreenUpdating = True
 
-    MsgBox "DRS Transactions processing complete. Output is on sheet: " & finalSheet.Name, vbInformation
+    ' MsgBox "DRS Transactions processing complete. Output is on sheet: " & finalSheet.Name, vbInformation
     Debug.Print "--- Macro End ---"
 End Sub
