@@ -1,0 +1,148 @@
+The Yes Check
+Check 1: Does what I am doing keep our customers and the Group safe and
+Secure?
+. Consider the impact of what you are doing. Rehearse a briefing with your boss
+Check 2: Would customers and colleagues say I am acting with integrity?
+. Would I do this to someone in my family or a friend? Would I do it to myself?
+Check 3: Am I happy with how this would be perceived on the outside?
+. Consider the impact of this in the outside world.
+. Try writing the press release -does it sound good for customers?
+Check 4: Is what I am doing meeting the standards of conduct required?
+. Think. If you are unsure then seek a second opinion
+o Check 5: In 5 years' time would others see this as a good way to work?
+. Will this have a positive impact? Imagine writing it on your CV
+
+
+
+about yourself:
+
+Hi, I currently manage the Dispute INC Debit process and act as the Subject Matter Expert, with over 19 months of experience in the role. Our process focuses on verifying and refunding interest or charges incurred due to disputed PSD transactions, using tools like DRS, Excel, and Back Office systems.
+
+I take full ownership of the process — from daily execution to continuous improvement. Recently, I independently developed an EUDA tool that automates interest adjustments across all scenarios — previously done manually by 4–5 users. It’s registered in SLX and FFD and is set for deployment this month. The project was acknowledged by senior leaders and helped me gain deep insight into risk, compliance, and the governance behind automation — something I’ve always aspired to contribute to from an operations background.
+
+Alongside this, I’ve delivered training and KTs to tech and ops stakeholders, and supported cross-trained processes like PSD Debit and FDP Credit during high-volume periods. I’m seen as both a reliable individual contributor and a team player — often the go-to person for both process and technical queries. Beyond work, I’m also passionate about personal finance, psychology, economics, and health — areas that keep me curious and learning constantly.
+
+
+
+
+
+I currently handle the Dispute INC Debit process, acting as an SME, with over 19 months of experience in my current role. 
+So our process starts after refunds are processed for disputed PSD cases, we verify whether any interest or charges were incurred by the customer due to the disputed transactions. If applicable, we adjust or refund these amounts in the back office before forwarding the case to the chargeback queue. In this process we use Back office, Refunds report, DRS, Excel and few other tools.
+
+I take full ownership of the process — not just in terms of daily execution and completing the allocation, but also in enhancing its efficiency and accuracy with a focus on continuous improvement. I treat the process as if it’s my own business — constantly looking for better ways to run it and being accountable for every outcome.
+
+Very recently, leveraging my in-depth process knowledge and insights gained through PDP learnings, I independently developed a new EUDA tool that automates interest adjustments across all scenarios — a task previously handled manually by 4–5 users. This has been officially registered in the EUDA inventory and FFD, with deployment planned at the end of this month. The development was positively acknowledged by senior leaders including Ashwani, Bala, Gowri, and Charlie.
+This experience also deepened my understanding of the end-to-end process of building a tool. It goes far beyond just writing the code — it involves ensuring alignment with group risk policies, undergoing multiple levels of review, and  demonstrate that the solution meets all compliance and operational standards. It's kind of a personal achievement which I was wanting to do, from an operational background to develop automation tools for our own.
+
+I’ve conducted training sessions, walkthroughs, and knowledge transfers for stakeholders including VB, Bala, and several technology partners involved in INC automation.
+I've also been cross-trained in neighbouring processes such as PSD Debit, Blacklisted CIN, and FDP Credit which allows me to step in and support effectively during high-volume periods.
+
+I'm both an individual contributor and a strong team player. My individual strengths are reflected in the automation tool I developed, which streamlined interest adjustments and significantly improved efficiency. At the same time, I’m often the go-to person for both process-related and technical queries — not just within my team, but across related functions. This trust and collaboration highlight my ability to support and uplift those around me, while continuing to drive results independently.
+
+I also have a lot of interest and opinions in Personal finance, Economics, Psychology, Health and etc.
+
+Deserving this position can be subjective, but here’s my perspective. I believe I’ve already been operating at a Senior Analyst level — taking full ownership of my process, solving problems proactively, and collaborating effectively across teams. From building automation tools that have significantly improved efficiency, to making critical decisions during system transitions, I’ve consistently gone beyond my core responsibilities. I’ve also earned the trust of peers and stakeholders, often serving as a go-to person for support and solutions. With my experience, mindset, and commitment to continuous improvement, I’m confident I can add even more value in this next role.
+
+I see myself in a position where I continue to add meaningful value by identifying opportunities for improvement and applying both my CPC and technical skills to drive impact. Over time, I aim to grow into roles where I can lead change, mentor others, and contribute at a strategic level. Based on the recognition I’ve received from both peers and stakeholders — including comments like “You definitely deserve this, and I’d be happy if you get it” from colleagues competing for the same role — I believe I’m on the right path. Ideally, I’d like to be in a place where my performance speaks for itself and future transitions feel like a natural next step.
+
+In a recent discussion with my manager, I proposed creating comprehensive documentation for key responsibilities typically handled by PLs and managers — such as onboarding checklists for new joiners, access request procedures, and answers to common business-related "how-to" questions beyond core processes. I’ve observed that we still rely heavily on individuals for this knowledge, which poses a risk to Business Continuity Planning. My view is that every team member should have access to this information in a structured format, so they’re not dependent on specific people — promoting both self-sufficiency and operational resilience.
+
+While declaring results for roles like this, it’s natural for the question “Why him and not me?” to arise among peers. I believe this reflects a gap in how we create visibility for individual and team contributions. Often, impactful work happens behind the scenes and isn’t consistently showcased. I feel there’s significant room for improvement in building a culture where achievements — both individual and collaborative — are documented, recognized, and communicated more transparently.
+
+getting things done:
+We recently had a Fun Friday event initiated by a colleague who’s leaving at the end of the month. Only around 12 of us were in office, and some teammates were hesitant to join due to pending work. I felt bad for the person who took the initiative — it’s disheartening when efforts go unnoticed. So, I spoke to those who were reluctant and explained that if we discourage such initiatives, others will hesitate to step forward in the future. I reminded them that participation builds a positive culture, and we should support such efforts. They agreed and joined — and the outcome was amazing. Everyone ended up having a great time, bonding over games and conversations. Sometimes, it just takes one conversation to shift the mood and make things happen.
+
+There are three new projects coming into our business, and I can already see multiple opportunities where automation and the use of technology can greatly improve efficiency. With the current team size at around 270 colleagues under Ashwani — including you and me — I’m curious: based on the direction we’re heading and the impact of automation, what’s your view on how our team size might evolve over the next 2–3 years? Do you foresee it growing, stabilizing, or potentially shrinking due to tech-led efficiencies?
+
+
+Personal Finance - Accounting of personal inc and exp since 2022, now over 3 years. Actively read and watch videos/hear podcast about others perspective over finance and learn from it.
+Interest in Psychology, Economics - Having a good amount of interest in Economics and psychology other than technology. I've written a own theory in an exam while being at college. Professor called me in front of everyone in call and appreciated for having this much understanding over the concepts in economics, which I'll never forget.
+Health - Do calisthenics workout, and eat healthy. does a lot of physical activities, which sometimes involves part time work also.
+
+
+improver innovator - While exploring areas for improvement beyond process work, I identified a UX issue in the Routematic app. Each time a user tries to book a shuttle, they must scroll extensively to find their preferred route — a repetitive and inefficient experience. I proposed a simple feature enhancement: allowing users to pin their frequently used route for quick access. I documented this as feedback and shared it with Routematic, who acknowledged the idea and confirmed they’d escalate it to the appropriate team. This reflects my natural inclination to spot inefficiencies and suggest intuitive, user-friendly improvements — a quality that aligns with the Improver Innovator mindset.
+
+change ready - During the transition from BPM to DRS in the INC process, I embraced the significant changes despite initial challenges and inefficiencies. I quickly adapted to the new system, identified process gaps, and contributed ideas to streamline workflows—playing an active role in stabilizing and improving the revised process.
+
+critical thinker - During the INC process transition, management proposed a flat £1 refund for all WIP cases due to time constraints. I identified the flaws in this approach, as many cases were entitled to less or more. I developed a formula-based method to accurately estimate fair refunds using transaction data, enabling us to process 60% of cases below £1 automatically while manually handling exceptions. This significantly reduced potential complaint volumes and saved costs.
+
+connected - My work on automation and process improvement helped me build meaningful connections with stakeholders across tech, operations, and senior leadership. I regularly collaborate across teams, conduct walkthroughs, and share insights that foster mutual understanding and drive joint solutions—not just superficial collaboration.
+
+trusted advisor - Recognized as a go-to person across teams for resolving process and automation-related queries, even beyond my domain. From advising a developer on GSI Production connectivity to identifying rare filter issues in automation files, I’ve consistently provided accurate guidance, earning trust through deep process knowledge and reliable support.
+
+🔹 Improver Innovator
+S: While using the RouteMatic app, I noticed users had to scroll repeatedly to find their preferred shuttle route.
+T: I wanted to improve this repetitive user experience.
+A: I suggested a feature to pin frequently used routes and shared it as formal feedback to the Routematic team.
+R: The idea was acknowledged and escalated by their team. It reflected my instinct to spot and solve usability inefficiencies beyond just process work.
+
+🔹 Change Ready
+S: During the transition from BPM to DRS in the INC process, many challenges and inefficiencies surfaced.
+T: I had to adapt quickly and ensure the process remained stable.
+A: I learned the new system rapidly, identified key gaps, and shared improvement ideas with the team.
+R: My contributions helped smoothen the transition and improve workflow consistency, reinforcing my adaptability.
+
+🔹 Critical Thinker
+S: Management proposed a flat £1 refund during high WIP, but I saw flaws in the logic.
+T: I needed to find a fairer, data-driven approach.
+A: I developed a formula-based method to accurately estimate fair refunds using transaction data, enabling us to process more than 60% of those cases which were below £1 by respective maximum amounts and rest of the cases manually.
+R: This saved costs, reduced complaints, and maintained fairness — a clear example of thoughtful, impact-driven problem solving.
+
+🔹 Connected
+S: I’ve worked on automation and process improvement across INC, collaborating with multiple teams.
+T: I aimed to ensure alignment and shared understanding across functions.
+A: I conducted walkthroughs, shared knowledge with tech teams, and engaged senior leadership throughout projects.
+R: These efforts helped strengthen collaboration, build trust, and deliver solutions that worked across the board.
+
+🔹 Trusted Advisor
+S: Colleagues across teams often reach out to me for process and even technical queries.
+T: I ensure they get accurate, dependable support — even beyond my core responsibilities.
+A: I’ve helped troubleshoot rare automation issues and guided developers on system access and functionality.
+R: This has earned me a reputation as a go-to person, reflecting deep process understanding and a supportive mindset.
+
+
+1. How do you manage and prioritize tasks when volumes are high or SLAs are at risk?
+I first assess urgency versus impact — starting with tasks closest to breaching SLA or affecting customer experience. I also proactively communicate with stakeholders to set realistic expectations. That's why we always encourage colleagues to get cross trained in multiple processes. It helps at these times and also in times where extra leaves are requested on a same day. During high-volume periods, I’ve supported cross-trained processes like which I've mentioned earlier to share the load while still managing my own. I rely on trackers and MI to monitor progress and stay on top of priorities. 
+
+2. Tell us about a time you handled an unexpected exception or error.
+Once, a colleague faced an error while allocating automation files. The system seemed correct, but I suspected a rare case where filters weren’t properly applied before downloading reports. I asked them to recheck, and that indeed was the issue. My familiarity with edge cases helped resolve the problem quickly and avoid escalation just over a call.
+
+3. How do you handle changes in procedures or tools?
+I embrace change as a chance to improve. For example, during the BPM to DRS transition, I quickly adapted, understood the new system, and identified process gaps. I suggested fixes and supported others through the shift. Being adaptable and solution-focused helped keeping the process stable and maintain performance.
+
+4. How do you handle escalations or error cases from stakeholders?
+I approach escalations calmly, first by understanding the full context, then reviewing the data or case facts. If it’s a process error, I take ownership, correct it, and implement preventive steps. I also ensure transparent communication with stakeholders so they know we’re in control of the resolution and working toward improvement.
+
+5. What does process ownership mean to you?
+For me, process ownership means taking full responsibility — not just for delivery, but for quality, accuracy, improvement, and stakeholder satisfaction. I treat the process as if it’s my own business — constantly looking for better ways to run it and being accountable for every outcome.
+
+6. How do you align your work with business goals or customer impact?
+I always consider how each task contributes to bigger goals like customer satisfaction, compliance, or cost-efficiency. For example, I challenged a £1 flat refund approach and built a logic-based alternative that ensured fair treatment to customers while also reducing unnecessary payouts — aligning both business and customer interests.
+
+7. What would you focus on if given charge of this process as a Senior Analyst?
+I’d focus on strengthening process controls, improving speed through further automation, and building stronger documentation for knowledge continuity. I’d also look to mentor team members and create a culture where feedback and continuous improvement are part of daily practice.
+
+8. Have you taken any initiative that had a long-term impact on the team?
+Yes — the EUDA tool I built automated interest adjustments that were earlier done manually by 4–5 users. It has improved accuracy, reduced turnaround time, and freed up resources for higher-value work. It’s now registered in EUDA inventory and FFD and ready for deployment.
+
+9. Where do you see improvement potential in your current area?
+I see potential in simplifying data access — for example, reducing dependency on multiple reports and manual formatting. With small automations, we could reduce redundant steps and improve TAT. There’s also scope to better document edge-case scenarios so fewer errors are made by users.
+
+10. How do you handle conflicting priorities or stakeholder expectations?
+I focus on transparent communication and setting clear expectations. If two priorities clash, I evaluate based on urgency, risk, and business impact — and if needed, escalate early for alignment. I believe in solution-oriented discussions rather than silent juggling, which helps avoid missed deadlines or errors.
+
+11. Imagine the process has failed for a day. What would be your immediate actions?
+First, I’d isolate the cause — system, people, or data. Then I’d communicate the issue and estimated impact to stakeholders. Meanwhile, I’d coordinate a recovery plan — reallocating tasks, extending working windows, or prioritizing urgent cases. Post-recovery, I’d document the issue and propose preventive controls.
+
+12. If you find a peer making consistent errors, how would you address it?
+I’d approach it supportively and privately. I'd try to understand if it’s a knowledge gap or something else. I’d offer help, share the correct method, and guide them without making it uncomfortable. If the issue persists, I’d escalate with context so it can be resolved constructively.
+
+13. You’re asked to support a new process while managing your own – what do you do?
+I’d first understand the scope and urgency of the new process and align timelines. If it’s feasible, I’d adjust my day and use my time efficiently — possibly automating parts of my current process. If both demand full focus, I’d raise it with my manager early to prioritize effectively.
+
+14. How would you deal with resistance to an automation idea you proposed?
+I’d first try to understand the resistance — is it technical feasibility, data sensitivity, or just reluctance to change? Then I’d demonstrate the benefit clearly — time saved, reduced errors, or simplified tasks. I’ve found that a working prototype and a few real examples usually help shift perception. I believe leaders aren't reluctant to change
+
+15. "Have you ever disagreed with a management decision?"
+Yes — during a high WIP phase, management proposed a flat £1 refund for all cases. I pointed out the risk of unfair payouts and built a formula to calculate accurate refunds based on transaction details. This solution was accepted and used until the WIP is cleared, reducing complaints and saving cost.
+
