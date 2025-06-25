@@ -18,7 +18,7 @@ about yourself:
 
 Hi, I currently manage the Dispute INC Debit process and act as the Subject Matter Expert, with over 19 months of experience in the role. Our process focuses on verifying and refunding interest or charges incurred due to disputed PSD transactions, using tools like DRS, Excel, and Back Office systems.
 
-I take full ownership of the process — from daily execution to continuous improvement. Recently, I independently developed an EUDA tool that automates interest adjustments across all scenarios — previously done manually by 4–5 users. It’s registered in SLX and FFD and is set for deployment this month. The project was acknowledged by senior leaders and helped me gain deep insight into risk, compliance, and the governance behind automation — something I’ve always aspired to contribute to from an operations background.
+I take full ownership of the process — from daily execution to continuous improvement. Recently, I independently developed an EUDA tool that automates interest adjustments across all scenarios — previously done manually by 4–5 users. It’s registered officially and is set for deployment this month. The project was acknowledged by senior leaders and helped me gain deep insight into risk, compliance, and the governance behind automation — something I’ve always aspired to contribute to from an operations background.
 
 Alongside this, I’ve delivered training and KTs to tech and ops stakeholders, and supported cross-trained processes like PSD Debit and FDP Credit during high-volume periods. I’m seen as both a reliable individual contributor and a team player — often the go-to person for both process and technical queries. Beyond work, I’m also passionate about personal finance, psychology, economics, and health — areas that keep me curious and learning constantly.
 
@@ -41,6 +41,422 @@ I'm both an individual contributor and a strong team player. My individual stren
 
 I also have a lot of interest and opinions in Personal finance, Economics, Psychology, Health and etc.
 
+
+
+
+************************************************************************
+
+1. Process Improvement through Data Access & Collaboration
+S (Situation):
+While calculating interest refunds for disputed transactions, the most time-consuming step wasn’t the calculation itself — it was manually checking several back-office pages to find the day-end balance for each transaction. Even after I built an Excel-based calculator to simplify the math, we were still spending excessive time just gathering inputs.
+
+T (Task):
+I wanted to simplify and speed up the process further by eliminating the manual effort of searching for data in the back office.
+
+A (Action):
+I realized that if the information is visible on the screen, it must be coming from a database. I proposed the idea of accessing this database to fetch required details directly through queries. I shared this idea with Bala, our tech lead. He immediately brought the right stakeholders to the table, and I walked them through the use case and challenges. Within two days, they delivered the first version of a report. We tested it against multiple scenarios, refined the logic, and finalized a solution.
+
+R (Result):
+That report is still being used today and has drastically reduced our effort. Back then, we were 8 FTEs handling the workload — now it’s just 4, thanks in part to this improvement. Additionally, the automation tool I later built (Project 1 in my resume) now runs on top of this data, enabling end-to-end automation of interest adjustments. This initiative not only improved efficiency but also reduced dependency on manual checks.
+
+
+----------------------------
+
+2. Learning from a Mistake
+S (Situation):
+When the INC process moved from BPM to DRS, a new automation tool was introduced to calculate INC interest and charges using the refunds report. It was developed by Adam Smith and Tylor, based solely on Blueworks documentation.
+
+T (Task):
+I was excited to see the tool in action, but during testing, I discovered that 100% of the outputs were inaccurate. Key logic steps in calculating refund amounts were missing. Meanwhile, case volumes were piling up and we hadn’t started processing them.
+
+A (Action):
+I raised the issue immediately and suggested we limit the tool’s scope — use it only to check INC applicability for now, and continue calculating refunds manually as we used to. I proposed we revisit the full calculation logic in a later release, this time by involving process SMEs like myself during development — not just relying on process maps like Blueworks.
+
+R (Result):
+We were able to start processing the cases right away instead of waiting for a faulty tool fix. This approach helped us reduce SLA breaches. More importantly, it highlighted a key learning for me: building automation without continuous collaboration with process experts can fail, and real success comes from adopting an agile, collaborative way of working.
+
+----------------------------
+
+3. Challenging a Faulty INC Tool Implementation
+S (Situation):
+After the INC process moved from BPM to DRS, a new automation tool was introduced to calculate interest and charges. The tool was built by developers based only on the Blueworks process documentation, without involving process SMEs like us.
+
+T (Task):
+During testing, I found that 100% of the tool’s outputs were wrong — key logic steps were missing. Despite the urgency, we hadn’t even started processing those cases, and WIP was piling up.
+
+A (Action):
+Instead of just rejecting the tool, I calmly explained the gaps to our tech lead and suggested we scale back its functionality for now. I proposed using the tool only for checking INC applicability and continuing with manual calculations for refunds. I also recommended that in future updates, the process SME should be involved during development to co-create the logic — an agile, collaborative approach.
+
+R (Result):
+We were able to start processing the backlog immediately instead of waiting for the full tool fix. It helped reduce SLA breaches, and the collaboration model I proposed was adopted going forward for automation development — ensuring more accurate outcomes.
+
+----------------------------
+
+4. Collaborating to Enable Automation for DRS Manual Cases
+S (Situation):
+We started receiving some INC cases through DRS that had to be processed completely manually — none of the automation tools or reports we used for regular cases were compatible. It significantly increased the time and effort required to handle these cases.
+
+T (Task):
+I proposed a solution: if we could extract refund-related data for DRS manual cases from the backend database and compile it into a usable report, we could use our existing tools to process them like any other case. But it wasn’t straightforward — there were multiple technical challenges in pulling the right data and joining the right tables.
+
+A (Action):
+I worked closely with a developer on this. I sat down to understand the database structure, helped identify the relevant tables, filters, and logic to extract the required fields, and manually validated the extracted report by comparing it against actual cases in DRS. We held multiple working sessions and testing calls. Midway through, the developer I was working with moved to another role, which caused a temporary gap. But I maintained continuity by documenting our progress and resumed collaboration with the new developer once work restarted — sharing all previous logic, validations, and input ideas.
+
+R (Result):
+Although the final report is still in progress, we’re back on track. My proactive involvement, technical contribution, and ability to bridge the transition gap helped keep the project moving. Once complete, this will significantly reduce manual effort and bring DRS manual cases in line with our automated process.
+
+----------------------------
+
+5. Communicating Process Changes to QC Team
+S (Situation):
+After several changes in the INC processing workflow, a call was scheduled with the QC team to restart external quality checks. Each analyst was processing cases from their allocated Excel files, and the process had evolved significantly since QC was last involved.
+
+T (Task):
+As the SME, I had to ensure the QC team clearly understood the new process, including all logic changes and what to look for while reviewing cases.
+
+A (Action):
+On the call, I clearly walked them through each part of the current workflow, explained the revised rules for processing, and verified multiple times if they had any questions or needed clarification. After QC began, they raised a concern that each user’s allocation files were inconsistent in format, making QC difficult. I quickly set up a separate internal call with all users and aligned the team on a standardized format to track and save allocation status, ensuring consistency.
+
+R (Result):
+This not only enabled the QC team to carry out reviews more smoothly but also improved transparency and consistency across the team. Clear communication and proactive follow-up helped avoid rework and made the process more quality-friendly.
+
+----------------------------
+
+6. Responding to Feedback about Prioritization
+S (Situation):
+When the Senior Analyst role was posted on Workday, I was deeply involved in enhancing our automation tool and helping extract refund data for DRS manual cases — a technically challenging project that demanded my full attention. I was working from office that week and fully focused on pushing it forward.
+
+T (Task):
+While I was engrossed in the project, I delayed applying for the role. Three days passed, and my manager hadn’t received any application notification. During a team huddle, they directly advised me to pause the ongoing work temporarily and focus on applying and preparing — since this opportunity was important for my growth.
+
+A (Action):
+I immediately took the feedback positively. That same night, I updated my application, polished my resume, and shifted my focus to prepare for the interview. I also realized the importance of balancing personal development opportunities with delivery responsibilities.
+
+R (Result):
+I applied and began preparation with full intent. The feedback helped me reframe how I prioritize — especially when it comes to opportunities that support long-term growth. And once the interview’s done, I’ll continue from exactly where I left off in the project.
+
+----------------------------
+
+7. Adapting to a Different Working Style During Tool Development
+S (Situation):
+While working on the project to extract refund data for DRS manual cases, I collaborated with a tech developer who had a very structured and process-driven approach. Coming from a technical background, he preferred detailed specifications and documentation before writing a single line of code.
+
+T (Task):
+My role was to explain the business logic and real-life case scenarios that weren’t easy to document all at once — especially since many edge cases only surface during testing.
+
+A (Action):
+I adapted by changing my approach — instead of trying to explain everything upfront, I started breaking the logic into smaller, well-defined blocks. I prepared sample cases in Excel, tagged scenarios clearly, and sat with him for short, focused syncs to discuss one topic at a time. I also gave him written examples and mock outputs so he could work at his own pace while understanding the intent.
+
+R (Result):
+Our collaboration improved significantly. He was able to build faster and more accurately, and I ensured the logic stayed true to the process. This experience taught me that flexibility in communication and adapting to someone else’s style can be just as important as the content itself.
+
+----------------------------
+
+8. Adapting to a Change in Leadership Style
+S (Situation):
+After my previous manager Saravanan transitioned out, I was temporarily reporting to Narasimhan. Naturally, every leader brings a different approach, and initially, there were some changes — like closer follow-ups on GPLs and tighter timelines around refund reports.
+
+T (Task):
+I had to adapt to this new working style while ensuring I continued delivering high performance and meeting the expectations of the role.
+
+A (Action):
+I proactively explained our end-to-end process to him — what dependencies we have, the tools we rely on, and how we prioritize based on case volumes and SLAs. I ensured transparency from my side and provided regular updates on progress. Over time, this helped align expectations, build mutual trust, and create a rhythm that worked for both of us.
+
+R (Result):
+Our communication became smooth and efficient, and he adapted his approach based on better understanding of the ground reality. I was able to maintain consistent performance throughout the transition, and the experience taught me how to navigate changes in leadership with clarity and collaboration.
+
+--------------------------
+
+9. Staying Resilient as an FTC Employee
+S (Situation):
+When I joined as an FTC employee, I was told that based on performance, I might be considered for a permanent role after 9 months. I consistently delivered across all metrics — quality, productivity, support, and behavior — but even after 9 months, our contracts were extended instead of being converted.
+
+T (Task):
+Though it was disappointing, I had to stay motivated, continue delivering at my best, and maintain a positive attitude despite the uncertainty.
+
+A (Action):
+I reminded myself to trust the process and focus on being a valuable contributor. I stayed engaged, kept up my performance, and ensured I remained visible through the work I did — whether it was owning the INC process, building automation, or supporting peers and tech teams.
+
+R (Result):
+After 14 months, I was made a permanent employee. My biggest learning? When the opportunity comes, you shouldn’t have to prepare — you should already be ready. Stay consistent, stay visible, and the right doors will open.
+
+------------------------------
+
+10. Managing Multiple Priorities Across Processes
+S (Situation):
+There have been several instances where the volume in cross-trained processes — like abusive transactions or PSD Debit — spiked significantly. These were same-day SLA processes and needed immediate attention, even when I had my own INC process allocation to complete.
+
+T (Task):
+I had to balance both: meet the SLA for high-volume cross-process tasks while ensuring my own process (INC Debit) didn’t fall behind or suffer in quality.
+
+A (Action):
+I prioritized based on cut-off times and impact. I knew INC cases couldn’t be processed after 6 PM GMT, so I focused on completing them first. Then I moved to the abusive process, which could be handled post 6 PM. I stretched a bit when needed and planned my day to batch similar tasks — this helped me work faster without compromising accuracy.
+
+R (Result):
+I was consistently able to meet both sets of deadlines. This approach not only helped the wider team meet critical SLAs, but also reinforced my reliability in handling pressure and juggling priorities effectively.
+
+-----------------------
+
+11. Learning VBA to Automate Repetitive Work
+S (Situation):
+I noticed that in almost every workplace — especially in operations — Excel is widely used, and many tasks are repetitive and time-consuming. These often included formatting, allocation, and folder creation, which were being done manually every day.
+
+T (Task):
+I wanted to find a way to reduce repetitive effort and make our daily tasks more efficient, both for myself and for the team.
+
+A (Action):
+I took the initiative to learn Visual Basic for Applications (VBA), the language used to create macros in Excel. I started experimenting by automating small tasks — building tools for data formatting, automated allocations, and even generating folder structures. I kept enhancing my skills over time and shared useful tools with my colleagues as well.
+
+R (Result):
+This not only helped me save time in my daily work but also supported my teammates in simplifying their routine tasks. Some of these tools are still being used regularly. It also laid the foundation for my larger automation projects, like the EUDA tool I built for interest adjustments.
+
+----------------------
+
+12. Shifting Priorities During a Volume Spike
+S (Situation):
+Just a few months into my role, while I was still learning and stabilizing in my core INC Debit process, there was a sudden volume spike in the DC1 process due to an incident. The business needed urgent support across teams, including mine.
+
+T (Task):
+I was asked to support write-offs and Retailer Credit cases in DC1 — a process I had no prior hands-on experience with — while still managing my existing workload in INC.
+
+A (Action):
+I quickly picked up the basics in a day and started processing cases immediately to help the team. Though I wasn’t deeply trained, I ensured every case I worked on met quality standards by double-checking against examples and guidance notes. I supported DC1 throughout weekends and during weekdays wherever possible, while continuing with my INC allocation in a balanced way.
+
+R (Result):
+We managed to clear the critical backlog in DC1 over the next few weeks, and once the volumes were back to normal, I resumed full focus on my core process. The experience helped me prove my adaptability and reinforced that I can step up when business needs shift unexpectedly.
+
+--------------------
+
+13. Analyzing a Refund Calculation Issue in INC Tool
+S (Situation):
+When a new automation tool was introduced for calculating interest and charges in the INC process (post-BPM to DRS migration), it was expected to be a ready-made solution. However, during my initial testing, I found that 100% of the results were wrong — which meant we couldn’t proceed with processing any cases.
+
+T (Task):
+I had to find out why the outputs were incorrect, identify where the logic was breaking, and propose a fix — all while backlog was building up and SLA risk was growing.
+
+A (Action):
+I started by reviewing the logic used in the tool and comparing it against actual case examples. I noticed that major steps from the original manual process were missing — like transaction linking, daily balance check, and interest rate variability. I documented all missing elements and engaged with the developer team to explain these gaps. Instead of pushing for a complete rework, I suggested we limit the tool’s use to identifying INC applicability only, and manually calculate interest refunds for now. I also proposed involving process SMEs in future tool development to avoid such disconnects.
+
+R (Result):
+This quick fix allowed us to start processing cases immediately and reduced SLA breaches. In the longer run, this experience helped establish a better collaboration model for tool-building — aligning business logic with development through real-time SME involvement.
+
+---------------------------
+
+14. Choosing Fair Refund Logic Over Flat Refunds
+S (Situation):
+During a high WIP period in the INC process, management proposed applying a flat £1 interest refund for all disputed cases to speed up processing and reduce SLA breaches.
+
+T (Task):
+While this would save time, I realized it might lead to unfair treatment — some customers were entitled to much more than £1, while others less. I had to decide whether to follow the flat refund or find a balanced alternative that wouldn’t compromise customer fairness.
+
+A (Action):
+I evaluated the situation by analyzing case data — transaction amount, interest rate, transaction date, and refund date. I created a formula to calculate the maximum fair refund for each case. Based on the results, over 60% of cases still came under £1 and could be processed using the flat logic. For the rest, we handled them manually to ensure customers got what they were rightfully owed.
+
+R (Result):
+This approach saved time on most cases while maintaining fairness and reducing the risk of complaints from customers entitled to higher refunds. It also demonstrated a customer-first approach while still being efficient operationally.
+
+-----------------------------
+
+15. Challenging the Flat £1 Refund Assumption
+S (Situation):
+During a high-volume period in the INC process, to meet SLAs quickly, the proposed solution was to refund a flat £1 interest amount for every case — assuming it would balance out over time and avoid delays.
+
+T (Task):
+I had to assess whether this blanket approach would truly be fair to customers and align with the bank’s risk and compliance standards — especially since interest refund calculations impact both customer trust and financial accuracy.
+
+A (Action):
+I analyzed historical data and ran refund scenarios using actual case logic. I found that some customers were entitled to more than £1, and under-refunding them could trigger complaints. Others deserved far less, so over-refunding would be a financial leakage. Instead of rejecting the proposal entirely, I developed a logic-based formula that used transaction amount, date, and rate to estimate the accurate refund. We then applied the flat £1 only when the calculated amount came below that — and manually processed exceptions that exceeded it.
+
+R (Result):
+This approach was quickly adopted for about two months. It helped us meet SLA, minimize risk, and ensure fairness, which aligns with the bank’s commitment to ethical practices and customer trust. It also demonstrated how we can question assumptions thoughtfully without slowing down the business.
+
+-------------------------
+
+16. Ensuring Accuracy During Account Statement Tool Testing
+S (Situation):
+While developing the account statement tool used to fetch transaction-level data for INC interest calculations, I was responsible for testing the accuracy of the tool’s output before it could be relied on for automation.
+
+T (Task):
+The output included 500+ records daily, and every transaction detail had to match exactly with the back-office system. Since the tool would eventually be used to calculate customer refunds, even a 1-penny error could compromise accuracy and compliance.
+
+A (Action):
+In the early stages, errors were easier to catch — one every 10–15 records. But as I kept enhancing the logic and adding edge-case scenarios, the tool’s accuracy improved significantly, making errors much harder to spot. I kept up with rigorous manual validation, day after day, despite long stretches where no errors appeared. I cross-verified tool output with back-office records, line by line, to ensure 100% reliability. I also documented recurring patterns to avoid future misses.
+
+R (Result):
+The tool was validated to be accurate to the highest standard. It’s now a core part of the interest calculation automation process. This experience reinforced how extreme attention to detail and patience — even when you expect no errors — is what builds systems that can be trusted at scale.
+
+--------------------
+
+17. Handling Inconsistencies in Data Analysis
+S (Situation):
+If I were given a dataset with inconsistencies or missing fields, the first thing I’d focus on is not jumping straight to analysis — but ensuring the integrity of the data aligns with the business objective.
+
+T (Task):
+My goal would be to produce a report that is accurate, reliable, and answers the business question meaningfully — without misleading stakeholders due to incomplete inputs.
+
+A (Action):
+I would start by identifying exactly what’s inconsistent or missing and assess how critical that information is to the core analysis. If possible, I’d try to trace the issue back to the source system or check if the same data is available from another backup or alternate report. I’d reach out to data owners or upstream teams to verify. If the gaps couldn’t be filled, I’d look for reasonable assumptions or use proxies where justifiable — but I would clearly document those in the report. Most importantly, I’d make sure the key message still holds, and if not, I’d communicate the limitation upfront.
+
+R (Result):
+By doing this, I ensure the output remains transparent, defensible, and decision-worthy, even when not every data point is perfect. This approach balances speed with responsibility — something especially important in senior roles.
+
+--------------------------
+
+18. Balancing Speed with Responsibility in Analysis
+S (Situation):
+If a stakeholder asked for a quick analysis that seemed oversimplified or risked missing key variables, I’d recognize that while agility is important, accuracy and context matter just as much — especially in a regulated environment like banking.
+
+T (Task):
+My task would be to support the stakeholder’s need for timely insights while ensuring the analysis doesn’t misrepresent reality or expose the bank to potential risk.
+
+A (Action):
+I’d first clarify the purpose and end use of the analysis — is it just for directional input, or will it inform a final decision? Then I’d offer to provide a high-level version with clear disclaimers: what assumptions were made, what’s not covered, and where risks might lie. At the same time, I’d suggest a more detailed version that could follow shortly after, especially if the topic is complex or customer-impacting. This way, I support their urgency while also protecting the integrity of the output.
+
+R (Result):
+This approach helps maintain trust, manage expectations, and reflect the bank’s broader values of prudence, transparency, and customer-centricity — even in fast-paced situations.
+
+---------------------------
+
+19. Collaborating with Tech Stakeholder for Refund Report Automation
+S (Situation):
+While trying to automate the process for handling INC DRS manual cases, I needed to work closely with a tech developer to create a report that could extract refund-related data directly from backend systems — something that had never been done before.
+
+T (Task):
+It was crucial to build a mutual understanding — I had to communicate the business logic behind each scenario, and the developer had to translate it into data queries and automation.
+
+A (Action):
+I approached this by being very transparent, open, and proactive. I didn’t just give high-level requirements — I broke down complex logic into smaller steps, provided test cases, and sat with him regularly to clarify doubts. I also made sure to learn the technical side enough to communicate in his terms. When he got rolled off the project suddenly, I made sure all our progress was well-documented so it could seamlessly resume with the next developer.
+
+R (Result):
+Because of that strong foundation and documentation, we were able to pick up where we left off without delays. The ongoing relationship helped improve both the speed and quality of collaboration, and this style of working has become my go-to approach for cross-functional teamwork since.
+
+-----------------------
+
+20. Supporting a Teammate During a Low Phase
+S (Situation):
+A colleague in my team was going through a rough patch — both personally and professionally. They had made a few errors in the process and were feeling extremely low in confidence, to the point of withdrawing from discussions and team activities.
+
+T (Task):
+I felt it was important to not just focus on the mistakes, but to help them rebuild confidence and feel supported — both as a teammate and as a person.
+
+A (Action):
+I reached out to them one-on-one, not just to offer help with the process but also to genuinely listen to what they were going through. I shared how I too had made mistakes earlier and how it’s part of learning. I helped them go over the process again step-by-step, and when they had a small success, I made sure to acknowledge it publicly in the group chat — to reinforce their confidence without making it obvious.
+
+R (Result):
+Over the next few days, their engagement improved, and they were back to handling tasks independently. This experience reminded me that sometimes, empathy and small gestures of support make a bigger impact than technical solutions — and it helped strengthen trust in our team.
+
+-------------------------------
+
+21. Upholding Fairness in Refunds Under Pressure
+S (Situation):
+During a period of high WIP in the INC process, there was pressure to quickly clear cases. Management proposed a flat £1 interest refund for all cases to speed up processing — regardless of the actual amount the customer was owed.
+
+T (Task):
+I had to evaluate whether this approach was fair to customers and aligned with the bank’s ethical standards, even though it came from senior direction and seemed like a quick fix.
+
+A (Action):
+Instead of silently following through, I raised my concern and explained the potential for unfair refunds — some customers would be underpaid, some overpaid. I developed a logic-based formula that calculated the accurate refund using transaction date, amount, and rate. We processed cases under £1 using the formula, and flagged those that required more refund for manual handling.
+
+R (Result):
+This approach was adopted for two months, reducing errors and potential complaints while maintaining fairness. It reinforced that doing the right thing — even if it's not the fastest — protects both the customer and the bank’s reputation.
+
+----------------------------
+
+22. Guiding a Tech Colleague with GSI Back Office Understanding
+S (Situation):
+A tech developer who was working on an automation project reached out to me with a query about whether it was possible to connect programmatically to the GSI Production back-office system to extract data.
+
+T (Task):
+Though this was outside my core responsibilities, I had strong hands-on experience with GSI through the INC process. My role was to help him understand the tool’s structure, limitations, and access control — so he could make the right decision on approach.
+
+A (Action):
+I walked him through how GSI behaves — what data is accessible, how it’s structured, and where automation might face blockers like dropdowns, dynamic loads, or security restrictions. I also explained how some parts of the process rely on real-time user interaction, which might not be feasible to automate without read-only backend alternatives.
+
+R (Result):
+He adjusted his automation approach accordingly and avoided investing time in a method that wouldn’t scale. This saved effort and helped steer the project in a more practical direction — and it reinforced how deep product/process knowledge can influence smarter decisions, even outside your own domain.
+
+-------------------------------
+
+23. Understanding the Broader Need Behind Report Automation
+S (Situation):
+While collaborating with the tech team to build a report that fetches refund data for DRS manual cases, their initial goal was to just automate data extraction for immediate processing support.
+
+T (Task):
+However, I realized that their request was only addressing the surface-level need. The long-term need was to create a sustainable input source that could also integrate into future automation tools, reduce manual handling, and scale as volume grows.
+
+A (Action):
+I took time to understand the broader intent by asking questions like: “Where else do you see this data being used?” and “Do we want this report to remain static or evolve with changing logic?” Based on those discussions, I contributed scenarios, validations, and logic blocks that weren’t part of the original ask — like date-based refund calculations and process-specific applicability checks.
+
+R (Result):
+The report is now not just a one-time data pull, but a foundation for long-term automation and process efficiency. It serves both current manual needs and future-proofing, and my proactive approach helped align the solution to a bigger picture than initially scoped.
+
+----------------------------
+
+24. Balancing Urgency with Ethical Boundaries
+S (Situation):
+If a stakeholder urgently requested data that, in its raw form, could breach data privacy guidelines — such as exposing customer-sensitive fields or personally identifiable information — I’d recognize the importance of acting fast, but also the need to uphold the bank’s standards.
+
+T (Task):
+My responsibility would be to support the business need without violating ethical or regulatory boundaries — ensuring both compliance and stakeholder satisfaction.
+
+A (Action):
+First, I’d acknowledge the urgency and clarify the exact outcome they’re looking for. I’d then suggest an alternative version of the data — like masked values, aggregated summaries, or anonymized fields — that still delivers insight without compromising confidentiality. If required, I’d consult with the data governance team or our manager for alignment, and explain transparently why raw access wasn’t feasible. Throughout, I’d keep communication open, respectful, and solution-focused.
+
+R (Result):
+This approach would help me maintain trust, protect data integrity, and demonstrate responsible handling of sensitive information — showing I can balance delivery with doing what’s right for the customer and the bank.
+
+----------------------------
+
+25. Turning Customer Feedback into Actionable Insights
+S (Situation):
+If I were asked to analyze customer feedback to improve a service, I’d treat it not just as raw data, but as real customer experiences that need to be understood in the right context — emotionally and operationally.
+
+T (Task):
+The goal would be to extract meaningful patterns from the feedback, understand why customers feel the way they do, and translate that into actionable, credible recommendations for the business.
+
+A (Action):
+I’d begin by categorizing the feedback — whether it’s about delays, clarity, process complexity, or agent behavior. Then, I’d connect each type of feedback with its respective journey touchpoint — for example, was the delay due to an internal handoff, tool limitation, or unclear communication?
+I’d also review actual cases, not just survey comments, to understand context. If needed, I’d talk to frontline teams who interact with customers daily to gather qualitative inputs. After analyzing the root causes and customer pain points, I’d recommend solutions that not only solve the problem but also align with customer expectations — such as simplifying language, improving turnaround time, or adding proactive updates.
+
+R (Result):
+This approach ensures that feedback isn’t just recorded but understood, and that the solutions proposed improve both customer satisfaction and operational efficiency — making the feedback loop truly meaningful.
+
+-------------------------
+
+26. Staying Current in a Senior Analyst Role
+S (Situation):
+In a dynamic role like Senior Analyst, staying updated isn’t optional — it's essential to provide credible insights, make informed decisions, and guide others confidently.
+
+T (Task):
+My goal would be to proactively stay informed on changes in banking products, internal policy updates, automation trends, regulatory shifts, and customer expectations — all of which shape the way we serve customers and design solutions.
+
+A (Action):
+I’d take a multi-layered approach:
+
+Internal Sources: Stay close to product teams, attend process update huddles, and review SLX, FFD, or policy updates regularly.
+
+Collaborative Learning: Actively engage with cross-functional teams — especially tech and risk — to stay ahead of changes that affect operations.
+
+External Awareness: Read industry updates from RBI, FinTech blogs, and publications like Mint or Economic Times to understand regulatory trends and innovation in banking.
+
+Upskilling: I’d also continue learning through platforms like Udemy or LinkedIn Learning — particularly on automation, data analytics, or regulatory compliance.
+
+R (Result):
+By doing this consistently, I can ensure I’m not just executing the current process, but also equipped to advise on what’s coming next — providing trusted, future-ready guidance to peers and stakeholders.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Deserving this position can be subjective, but here’s my perspective. I believe I’ve already been operating at a Senior Analyst level — taking full ownership of my process, solving problems proactively, and collaborating effectively across teams. From building automation tools that have significantly improved efficiency, to making critical decisions during system transitions, I’ve consistently gone beyond my core responsibilities. I’ve also earned the trust of peers and stakeholders, often serving as a go-to person for support and solutions. With my experience, mindset, and commitment to continuous improvement, I’m confident I can add even more value in this next role.
 
 I see myself in a position where I continue to add meaningful value by identifying opportunities for improvement and applying both my CPC and technical skills to drive impact. Over time, I aim to grow into roles where I can lead change, mentor others, and contribute at a strategic level. Based on the recognition I’ve received from both peers and stakeholders — including comments like “You definitely deserve this, and I’d be happy if you get it” from colleagues competing for the same role — I believe I’m on the right path. Ideally, I’d like to be in a place where my performance speaks for itself and future transitions feel like a natural next step.
@@ -52,7 +468,7 @@ While declaring results for roles like this, it’s natural for the question “
 getting things done:
 We recently had a Fun Friday event initiated by a colleague who’s leaving at the end of the month. Only around 12 of us were in office, and some teammates were hesitant to join due to pending work. I felt bad for the person who took the initiative — it’s disheartening when efforts go unnoticed. So, I spoke to those who were reluctant and explained that if we discourage such initiatives, others will hesitate to step forward in the future. I reminded them that participation builds a positive culture, and we should support such efforts. They agreed and joined — and the outcome was amazing. Everyone ended up having a great time, bonding over games and conversations. Sometimes, it just takes one conversation to shift the mood and make things happen.
 
-There are three new projects coming into our business, and I can already see multiple opportunities where automation and the use of technology can greatly improve efficiency. With the current team size at around 270 colleagues under Ashwani — including you and me — I’m curious: based on the direction we’re heading and the impact of automation, what’s your view on how our team size might evolve over the next 2–3 years? Do you foresee it growing, stabilizing, or potentially shrinking due to tech-led efficiencies?
+There are three new projects coming into our business Sainsbury's Bank, A2A application, Virtual cards, and I can already see multiple opportunities where automation and the use of technology can greatly improve efficiency. With the current team size at around 270 colleagues under Ashwani — including you and me — I’m curious: based on the direction we’re heading and the impact of automation, what’s your view on how our team size might evolve over the next 2–3 years? Do you foresee it growing, stabilizing, or potentially shrinking due to tech-led efficiencies?
 
 
 Personal Finance - Accounting of personal inc and exp since 2022, now over 3 years. Actively read and watch videos/hear podcast about others perspective over finance and learn from it.
