@@ -1,85 +1,32 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-# --- Configuration ---
-# This is a special "data URL" that creates a simple webpage in memory.
-# It contains a link that opens a new tab (target="_blank").
-# The new page is w3.org, a stable site for demonstration.
-INITIAL_URL = 'data:text/html,<html><body><h1>Original Tab</h1><a href="https://www.w3.org/" target="_blank" id="new-tab-link">Click here to open a new tab</a></body></html>'
+# ... (the rest of your code)
 
 def main():
     """
     Main function to run the browser automation.
     """
-    # Modern Selenium (4.6.0+) automatically manages the driver.
-    # This is the simplest way to start Chrome.
-    driver = webdriver.Chrome()
-    
-    # Set a timeout for waiting for elements to appear
-    wait = WebDriverWait(driver, 10)
-
     try:
-        # 1. Go to the initial URL
-        print(f"Navigating to the initial page...")
-        driver.get(INITIAL_URL)
-
-        # 2. Store the handle of the original tab
-        # Every window/tab has a unique ID called a "handle"
-        original_window_handle = driver.current_window_handle
-        print(f"Original Tab Handle: {original_window_handle}")
-        print(f"Original Tab Title: '{driver.title}'")
-
-        # 3. Find the link and click it to open the new tab
-        print("\nFinding and clicking the link to open a new tab...")
-        # We use WebDriverWait to ensure the link is clickable before we interact with it.
-        link = wait.until(
-            EC.element_to_be_clickable((By.ID, "new-tab-link"))
-        )
-        link.click()
-
-        # 4. Wait for the new tab to open
-        # We wait until the number of window handles is 2
-        print("Waiting for the new tab to open...")
-        wait.until(EC.number_of_windows_to_be(2))
-
-        # 5. Switch to the new tab
-        print("Switching to the new tab...")
-        for window_handle in driver.window_handles:
-            if window_handle != original_window_handle:
-                driver.switch_to.window(window_handle)
-                break
+        # --- CHANGE THIS LINE ---
+        # Instead of webdriver.Chrome(), use webdriver.Edge()
+        print("Attempting to start Microsoft Edge...")
+        driver = webdriver.Edge()
+        print("SUCCESS: Microsoft Edge driver started successfully!")
         
-        print(f"Switched to New Tab Handle: {driver.current_window_handle}")
-        print(f"New Tab Title: '{driver.title}'")
-
-        # 6. Interact with the new tab and scrape data
-        print("\nScraping data from the new tab...")
-        # Example: Scrape the main heading (<h1>) from the new page
-        # We wait until the element is visible before trying to get its text
-        heading_element = wait.until(
-            EC.visibility_of_element_located((By.TAG_NAME, "h1"))
-        )
-        scraped_data = heading_element.text
-        print(f"SUCCESS: Scraped heading is -> '{scraped_data}'")
-
-        # 7. (Optional) Close the new tab and switch back to the original
-        print("\nClosing the new tab and switching back to the original...")
-        driver.close() # Closes the current tab
-        driver.switch_to.window(original_window_handle) # Switches focus back
-
-        print(f"Switched back to original tab. Current title: '{driver.title}'")
+        # Now you can use the driver object just like before
+        driver.get("https://www.bing.com") # Let's go to bing for fun
+        print(f"Current page title: {driver.title}")
+        time.sleep(5)
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
     finally:
-        # 8. Clean up
-        print("\nScript finished. Closing the browser in 5 seconds...")
-        time.sleep(5)
-        driver.quit() # Closes all browser windows and ends the session
+        if 'driver' in locals() and driver:
+            print("Closing the browser.")
+            driver.quit()
 
 if __name__ == "__main__":
     main()
