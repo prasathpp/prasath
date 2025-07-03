@@ -6,7 +6,7 @@ Option Explicit ' Forces variable declaration
 ' Main Automation Procedure to Open Browser and Click Disputes
 '****************************************************************************************************
 
-Sub OpenEdgeProcessPortal_AndClickDisputes()
+Sub OpenEdgeProcessPortal_AndClickDisputes_Revised()
 
     ' --- Configuration ---
     ' Process name for Microsoft Edge
@@ -15,21 +15,26 @@ Sub OpenEdgeProcessPortal_AndClickDisputes()
     Const PORTAL_URL As String = "https://fsso.fm.rbsgrp.net/idp/startsso.ping?PartnerSpId=NATWEST_PF_External_EMEA_Prod"
     ' The expected title or part of the title of the browser window after login/redirect
     Const EXPECTED_BROWSER_TITLE As String = "Process Portal" ' Or whatever the actual title contains
-    ' The text/Name of the element to click
-    Const ELEMENT_TO_CLICK_NAME As String = "Disputes"
+    ' The text/Name of the element to locate first
+    Const TEXT_ELEMENT_NAME As String = "Disputes" ' Changed name to reflect it's text
     ' Maximum seconds to wait for the browser window to appear/attach
     Const MAX_WAIT_ATTACH_SEC As Integer = 20
-    ' Maximum seconds to wait for the "Disputes" element to appear on the page
-    Const MAX_WAIT_ELEMENT_SEC As Integer = 30
+    ' Maximum seconds to wait for the text element to appear on the page
+    Const MAX_WAIT_TEXT_ELEMENT_SEC As Integer = 30
+    ' Maximum levels to walk up the tree to find a clickable ancestor
+    Const MAX_ANCESTOR_LEVELS As Integer = 10 ' Limit how far up we search
     ' Maximum seconds to wait for the click action to succeed
-    Const MAX_WAIT_CLICK_SEC As Integer = 5 ' This is usually just retries for the pattern/action
+    Const MAX_WAIT_CLICK_SEC As Integer = 5
 
 
     ' --- Variables ---
     Dim wasOpened As Boolean
     Dim edgeBrowserElement As IUIAutomationElement ' Variable to hold the browser element
-    Dim disputesElement As IUIAutomationElement    ' Variable to hold the Disputes element
+    Dim disputesTextElement As IUIAutomationElement ' Variable to hold the Disputes TEXT element
+    Dim clickableAncestorElement As IUIAutomationElement ' Variable to hold the clickable PARENT element
     Dim clickSuccess As Boolean
+    Dim currentElement As IUIAutomationElement     ' For tree walking
+    Dim ancestorLevel As Integer                   ' For tree walking loop counter
 
 
     ' --- Step 1: Open the Browser ---
@@ -43,11 +48,11 @@ Sub OpenEdgeProcessPortal_AndClickDisputes()
     Debug.Print "Browser opened successfully."
 
     ' --- Step 2: Attach to the Browser Window using UI Automation ---
-    ' Give it a moment to potentially redirect or load initial title
-    Sleep 3000 ' Wait 3 seconds
+    ' Give it time to potentially redirect or load initial title
+    ' Increase this sleep if the SSO/redirect process takes longer before the main page loads
+    Sleep 5000 ' Wait 5 seconds initially for redirect/load
 
     Debug.Print "Step 2: Attaching to browser window titled containing '" & EXPECTED_BROWSER_TITLE & "'..."
-    ' Use the AttachBrowserUIA function from modAutomationHelpers
     Set edgeBrowserElement = AttachBrowserUIA(EXPECTED_BROWSER_TITLE, MAX_WAIT_ATTACH_SEC, "EDGE")
 
     If edgeBrowserElement Is Nothing Then
@@ -57,41 +62,91 @@ Sub OpenEdgeProcessPortal_AndClickDisputes()
     Debug.Print "Successfully attached to browser window: " & edgeBrowserElement.CurrentName
 
 
-    ' --- Step 3: Wait for and Find the "Disputes" Element ---
-    Debug.Print "Step 3: Waiting for and finding the '" & ELEMENT_TO_CLICK_NAME & "' element..."
-    ' Use FindElementUIA to search within the attached browser element.
-    ' Searching by Name is often effective for text labels/buttons.
-    ' Let's search by PROP_NAME and use MAX_WAIT_ELEMENT_SEC as the timeout.
-    ' We omit LocalizedControl_UIA initially to search broadly unless a specific type is known.
-    Set disputesElement = FindElementUIA(edgeBrowserElement, PROP_NAME, , ELEMENT_TO_CLICK_NAME, MAX_WAIT_ELEMENT_SEC)
+    ' --- Step 3: Wait for and Find the "Disputes" TEXT Element ---
+    Debug.Print "Step 3: Waiting for and finding the '" & TEXT_ELEMENT_NAME & "' TEXT element..."
+    ' Use FindElementUIA to search within the attached browser element by Name "Disputes".
+    ' Based on UIAVerify, its ControlType is "text". Let's search specifically for that.
+    Set disputesTextElement = FindElementUIA(edgeBrowserElement, PROP_NAME, "text", TEXT_ELEMENT_NAME, MAX_WAIT_TEXT_ELEMENT_SEC)
 
-    If disputesElement Is Nothing Then
-        MsgBox "Failed to find the '" & ELEMENT_TO_CLICK_NAME & "' element after " & MAX_WAIT_ELEMENT_SEC & " seconds. The page may not have loaded as expected or the element's name has changed. Automation cancelled.", vbCritical
-        ' Optional: Close the browser gracefully here if needed
-        ' Call CloseBrowserUIA(edgeBrowserElement, ...)
-        Exit Sub ' Exit if the element is not found
+    If disputesTextElement Is Nothing Then
+        MsgBox "Failed to find the '" & TEXT_ELEMENT_NAME & "' text element after " & MAX_WAIT_TEXT_ELEMENT_SEC & " seconds. The page may not have loaded as expected or the element's properties have changed. Automation cancelled.", vbCritical
+        Exit Sub ' Exit if the text element is not found
     End If
-    Debug.Print "Successfully found the '" & ELEMENT_TO_CLICK_NAME & "' element."
+    Debug.Print "Successfully found the '" & TEXT_ELEMENT_NAME & "' text element."
 
 
-    ' --- Step 4: Click the "Disputes" Element ---
-    Debug.Print "Step 4: Clicking the '" & ELEMENT_TO_CLICK_NAME & "' element..."
-    ' Assuming the element is clickable via the Invoke pattern (common for buttons, links, tabs)
-    clickSuccess = ClickUIA(disputesElement, PATTERN_INVOKE, MAX_WAIT_CLICK_SEC)
+    ' --- Step 4: Find the Clickable Ancestor Element ---
+    Debug.Print "Step 4: Searching for a clickable ancestor of the '" & TEXT_ELEMENT_NAME & "' text element..."
+    Set clickableAncestorElement = Nothing ' Initialize
+    Set currentElement = disputesTextElement ' Start checking from the text element itself (though unlikely to be clickable based on UIAVerify)
+    Dim walker As IUIAutomationTreeWalker ' TreeWalker for efficient navigation
 
-    ' Clean up the element reference now that we're done with it
-    Set disputesElement = Nothing
+    Set walker = gUIA.ControlViewWalker ' Use the ControlViewWalker to navigate up
+
+    ' Loop upwards through parent elements
+    For ancestorLevel = 1 To MAX_ANCESTOR_LEVELS ' Limit the levels searched
+        ' Get the parent element of the current element
+        Set currentElement = walker.GetParentElement(currentElement)
+
+        ' Check if we reached the root or no more parents
+        If currentElement Is Nothing Or currentElement.CurrentControlType = ControlType_Window Then ' Stop if we reach the browser window itself or no parent
+             Debug.Print "Reached top of tree without finding a suitable clickable ancestor within " & MAX_ANCESTOR_LEVELS & " levels."
+            Exit For
+        End If
+
+        ' Check if this ancestor element is clickable (supports Invoke or Legacy patterns)
+        Dim isInvokeAvailable As Boolean
+        Dim isLegacyAvailable As Boolean
+
+        On Error Resume Next ' Safely check pattern availability
+        isInvokeAvailable = currentElement.GetCurrentPattern(UIA_InvokePatternId) Is Not Nothing
+        isLegacyAvailable = currentElement.GetCurrentPattern(UIA_LegacyIAccessiblePatternId) Is Not Nothing
+        On Error GoTo 0 ' Resume normal error handling
+
+        Debug.Print "  Checking ancestor level " & ancestorLevel & " (Name: '" & currentElement.CurrentName & "', Type: '" & currentElement.CurrentLocalizedControlType & "'). Invoke=" & isInvokeAvailable & ", Legacy=" & isLegacyAvailable
+
+        If isInvokeAvailable Or isLegacyAvailable Then
+            ' Found a clickable ancestor! This is the element we want to click.
+            Set clickableAncestorElement = currentElement
+            Debug.Print "  Found clickable ancestor (Name: '" & currentElement.CurrentName & "', Type: '" & currentElement.CurrentLocalizedControlType & "')."
+            Exit For ' Exit the ancestor search loop
+        End If
+
+    Next ancestorLevel
+
+    ' Clean up walker
+    Set walker = Nothing
+    ' Clean up the initial text element reference
+    Set disputesTextElement = Nothing
+
+
+    ' --- Step 5: Click the Clickable Element ---
+    If clickableAncestorElement Is Nothing Then
+         MsgBox "Failed to find a clickable ancestor element for 'Disputes' within " & MAX_ANCESTOR_LEVELS & " levels. Automation cancelled.", vbCritical
+         ' Optional: Close browser
+         Exit Sub
+    End If
+
+    Debug.Print "Step 5: Clicking the identified clickable ancestor element..."
+
+    ' Try clicking using the pattern confirmed by UIAVerify (LegacyIAccessiblePattern)
+    ' If that fails, you *could* try InvokePattern, but UIAVerify said Invoke is false on the text element
+    ' Let's stick to Legacy first as it's confirmed available on the text element's ancestor.
+    clickSuccess = ClickUIA(clickableAncestorElement, PATTERN_LEGACY, MAX_WAIT_CLICK_SEC)
+
+    ' Clean up the element reference
+    Set clickableAncestorElement = Nothing
 
     If Not clickSuccess Then
-        MsgBox "Failed to click the '" & ELEMENT_TO_CLICK_NAME & "' element. Automation may not proceed correctly.", vbCritical
+        MsgBox "Failed to click the clickable ancestor element using the LEGACY pattern. Automation may not proceed correctly.", vbCritical
         ' Optional: Decide whether to exit or continue depending on the process
         ' Exit Sub
     Else
-        Debug.Print "Successfully clicked the '" & ELEMENT_TO_CLICK_NAME & "' element."
+        Debug.Print "Successfully clicked the clickable ancestor element using the LEGACY pattern."
     End If
 
-    ' --- Step 5: Automation Sequence Completed (for this part) ---
-    MsgBox "Automation part completed. Disputes element clicked.", vbInformation
+    ' --- Step 6: Automation Sequence Completed (for this part) ---
+    MsgBox "Automation part completed. Disputes element's ancestor clicked.", vbInformation
 
     ' --- Optional: Clean up the browser element reference ---
     ' You might want to keep this if subsequent steps interact with the browser.
