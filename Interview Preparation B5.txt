@@ -1,156 +1,85 @@
-' modMain module
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-Option Explicit ' Forces variable declaration
+# --- Configuration ---
+# This is a special "data URL" that creates a simple webpage in memory.
+# It contains a link that opens a new tab (target="_blank").
+# The new page is w3.org, a stable site for demonstration.
+INITIAL_URL = 'data:text/html,<html><body><h1>Original Tab</h1><a href="https://www.w3.org/" target="_blank" id="new-tab-link">Click here to open a new tab</a></body></html>'
 
-'****************************************************************************************************
-' Main Automation Procedure to Open Browser and Click Disputes
-'****************************************************************************************************
+def main():
+    """
+    Main function to run the browser automation.
+    """
+    # Modern Selenium (4.6.0+) automatically manages the driver.
+    # This is the simplest way to start Chrome.
+    driver = webdriver.Chrome()
+    
+    # Set a timeout for waiting for elements to appear
+    wait = WebDriverWait(driver, 10)
 
-Sub OpenEdgeProcessPortal_AndClickDisputes_Revised()
+    try:
+        # 1. Go to the initial URL
+        print(f"Navigating to the initial page...")
+        driver.get(INITIAL_URL)
 
-    ' --- Configuration ---
-    ' Process name for Microsoft Edge
-    Const EDGE_PROCESS_NAME As String = "msedge.exe"
-    ' The specific URL to open
-    Const PORTAL_URL As String = "https://fsso.fm.rbsgrp.net/idp/startsso.ping?PartnerSpId=NATWEST_PF_External_EMEA_Prod"
-    ' The expected title or part of the title of the browser window after login/redirect
-    Const EXPECTED_BROWSER_TITLE As String = "Process Portal" ' Or whatever the actual title contains
-    ' The text/Name of the element to locate first
-    Const TEXT_ELEMENT_NAME As String = "Disputes" ' Changed name to reflect it's text
-    ' Maximum seconds to wait for the browser window to appear/attach
-    Const MAX_WAIT_ATTACH_SEC As Integer = 20
-    ' Maximum seconds to wait for the text element to appear on the page
-    Const MAX_WAIT_TEXT_ELEMENT_SEC As Integer = 30
-    ' Maximum levels to walk up the tree to find a clickable ancestor
-    Const MAX_ANCESTOR_LEVELS As Integer = 10 ' Limit how far up we search
-    ' Maximum seconds to wait for the click action to succeed
-    Const MAX_WAIT_CLICK_SEC As Integer = 5
+        # 2. Store the handle of the original tab
+        # Every window/tab has a unique ID called a "handle"
+        original_window_handle = driver.current_window_handle
+        print(f"Original Tab Handle: {original_window_handle}")
+        print(f"Original Tab Title: '{driver.title}'")
 
+        # 3. Find the link and click it to open the new tab
+        print("\nFinding and clicking the link to open a new tab...")
+        # We use WebDriverWait to ensure the link is clickable before we interact with it.
+        link = wait.until(
+            EC.element_to_be_clickable((By.ID, "new-tab-link"))
+        )
+        link.click()
 
-    ' --- Variables ---
-    Dim wasOpened As Boolean
-    Dim edgeBrowserElement As IUIAutomationElement ' Variable to hold the browser element
-    Dim disputesTextElement As IUIAutomationElement ' Variable to hold the Disputes TEXT element
-    Dim clickableAncestorElement As IUIAutomationElement ' Variable to hold the clickable PARENT element
-    Dim clickSuccess As Boolean
-    Dim currentElement As IUIAutomationElement     ' For tree walking
-    Dim ancestorLevel As Integer                   ' For tree walking loop counter
+        # 4. Wait for the new tab to open
+        # We wait until the number of window handles is 2
+        print("Waiting for the new tab to open...")
+        wait.until(EC.number_of_windows_to_be(2))
 
+        # 5. Switch to the new tab
+        print("Switching to the new tab...")
+        for window_handle in driver.window_handles:
+            if window_handle != original_window_handle:
+                driver.switch_to.window(window_handle)
+                break
+        
+        print(f"Switched to New Tab Handle: {driver.current_window_handle}")
+        print(f"New Tab Title: '{driver.title}'")
 
-    ' --- Step 1: Open the Browser ---
-    Debug.Print "Step 1: Opening browser and navigating to URL..."
-    wasOpened = OpenBrowser(EDGE_PROCESS_NAME, PORTAL_URL)
+        # 6. Interact with the new tab and scrape data
+        print("\nScraping data from the new tab...")
+        # Example: Scrape the main heading (<h1>) from the new page
+        # We wait until the element is visible before trying to get its text
+        heading_element = wait.until(
+            EC.visibility_of_element_located((By.TAG_NAME, "h1"))
+        )
+        scraped_data = heading_element.text
+        print(f"SUCCESS: Scraped heading is -> '{scraped_data}'")
 
-    If Not wasOpened Then
-        MsgBox "Failed to open Edge browser or navigate. Automation cancelled.", vbCritical
-        Exit Sub ' Exit the procedure if opening fails
-    End If
-    Debug.Print "Browser opened successfully."
+        # 7. (Optional) Close the new tab and switch back to the original
+        print("\nClosing the new tab and switching back to the original...")
+        driver.close() # Closes the current tab
+        driver.switch_to.window(original_window_handle) # Switches focus back
 
-    ' --- Step 2: Attach to the Browser Window using UI Automation ---
-    ' Give it time to potentially redirect or load initial title
-    ' Increase this sleep if the SSO/redirect process takes longer before the main page loads
-    Sleep 5000 ' Wait 5 seconds initially for redirect/load
+        print(f"Switched back to original tab. Current title: '{driver.title}'")
 
-    Debug.Print "Step 2: Attaching to browser window titled containing '" & EXPECTED_BROWSER_TITLE & "'..."
-    Set edgeBrowserElement = AttachBrowserUIA(EXPECTED_BROWSER_TITLE, MAX_WAIT_ATTACH_SEC, "EDGE")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-    If edgeBrowserElement Is Nothing Then
-        MsgBox "Failed to attach to the browser window titled '" & EXPECTED_BROWSER_TITLE & "' after " & MAX_WAIT_ATTACH_SEC & " seconds. Automation cancelled.", vbCritical
-        Exit Sub ' Exit if attachment fails
-    End If
-    Debug.Print "Successfully attached to browser window: " & edgeBrowserElement.CurrentName
+    finally:
+        # 8. Clean up
+        print("\nScript finished. Closing the browser in 5 seconds...")
+        time.sleep(5)
+        driver.quit() # Closes all browser windows and ends the session
 
-
-    ' --- Step 3: Wait for and Find the "Disputes" TEXT Element ---
-    Debug.Print "Step 3: Waiting for and finding the '" & TEXT_ELEMENT_NAME & "' TEXT element..."
-    ' Use FindElementUIA to search within the attached browser element by Name "Disputes".
-    ' Based on UIAVerify, its ControlType is "text". Let's search specifically for that.
-    Set disputesTextElement = FindElementUIA(edgeBrowserElement, PROP_NAME, "text", TEXT_ELEMENT_NAME, MAX_WAIT_TEXT_ELEMENT_SEC)
-
-    If disputesTextElement Is Nothing Then
-        MsgBox "Failed to find the '" & TEXT_ELEMENT_NAME & "' text element after " & MAX_WAIT_TEXT_ELEMENT_SEC & " seconds. The page may not have loaded as expected or the element's properties have changed. Automation cancelled.", vbCritical
-        Exit Sub ' Exit if the text element is not found
-    End If
-    Debug.Print "Successfully found the '" & TEXT_ELEMENT_NAME & "' text element."
-
-
-    ' --- Step 4: Find the Clickable Ancestor Element ---
-    Debug.Print "Step 4: Searching for a clickable ancestor of the '" & TEXT_ELEMENT_NAME & "' text element..."
-    Set clickableAncestorElement = Nothing ' Initialize
-    Set currentElement = disputesTextElement ' Start checking from the text element itself (though unlikely to be clickable based on UIAVerify)
-    Dim walker As IUIAutomationTreeWalker ' TreeWalker for efficient navigation
-
-    Set walker = gUIA.ControlViewWalker ' Use the ControlViewWalker to navigate up
-
-    ' Loop upwards through parent elements
-    For ancestorLevel = 1 To MAX_ANCESTOR_LEVELS ' Limit the levels searched
-        ' Get the parent element of the current element
-        Set currentElement = walker.GetParentElement(currentElement)
-
-        ' Check if we reached the root or no more parents
-        If currentElement Is Nothing Or currentElement.CurrentControlType = ControlType_Window Then ' Stop if we reach the browser window itself or no parent
-             Debug.Print "Reached top of tree without finding a suitable clickable ancestor within " & MAX_ANCESTOR_LEVELS & " levels."
-            Exit For
-        End If
-
-        ' Check if this ancestor element is clickable (supports Invoke or Legacy patterns)
-        Dim isInvokeAvailable As Boolean
-        Dim isLegacyAvailable As Boolean
-
-        On Error Resume Next ' Safely check pattern availability
-        isInvokeAvailable = currentElement.GetCurrentPattern(UIA_InvokePatternId) Is Not Nothing
-        isLegacyAvailable = currentElement.GetCurrentPattern(UIA_LegacyIAccessiblePatternId) Is Not Nothing
-        On Error GoTo 0 ' Resume normal error handling
-
-        Debug.Print "  Checking ancestor level " & ancestorLevel & " (Name: '" & currentElement.CurrentName & "', Type: '" & currentElement.CurrentLocalizedControlType & "'). Invoke=" & isInvokeAvailable & ", Legacy=" & isLegacyAvailable
-
-        If isInvokeAvailable Or isLegacyAvailable Then
-            ' Found a clickable ancestor! This is the element we want to click.
-            Set clickableAncestorElement = currentElement
-            Debug.Print "  Found clickable ancestor (Name: '" & currentElement.CurrentName & "', Type: '" & currentElement.CurrentLocalizedControlType & "')."
-            Exit For ' Exit the ancestor search loop
-        End If
-
-    Next ancestorLevel
-
-    ' Clean up walker
-    Set walker = Nothing
-    ' Clean up the initial text element reference
-    Set disputesTextElement = Nothing
-
-
-    ' --- Step 5: Click the Clickable Element ---
-    If clickableAncestorElement Is Nothing Then
-         MsgBox "Failed to find a clickable ancestor element for 'Disputes' within " & MAX_ANCESTOR_LEVELS & " levels. Automation cancelled.", vbCritical
-         ' Optional: Close browser
-         Exit Sub
-    End If
-
-    Debug.Print "Step 5: Clicking the identified clickable ancestor element..."
-
-    ' Try clicking using the pattern confirmed by UIAVerify (LegacyIAccessiblePattern)
-    ' If that fails, you *could* try InvokePattern, but UIAVerify said Invoke is false on the text element
-    ' Let's stick to Legacy first as it's confirmed available on the text element's ancestor.
-    clickSuccess = ClickUIA(clickableAncestorElement, PATTERN_LEGACY, MAX_WAIT_CLICK_SEC)
-
-    ' Clean up the element reference
-    Set clickableAncestorElement = Nothing
-
-    If Not clickSuccess Then
-        MsgBox "Failed to click the clickable ancestor element using the LEGACY pattern. Automation may not proceed correctly.", vbCritical
-        ' Optional: Decide whether to exit or continue depending on the process
-        ' Exit Sub
-    Else
-        Debug.Print "Successfully clicked the clickable ancestor element using the LEGACY pattern."
-    End If
-
-    ' --- Step 6: Automation Sequence Completed (for this part) ---
-    MsgBox "Automation part completed. Disputes element's ancestor clicked.", vbInformation
-
-    ' --- Optional: Clean up the browser element reference ---
-    ' You might want to keep this if subsequent steps interact with the browser.
-    ' Set edgeBrowserElement = Nothing
-
-
-End Sub
+if __name__ == "__main__":
+    main()
