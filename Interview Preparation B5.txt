@@ -1,49 +1,101 @@
-Public Function OpenBrowser(ByVal processName As String, ByVal url As String) As Boolean
-    ' Opens a new browser window (Edge or Chrome) at a specified URL.
-    ' Uses ShellExecute API and a hardcoded process path.
+' modMain module
 
-    Dim processPath As String
-    Dim commandLine As String
-    Dim shellResult As Long
+Option Explicit ' Forces variable declaration
 
-    OpenBrowser = False ' Initialize return value
+'****************************************************************************************************
+' Main Automation Procedure to Open Browser and Click Disputes
+'****************************************************************************************************
 
-    On Error GoTo ErrorHandler
+Sub OpenEdgeProcessPortal_AndClickDisputes()
 
-    ' --- HARDCODED PATH ---
-    ' The registry lookup failed on some machines, so we are providing the direct path.
-    ' PASTE THE PATH YOU COPIED FROM THE EDGE SHORTCUT PROPERTIES HERE.
-    processPath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-    ' --------------------
-    
-    If processPath <> "" Then
-        ' NOTE: When using ShellExecute with a file path that has spaces,
-        ' it's often better to put the path in the "lpFile" argument
-        ' and the URL in the "lpParameters" argument. But combining them can also work.
-        ' Let's stick to the combined method for now.
-        commandLine = """" & processPath & """" & " /new-window " & url
-        
-        ' Using ShellExecute's lpFile parameter directly
-        shellResult = ShellExecute(0, "open", processPath, "/new-window " & url, "", 1)
+    ' --- Configuration ---
+    ' Process name for Microsoft Edge
+    Const EDGE_PROCESS_NAME As String = "msedge.exe"
+    ' The specific URL to open
+    Const PORTAL_URL As String = "https://fsso.fm.rbsgrp.net/idp/startsso.ping?PartnerSpId=NATWEST_PF_External_EMEA_Prod"
+    ' The expected title or part of the title of the browser window after login/redirect
+    Const EXPECTED_BROWSER_TITLE As String = "Process Portal" ' Or whatever the actual title contains
+    ' The text/Name of the element to click
+    Const ELEMENT_TO_CLICK_NAME As String = "Disputes"
+    ' Maximum seconds to wait for the browser window to appear/attach
+    Const MAX_WAIT_ATTACH_SEC As Integer = 20
+    ' Maximum seconds to wait for the "Disputes" element to appear on the page
+    Const MAX_WAIT_ELEMENT_SEC As Integer = 30
+    ' Maximum seconds to wait for the click action to succeed
+    Const MAX_WAIT_CLICK_SEC As Integer = 5 ' This is usually just retries for the pattern/action
 
-        If shellResult > 32 Then
-            Application.Wait VBA.DateAdd("s", 1, Now)
-            OpenBrowser = True
-        Else
-            Debug.Print "ShellExecute failed with error code: " & shellResult & ". Could not open browser: " & processName
-            MsgBox "Failed to open browser using the hardcoded path. Check the path in the OpenBrowser function.", vbCritical
-        End If
+
+    ' --- Variables ---
+    Dim wasOpened As Boolean
+    Dim edgeBrowserElement As IUIAutomationElement ' Variable to hold the browser element
+    Dim disputesElement As IUIAutomationElement    ' Variable to hold the Disputes element
+    Dim clickSuccess As Boolean
+
+
+    ' --- Step 1: Open the Browser ---
+    Debug.Print "Step 1: Opening browser and navigating to URL..."
+    wasOpened = OpenBrowser(EDGE_PROCESS_NAME, PORTAL_URL)
+
+    If Not wasOpened Then
+        MsgBox "Failed to open Edge browser or navigate. Automation cancelled.", vbCritical
+        Exit Sub ' Exit the procedure if opening fails
+    End If
+    Debug.Print "Browser opened successfully."
+
+    ' --- Step 2: Attach to the Browser Window using UI Automation ---
+    ' Give it a moment to potentially redirect or load initial title
+    Sleep 3000 ' Wait 3 seconds
+
+    Debug.Print "Step 2: Attaching to browser window titled containing '" & EXPECTED_BROWSER_TITLE & "'..."
+    ' Use the AttachBrowserUIA function from modAutomationHelpers
+    Set edgeBrowserElement = AttachBrowserUIA(EXPECTED_BROWSER_TITLE, MAX_WAIT_ATTACH_SEC, "EDGE")
+
+    If edgeBrowserElement Is Nothing Then
+        MsgBox "Failed to attach to the browser window titled '" & EXPECTED_BROWSER_TITLE & "' after " & MAX_WAIT_ATTACH_SEC & " seconds. Automation cancelled.", vbCritical
+        Exit Sub ' Exit if attachment fails
+    End If
+    Debug.Print "Successfully attached to browser window: " & edgeBrowserElement.CurrentName
+
+
+    ' --- Step 3: Wait for and Find the "Disputes" Element ---
+    Debug.Print "Step 3: Waiting for and finding the '" & ELEMENT_TO_CLICK_NAME & "' element..."
+    ' Use FindElementUIA to search within the attached browser element.
+    ' Searching by Name is often effective for text labels/buttons.
+    ' Let's search by PROP_NAME and use MAX_WAIT_ELEMENT_SEC as the timeout.
+    ' We omit LocalizedControl_UIA initially to search broadly unless a specific type is known.
+    Set disputesElement = FindElementUIA(edgeBrowserElement, PROP_NAME, , ELEMENT_TO_CLICK_NAME, MAX_WAIT_ELEMENT_SEC)
+
+    If disputesElement Is Nothing Then
+        MsgBox "Failed to find the '" & ELEMENT_TO_CLICK_NAME & "' element after " & MAX_WAIT_ELEMENT_SEC & " seconds. The page may not have loaded as expected or the element's name has changed. Automation cancelled.", vbCritical
+        ' Optional: Close the browser gracefully here if needed
+        ' Call CloseBrowserUIA(edgeBrowserElement, ...)
+        Exit Sub ' Exit if the element is not found
+    End If
+    Debug.Print "Successfully found the '" & ELEMENT_TO_CLICK_NAME & "' element."
+
+
+    ' --- Step 4: Click the "Disputes" Element ---
+    Debug.Print "Step 4: Clicking the '" & ELEMENT_TO_CLICK_NAME & "' element..."
+    ' Assuming the element is clickable via the Invoke pattern (common for buttons, links, tabs)
+    clickSuccess = ClickUIA(disputesElement, PATTERN_INVOKE, MAX_WAIT_CLICK_SEC)
+
+    ' Clean up the element reference now that we're done with it
+    Set disputesElement = Nothing
+
+    If Not clickSuccess Then
+        MsgBox "Failed to click the '" & ELEMENT_TO_CLICK_NAME & "' element. Automation may not proceed correctly.", vbCritical
+        ' Optional: Decide whether to exit or continue depending on the process
+        ' Exit Sub
     Else
-        ' This part is now unlikely to be reached, but is kept for safety.
-        Debug.Print "The hardcoded browser path is empty."
-        MsgBox "The hardcoded browser path is empty.", vbCritical
+        Debug.Print "Successfully clicked the '" & ELEMENT_TO_CLICK_NAME & "' element."
     End If
 
-ExitProcedure:
-    Exit Function
+    ' --- Step 5: Automation Sequence Completed (for this part) ---
+    MsgBox "Automation part completed. Disputes element clicked.", vbInformation
 
-ErrorHandler:
-    OpenBrowser = False
-    Debug.Print "Error in OpenBrowser: " & Err.Description & " (Error " & Err.Number & ")"
-    Resume ExitProcedure
-End Function
+    ' --- Optional: Clean up the browser element reference ---
+    ' You might want to keep this if subsequent steps interact with the browser.
+    ' Set edgeBrowserElement = Nothing
+
+
+End Sub
