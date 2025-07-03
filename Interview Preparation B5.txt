@@ -1,564 +1,964 @@
-The Yes Check
-Check 1: Does what I am doing keep our customers and the Group safe and
-Secure?
-. Consider the impact of what you are doing. Rehearse a briefing with your boss
-Check 2: Would customers and colleagues say I am acting with integrity?
-. Would I do this to someone in my family or a friend? Would I do it to myself?
-Check 3: Am I happy with how this would be perceived on the outside?
-. Consider the impact of this in the outside world.
-. Try writing the press release -does it sound good for customers?
-Check 4: Is what I am doing meeting the standards of conduct required?
-. Think. If you are unsure then seek a second opinion
-o Check 5: In 5 years' time would others see this as a good way to work?
-. Will this have a positive impact? Imagine writing it on your CV
-
-
-
-about yourself:
-
-Hi, I currently manage the Dispute INC Debit process and act as the Subject Matter Expert, with over 19 months of experience in the role. Our process focuses on verifying and refunding interest or charges incurred due to disputed PSD transactions, using tools like DRS, Excel, and Back Office systems.
-
-I take full ownership of the process — from daily execution to continuous improvement. Recently, I independently developed an EUDA tool that automates interest adjustments across all scenarios — previously done manually by 4–5 users. It’s registered officially and is set for deployment this month. The project was acknowledged by senior leaders and helped me gain deep insight into risk, compliance, and the governance behind automation — something I’ve always aspired to contribute to from an operations background.
-
-Alongside this, I’ve delivered training and KTs to tech and ops stakeholders, and supported cross-trained processes like PSD Debit and FDP Credit during high-volume periods. I’m seen as both a reliable individual contributor and a team player — often the go-to person for both process and technical queries. Beyond work, I’m also passionate about personal finance, psychology, economics, and health — areas that keep me curious and learning constantly.
-
-
-
-
-
-I currently handle the Dispute INC Debit process, acting as an SME, with over 19 months of experience in my current role. 
-So our process starts after refunds are processed for disputed PSD cases, we verify whether any interest or charges were incurred by the customer due to the disputed transactions. If applicable, we adjust or refund these amounts in the back office before forwarding the case to the chargeback queue. In this process we use Back office, Refunds report, DRS, Excel and few other tools.
-
-I take full ownership of the process — not just in terms of daily execution and completing the allocation, but also in enhancing its efficiency and accuracy with a focus on continuous improvement. I treat the process as if it’s my own business — constantly looking for better ways to run it and being accountable for every outcome.
-
-Very recently, leveraging my in-depth process knowledge and insights gained through PDP learnings, I independently developed a new EUDA tool that automates interest adjustments across all scenarios — a task previously handled manually by 4–5 users. This has been officially registered in the EUDA inventory and FFD, with deployment planned at the end of this month. The development was positively acknowledged by senior leaders including Ashwani, Bala, Gowri, and Charlie.
-This experience also deepened my understanding of the end-to-end process of building a tool. It goes far beyond just writing the code — it involves ensuring alignment with group risk policies, undergoing multiple levels of review, and  demonstrate that the solution meets all compliance and operational standards. It's kind of a personal achievement which I was wanting to do, from an operational background to develop automation tools for our own.
-
-I’ve conducted training sessions, walkthroughs, and knowledge transfers for stakeholders including VB, Bala, and several technology partners involved in INC automation.
-I've also been cross-trained in neighbouring processes such as PSD Debit, Blacklisted CIN, and FDP Credit which allows me to step in and support effectively during high-volume periods.
-
-I'm both an individual contributor and a strong team player. My individual strengths are reflected in the automation tool I developed, which streamlined interest adjustments and significantly improved efficiency. At the same time, I’m often the go-to person for both process-related and technical queries — not just within my team, but across related functions. This trust and collaboration highlight my ability to support and uplift those around me, while continuing to drive results independently.
-
-I also have a lot of interest and opinions in Personal finance, Economics, Psychology, Health and etc.
-
-
-
-
-************************************************************************
-
-1. Process Improvement through Data Access & Collaboration
-S (Situation):
-While calculating interest refunds for disputed transactions, the most time-consuming step wasn’t the calculation itself — it was manually checking several back-office pages to find the day-end balance for each transaction. Even after I built an Excel-based calculator to simplify the math, we were still spending excessive time just gathering inputs.
-
-T (Task):
-I wanted to simplify and speed up the process further by eliminating the manual effort of searching for data in the back office.
-
-A (Action):
-I realized that if the information is visible on the screen, it must be coming from a database. I proposed the idea of accessing this database to fetch required details directly through queries. I shared this idea with Bala, our tech lead. He immediately brought the right stakeholders to the table, and I walked them through the use case and challenges. Within two days, they delivered the first version of a report. We tested it against multiple scenarios, refined the logic, and finalized a solution.
-
-R (Result):
-That report is still being used today and has drastically reduced our effort. Back then, we were 8 FTEs handling the workload — now it’s just 4, thanks in part to this improvement. Additionally, the automation tool I later built (Project 1 in my resume) now runs on top of this data, enabling end-to-end automation of interest adjustments. This initiative not only improved efficiency but also reduced dependency on manual checks.
-
-
-----------------------------
-
-2. Learning from a Mistake
-S (Situation):
-When the INC process moved from BPM to DRS, a new automation tool was introduced to calculate INC interest and charges using the refunds report. It was developed by Adam Smith and Tylor, based solely on Blueworks documentation.
-
-T (Task):
-I was excited to see the tool in action, but during testing, I discovered that 100% of the outputs were inaccurate. Key logic steps in calculating refund amounts were missing. Meanwhile, case volumes were piling up and we hadn’t started processing them.
-
-A (Action):
-I raised the issue immediately and suggested we limit the tool’s scope — use it only to check INC applicability for now, and continue calculating refunds manually as we used to. I proposed we revisit the full calculation logic in a later release, this time by involving process SMEs like myself during development — not just relying on process maps like Blueworks.
-
-R (Result):
-We were able to start processing the cases right away instead of waiting for a faulty tool fix. This approach helped us reduce SLA breaches. More importantly, it highlighted a key learning for me: building automation without continuous collaboration with process experts can fail, and real success comes from adopting an agile, collaborative way of working.
-
-----------------------------
-
-3. Challenging a Faulty INC Tool Implementation
-S (Situation):
-After the INC process moved from BPM to DRS, a new automation tool was introduced to calculate interest and charges. The tool was built by developers based only on the Blueworks process documentation, without involving process SMEs like us.
-
-T (Task):
-During testing, I found that 100% of the tool’s outputs were wrong — key logic steps were missing. Despite the urgency, we hadn’t even started processing those cases, and WIP was piling up.
-
-A (Action):
-Instead of just rejecting the tool, I calmly explained the gaps to our tech lead and suggested we scale back its functionality for now. I proposed using the tool only for checking INC applicability and continuing with manual calculations for refunds. I also recommended that in future updates, the process SME should be involved during development to co-create the logic — an agile, collaborative approach.
-
-R (Result):
-We were able to start processing the backlog immediately instead of waiting for the full tool fix. It helped reduce SLA breaches, and the collaboration model I proposed was adopted going forward for automation development — ensuring more accurate outcomes.
-
-----------------------------
-
-4. Collaborating to Enable Automation for DRS Manual Cases
-S (Situation):
-We started receiving some INC cases through DRS that had to be processed completely manually — none of the automation tools or reports we used for regular cases were compatible. It significantly increased the time and effort required to handle these cases.
-
-T (Task):
-I proposed a solution: if we could extract refund-related data for DRS manual cases from the backend database and compile it into a usable report, we could use our existing tools to process them like any other case. But it wasn’t straightforward — there were multiple technical challenges in pulling the right data and joining the right tables.
-
-A (Action):
-I worked closely with a developer on this. I sat down to understand the database structure, helped identify the relevant tables, filters, and logic to extract the required fields, and manually validated the extracted report by comparing it against actual cases in DRS. We held multiple working sessions and testing calls. Midway through, the developer I was working with moved to another role, which caused a temporary gap. But I maintained continuity by documenting our progress and resumed collaboration with the new developer once work restarted — sharing all previous logic, validations, and input ideas.
-
-R (Result):
-Although the final report is still in progress, we’re back on track. My proactive involvement, technical contribution, and ability to bridge the transition gap helped keep the project moving. Once complete, this will significantly reduce manual effort and bring DRS manual cases in line with our automated process.
-
-----------------------------
-
-5. Communicating Process Changes to QC Team
-S (Situation):
-After several changes in the INC processing workflow, a call was scheduled with the QC team to restart external quality checks. Each analyst was processing cases from their allocated Excel files, and the process had evolved significantly since QC was last involved.
-
-T (Task):
-As the SME, I had to ensure the QC team clearly understood the new process, including all logic changes and what to look for while reviewing cases.
-
-A (Action):
-On the call, I clearly walked them through each part of the current workflow, explained the revised rules for processing, and verified multiple times if they had any questions or needed clarification. After QC began, they raised a concern that each user’s allocation files were inconsistent in format, making QC difficult. I quickly set up a separate internal call with all users and aligned the team on a standardized format to track and save allocation status, ensuring consistency.
-
-R (Result):
-This not only enabled the QC team to carry out reviews more smoothly but also improved transparency and consistency across the team. Clear communication and proactive follow-up helped avoid rework and made the process more quality-friendly.
-
-----------------------------
-
-6. Responding to Feedback about Prioritization
-S (Situation):
-When the Senior Analyst role was posted on Workday, I was deeply involved in enhancing our automation tool and helping extract refund data for DRS manual cases — a technically challenging project that demanded my full attention. I was working from office that week and fully focused on pushing it forward.
-
-T (Task):
-While I was engrossed in the project, I delayed applying for the role. Three days passed, and my manager hadn’t received any application notification. During a team huddle, they directly advised me to pause the ongoing work temporarily and focus on applying and preparing — since this opportunity was important for my growth.
-
-A (Action):
-I immediately took the feedback positively. That same night, I updated my application, polished my resume, and shifted my focus to prepare for the interview. I also realized the importance of balancing personal development opportunities with delivery responsibilities.
-
-R (Result):
-I applied and began preparation with full intent. The feedback helped me reframe how I prioritize — especially when it comes to opportunities that support long-term growth. And once the interview’s done, I’ll continue from exactly where I left off in the project.
-
-----------------------------
-
-7. Adapting to a Different Working Style During Tool Development
-S (Situation):
-While working on the project to extract refund data for DRS manual cases, I collaborated with a tech developer who had a very structured and process-driven approach. Coming from a technical background, he preferred detailed specifications and documentation before writing a single line of code.
-
-T (Task):
-My role was to explain the business logic and real-life case scenarios that weren’t easy to document all at once — especially since many edge cases only surface during testing.
-
-A (Action):
-I adapted by changing my approach — instead of trying to explain everything upfront, I started breaking the logic into smaller, well-defined blocks. I prepared sample cases in Excel, tagged scenarios clearly, and sat with him for short, focused syncs to discuss one topic at a time. I also gave him written examples and mock outputs so he could work at his own pace while understanding the intent.
-
-R (Result):
-Our collaboration improved significantly. He was able to build faster and more accurately, and I ensured the logic stayed true to the process. This experience taught me that flexibility in communication and adapting to someone else’s style can be just as important as the content itself.
-
-----------------------------
-
-8. Adapting to a Change in Leadership Style
-S (Situation):
-After my previous manager Saravanan transitioned out, I was temporarily reporting to Narasimhan. Naturally, every leader brings a different approach, and initially, there were some changes — like closer follow-ups on GPLs and tighter timelines around refund reports.
-
-T (Task):
-I had to adapt to this new working style while ensuring I continued delivering high performance and meeting the expectations of the role.
-
-A (Action):
-I proactively explained our end-to-end process to him — what dependencies we have, the tools we rely on, and how we prioritize based on case volumes and SLAs. I ensured transparency from my side and provided regular updates on progress. Over time, this helped align expectations, build mutual trust, and create a rhythm that worked for both of us.
-
-R (Result):
-Our communication became smooth and efficient, and he adapted his approach based on better understanding of the ground reality. I was able to maintain consistent performance throughout the transition, and the experience taught me how to navigate changes in leadership with clarity and collaboration.
-
---------------------------
-
-9. Staying Resilient as an FTC Employee
-S (Situation):
-When I joined as an FTC employee, I was told that based on performance, I might be considered for a permanent role after 9 months. I consistently delivered across all metrics — quality, productivity, support, and behavior — but even after 9 months, our contracts were extended instead of being converted.
-
-T (Task):
-Though it was disappointing, I had to stay motivated, continue delivering at my best, and maintain a positive attitude despite the uncertainty.
-
-A (Action):
-I reminded myself to trust the process and focus on being a valuable contributor. I stayed engaged, kept up my performance, and ensured I remained visible through the work I did — whether it was owning the INC process, building automation, or supporting peers and tech teams.
-
-R (Result):
-After 14 months, I was made a permanent employee. My biggest learning? When the opportunity comes, you shouldn’t have to prepare — you should already be ready. Stay consistent, stay visible, and the right doors will open.
-
-------------------------------
-
-10. Managing Multiple Priorities Across Processes
-S (Situation):
-There have been several instances where the volume in cross-trained processes — like abusive transactions or PSD Debit — spiked significantly. These were same-day SLA processes and needed immediate attention, even when I had my own INC process allocation to complete.
-
-T (Task):
-I had to balance both: meet the SLA for high-volume cross-process tasks while ensuring my own process (INC Debit) didn’t fall behind or suffer in quality.
-
-A (Action):
-I prioritized based on cut-off times and impact. I knew INC cases couldn’t be processed after 6 PM GMT, so I focused on completing them first. Then I moved to the abusive process, which could be handled post 6 PM. I stretched a bit when needed and planned my day to batch similar tasks — this helped me work faster without compromising accuracy.
-
-R (Result):
-I was consistently able to meet both sets of deadlines. This approach not only helped the wider team meet critical SLAs, but also reinforced my reliability in handling pressure and juggling priorities effectively.
-
------------------------
-
-11. Learning VBA to Automate Repetitive Work
-S (Situation):
-I noticed that in almost every workplace — especially in operations — Excel is widely used, and many tasks are repetitive and time-consuming. These often included formatting, allocation, and folder creation, which were being done manually every day.
-
-T (Task):
-I wanted to find a way to reduce repetitive effort and make our daily tasks more efficient, both for myself and for the team.
-
-A (Action):
-I took the initiative to learn Visual Basic for Applications (VBA), the language used to create macros in Excel. I started experimenting by automating small tasks — building tools for data formatting, automated allocations, and even generating folder structures. I kept enhancing my skills over time and shared useful tools with my colleagues as well.
-
-R (Result):
-This not only helped me save time in my daily work but also supported my teammates in simplifying their routine tasks. Some of these tools are still being used regularly. It also laid the foundation for my larger automation projects, like the EUDA tool I built for interest adjustments.
-
-----------------------
-
-12. Shifting Priorities During a Volume Spike
-S (Situation):
-Just a few months into my role, while I was still learning and stabilizing in my core INC Debit process, there was a sudden volume spike in the DC1 process due to an incident. The business needed urgent support across teams, including mine.
-
-T (Task):
-I was asked to support write-offs and Retailer Credit cases in DC1 — a process I had no prior hands-on experience with — while still managing my existing workload in INC.
-
-A (Action):
-I quickly picked up the basics in a day and started processing cases immediately to help the team. Though I wasn’t deeply trained, I ensured every case I worked on met quality standards by double-checking against examples and guidance notes. I supported DC1 throughout weekends and during weekdays wherever possible, while continuing with my INC allocation in a balanced way.
-
-R (Result):
-We managed to clear the critical backlog in DC1 over the next few weeks, and once the volumes were back to normal, I resumed full focus on my core process. The experience helped me prove my adaptability and reinforced that I can step up when business needs shift unexpectedly.
-
---------------------
-
-13. Analyzing a Refund Calculation Issue in INC Tool
-S (Situation):
-When a new automation tool was introduced for calculating interest and charges in the INC process (post-BPM to DRS migration), it was expected to be a ready-made solution. However, during my initial testing, I found that 100% of the results were wrong — which meant we couldn’t proceed with processing any cases.
-
-T (Task):
-I had to find out why the outputs were incorrect, identify where the logic was breaking, and propose a fix — all while backlog was building up and SLA risk was growing.
-
-A (Action):
-I started by reviewing the logic used in the tool and comparing it against actual case examples. I noticed that major steps from the original manual process were missing — like transaction linking, daily balance check, and interest rate variability. I documented all missing elements and engaged with the developer team to explain these gaps. Instead of pushing for a complete rework, I suggested we limit the tool’s use to identifying INC applicability only, and manually calculate interest refunds for now. I also proposed involving process SMEs in future tool development to avoid such disconnects.
-
-R (Result):
-This quick fix allowed us to start processing cases immediately and reduced SLA breaches. In the longer run, this experience helped establish a better collaboration model for tool-building — aligning business logic with development through real-time SME involvement.
-
----------------------------
-
-14. Choosing Fair Refund Logic Over Flat Refunds
-S (Situation):
-During a high WIP period in the INC process, management proposed applying a flat £1 interest refund for all disputed cases to speed up processing and reduce SLA breaches.
-
-T (Task):
-While this would save time, I realized it might lead to unfair treatment — some customers were entitled to much more than £1, while others less. I had to decide whether to follow the flat refund or find a balanced alternative that wouldn’t compromise customer fairness.
-
-A (Action):
-I evaluated the situation by analyzing case data — transaction amount, interest rate, transaction date, and refund date. I created a formula to calculate the maximum fair refund for each case. Based on the results, over 60% of cases still came under £1 and could be processed using the flat logic. For the rest, we handled them manually to ensure customers got what they were rightfully owed.
-
-R (Result):
-This approach saved time on most cases while maintaining fairness and reducing the risk of complaints from customers entitled to higher refunds. It also demonstrated a customer-first approach while still being efficient operationally.
-
------------------------------
-
-15. Challenging the Flat £1 Refund Assumption
-S (Situation):
-During a high-volume period in the INC process, to meet SLAs quickly, the proposed solution was to refund a flat £1 interest amount for every case — assuming it would balance out over time and avoid delays.
-
-T (Task):
-I had to assess whether this blanket approach would truly be fair to customers and align with the bank’s risk and compliance standards — especially since interest refund calculations impact both customer trust and financial accuracy.
-
-A (Action):
-I analyzed historical data and ran refund scenarios using actual case logic. I found that some customers were entitled to more than £1, and under-refunding them could trigger complaints. Others deserved far less, so over-refunding would be a financial leakage. Instead of rejecting the proposal entirely, I developed a logic-based formula that used transaction amount, date, and rate to estimate the accurate refund. We then applied the flat £1 only when the calculated amount came below that — and manually processed exceptions that exceeded it.
-
-R (Result):
-This approach was quickly adopted for about two months. It helped us meet SLA, minimize risk, and ensure fairness, which aligns with the bank’s commitment to ethical practices and customer trust. It also demonstrated how we can question assumptions thoughtfully without slowing down the business.
-
--------------------------
-
-16. Ensuring Accuracy During Account Statement Tool Testing
-S (Situation):
-While developing the account statement tool used to fetch transaction-level data for INC interest calculations, I was responsible for testing the accuracy of the tool’s output before it could be relied on for automation.
-
-T (Task):
-The output included 500+ records daily, and every transaction detail had to match exactly with the back-office system. Since the tool would eventually be used to calculate customer refunds, even a 1-penny error could compromise accuracy and compliance.
-
-A (Action):
-In the early stages, errors were easier to catch — one every 10–15 records. But as I kept enhancing the logic and adding edge-case scenarios, the tool’s accuracy improved significantly, making errors much harder to spot. I kept up with rigorous manual validation, day after day, despite long stretches where no errors appeared. I cross-verified tool output with back-office records, line by line, to ensure 100% reliability. I also documented recurring patterns to avoid future misses.
-
-R (Result):
-The tool was validated to be accurate to the highest standard. It’s now a core part of the interest calculation automation process. This experience reinforced how extreme attention to detail and patience — even when you expect no errors — is what builds systems that can be trusted at scale.
-
---------------------
-
-17. Handling Inconsistencies in Data Analysis
-S (Situation):
-If I were given a dataset with inconsistencies or missing fields, the first thing I’d focus on is not jumping straight to analysis — but ensuring the integrity of the data aligns with the business objective.
-
-T (Task):
-My goal would be to produce a report that is accurate, reliable, and answers the business question meaningfully — without misleading stakeholders due to incomplete inputs.
-
-A (Action):
-I would start by identifying exactly what’s inconsistent or missing and assess how critical that information is to the core analysis. If possible, I’d try to trace the issue back to the source system or check if the same data is available from another backup or alternate report. I’d reach out to data owners or upstream teams to verify. If the gaps couldn’t be filled, I’d look for reasonable assumptions or use proxies where justifiable — but I would clearly document those in the report. Most importantly, I’d make sure the key message still holds, and if not, I’d communicate the limitation upfront.
-
-R (Result):
-By doing this, I ensure the output remains transparent, defensible, and decision-worthy, even when not every data point is perfect. This approach balances speed with responsibility — something especially important in senior roles.
-
---------------------------
-
-18. Balancing Speed with Responsibility in Analysis
-S (Situation):
-If a stakeholder asked for a quick analysis that seemed oversimplified or risked missing key variables, I’d recognize that while agility is important, accuracy and context matter just as much — especially in a regulated environment like banking.
-
-T (Task):
-My task would be to support the stakeholder’s need for timely insights while ensuring the analysis doesn’t misrepresent reality or expose the bank to potential risk.
-
-A (Action):
-I’d first clarify the purpose and end use of the analysis — is it just for directional input, or will it inform a final decision? Then I’d offer to provide a high-level version with clear disclaimers: what assumptions were made, what’s not covered, and where risks might lie. At the same time, I’d suggest a more detailed version that could follow shortly after, especially if the topic is complex or customer-impacting. This way, I support their urgency while also protecting the integrity of the output.
-
-R (Result):
-This approach helps maintain trust, manage expectations, and reflect the bank’s broader values of prudence, transparency, and customer-centricity — even in fast-paced situations.
-
----------------------------
-
-19. Collaborating with Tech Stakeholder for Refund Report Automation
-S (Situation):
-While trying to automate the process for handling INC DRS manual cases, I needed to work closely with a tech developer to create a report that could extract refund-related data directly from backend systems — something that had never been done before.
-
-T (Task):
-It was crucial to build a mutual understanding — I had to communicate the business logic behind each scenario, and the developer had to translate it into data queries and automation.
-
-A (Action):
-I approached this by being very transparent, open, and proactive. I didn’t just give high-level requirements — I broke down complex logic into smaller steps, provided test cases, and sat with him regularly to clarify doubts. I also made sure to learn the technical side enough to communicate in his terms. When he got rolled off the project suddenly, I made sure all our progress was well-documented so it could seamlessly resume with the next developer.
-
-R (Result):
-Because of that strong foundation and documentation, we were able to pick up where we left off without delays. The ongoing relationship helped improve both the speed and quality of collaboration, and this style of working has become my go-to approach for cross-functional teamwork since.
-
------------------------
-
-20. Supporting a Teammate During a Low Phase
-S (Situation):
-A colleague in my team was going through a rough patch — both personally and professionally. They had made a few errors in the process and were feeling extremely low in confidence, to the point of withdrawing from discussions and team activities.
-
-T (Task):
-I felt it was important to not just focus on the mistakes, but to help them rebuild confidence and feel supported — both as a teammate and as a person.
-
-A (Action):
-I reached out to them one-on-one, not just to offer help with the process but also to genuinely listen to what they were going through. I shared how I too had made mistakes earlier and how it’s part of learning. I helped them go over the process again step-by-step, and when they had a small success, I made sure to acknowledge it publicly in the group chat — to reinforce their confidence without making it obvious.
-
-R (Result):
-Over the next few days, their engagement improved, and they were back to handling tasks independently. This experience reminded me that sometimes, empathy and small gestures of support make a bigger impact than technical solutions — and it helped strengthen trust in our team.
-
--------------------------------
-
-21. Upholding Fairness in Refunds Under Pressure
-S (Situation):
-During a period of high WIP in the INC process, there was pressure to quickly clear cases. Management proposed a flat £1 interest refund for all cases to speed up processing — regardless of the actual amount the customer was owed.
-
-T (Task):
-I had to evaluate whether this approach was fair to customers and aligned with the bank’s ethical standards, even though it came from senior direction and seemed like a quick fix.
-
-A (Action):
-Instead of silently following through, I raised my concern and explained the potential for unfair refunds — some customers would be underpaid, some overpaid. I developed a logic-based formula that calculated the accurate refund using transaction date, amount, and rate. We processed cases under £1 using the formula, and flagged those that required more refund for manual handling.
-
-R (Result):
-This approach was adopted for two months, reducing errors and potential complaints while maintaining fairness. It reinforced that doing the right thing — even if it's not the fastest — protects both the customer and the bank’s reputation.
-
-----------------------------
-
-22. Guiding a Tech Colleague with GSI Back Office Understanding
-S (Situation):
-A tech developer who was working on an automation project reached out to me with a query about whether it was possible to connect programmatically to the GSI Production back-office system to extract data.
-
-T (Task):
-Though this was outside my core responsibilities, I had strong hands-on experience with GSI through the INC process. My role was to help him understand the tool’s structure, limitations, and access control — so he could make the right decision on approach.
-
-A (Action):
-I walked him through how GSI behaves — what data is accessible, how it’s structured, and where automation might face blockers like dropdowns, dynamic loads, or security restrictions. I also explained how some parts of the process rely on real-time user interaction, which might not be feasible to automate without read-only backend alternatives.
-
-R (Result):
-He adjusted his automation approach accordingly and avoided investing time in a method that wouldn’t scale. This saved effort and helped steer the project in a more practical direction — and it reinforced how deep product/process knowledge can influence smarter decisions, even outside your own domain.
-
--------------------------------
-
-23. Understanding the Broader Need Behind Report Automation
-S (Situation):
-While collaborating with the tech team to build a report that fetches refund data for DRS manual cases, their initial goal was to just automate data extraction for immediate processing support.
-
-T (Task):
-However, I realized that their request was only addressing the surface-level need. The long-term need was to create a sustainable input source that could also integrate into future automation tools, reduce manual handling, and scale as volume grows.
-
-A (Action):
-I took time to understand the broader intent by asking questions like: “Where else do you see this data being used?” and “Do we want this report to remain static or evolve with changing logic?” Based on those discussions, I contributed scenarios, validations, and logic blocks that weren’t part of the original ask — like date-based refund calculations and process-specific applicability checks.
-
-R (Result):
-The report is now not just a one-time data pull, but a foundation for long-term automation and process efficiency. It serves both current manual needs and future-proofing, and my proactive approach helped align the solution to a bigger picture than initially scoped.
-
-----------------------------
-
-24. Balancing Urgency with Ethical Boundaries
-S (Situation):
-If a stakeholder urgently requested data that, in its raw form, could breach data privacy guidelines — such as exposing customer-sensitive fields or personally identifiable information — I’d recognize the importance of acting fast, but also the need to uphold the bank’s standards.
-
-T (Task):
-My responsibility would be to support the business need without violating ethical or regulatory boundaries — ensuring both compliance and stakeholder satisfaction.
-
-A (Action):
-First, I’d acknowledge the urgency and clarify the exact outcome they’re looking for. I’d then suggest an alternative version of the data — like masked values, aggregated summaries, or anonymized fields — that still delivers insight without compromising confidentiality. If required, I’d consult with the data governance team or our manager for alignment, and explain transparently why raw access wasn’t feasible. Throughout, I’d keep communication open, respectful, and solution-focused.
-
-R (Result):
-This approach would help me maintain trust, protect data integrity, and demonstrate responsible handling of sensitive information — showing I can balance delivery with doing what’s right for the customer and the bank.
-
-----------------------------
-
-25. Turning Customer Feedback into Actionable Insights
-S (Situation):
-If I were asked to analyze customer feedback to improve a service, I’d treat it not just as raw data, but as real customer experiences that need to be understood in the right context — emotionally and operationally.
-
-T (Task):
-The goal would be to extract meaningful patterns from the feedback, understand why customers feel the way they do, and translate that into actionable, credible recommendations for the business.
-
-A (Action):
-I’d begin by categorizing the feedback — whether it’s about delays, clarity, process complexity, or agent behavior. Then, I’d connect each type of feedback with its respective journey touchpoint — for example, was the delay due to an internal handoff, tool limitation, or unclear communication?
-I’d also review actual cases, not just survey comments, to understand context. If needed, I’d talk to frontline teams who interact with customers daily to gather qualitative inputs. After analyzing the root causes and customer pain points, I’d recommend solutions that not only solve the problem but also align with customer expectations — such as simplifying language, improving turnaround time, or adding proactive updates.
-
-R (Result):
-This approach ensures that feedback isn’t just recorded but understood, and that the solutions proposed improve both customer satisfaction and operational efficiency — making the feedback loop truly meaningful.
-
--------------------------
-
-26. Staying Current in a Senior Analyst Role
-S (Situation):
-In a dynamic role like Senior Analyst, staying updated isn’t optional — it's essential to provide credible insights, make informed decisions, and guide others confidently.
-
-T (Task):
-My goal would be to proactively stay informed on changes in banking products, internal policy updates, automation trends, regulatory shifts, and customer expectations — all of which shape the way we serve customers and design solutions.
-
-A (Action):
-I’d take a multi-layered approach:
-
-Internal Sources: Stay close to product teams, attend process update huddles, and review SLX, FFD, or policy updates regularly.
-
-Collaborative Learning: Actively engage with cross-functional teams — especially tech and risk — to stay ahead of changes that affect operations.
-
-External Awareness: Read industry updates from RBI, FinTech blogs, and publications like Mint or Economic Times to understand regulatory trends and innovation in banking.
-
-Upskilling: I’d also continue learning through platforms like Udemy or LinkedIn Learning — particularly on automation, data analytics, or regulatory compliance.
-
-R (Result):
-By doing this consistently, I can ensure I’m not just executing the current process, but also equipped to advise on what’s coming next — providing trusted, future-ready guidance to peers and stakeholders.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Deserving this position can be subjective, but here’s my perspective. I believe I’ve already been operating at a Senior Analyst level — taking full ownership of my process, solving problems proactively, and collaborating effectively across teams. From building automation tools that have significantly improved efficiency, to making critical decisions during system transitions, I’ve consistently gone beyond my core responsibilities. I’ve also earned the trust of peers and stakeholders, often serving as a go-to person for support and solutions. With my experience, mindset, and commitment to continuous improvement, I’m confident I can add even more value in this next role.
-
-I see myself in a position where I continue to add meaningful value by identifying opportunities for improvement and applying both my CPC and technical skills to drive impact. Over time, I aim to grow into roles where I can lead change, mentor others, and contribute at a strategic level. Based on the recognition I’ve received from both peers and stakeholders — including comments like “You definitely deserve this, and I’d be happy if you get it” from colleagues competing for the same role — I believe I’m on the right path. Ideally, I’d like to be in a place where my performance speaks for itself and future transitions feel like a natural next step.
-
-In a recent discussion with my manager, I proposed creating comprehensive documentation for key responsibilities typically handled by PLs and managers — such as onboarding checklists for new joiners, access request procedures, and answers to common business-related "how-to" questions beyond core processes. I’ve observed that we still rely heavily on individuals for this knowledge, which poses a risk to Business Continuity Planning. My view is that every team member should have access to this information in a structured format, so they’re not dependent on specific people — promoting both self-sufficiency and operational resilience.
-
-While declaring results for roles like this, it’s natural for the question “Why him and not me?” to arise among peers. I believe this reflects a gap in how we create visibility for individual and team contributions. Often, impactful work happens behind the scenes and isn’t consistently showcased. I feel there’s significant room for improvement in building a culture where achievements — both individual and collaborative — are documented, recognized, and communicated more transparently.
-
-getting things done:
-We recently had a Fun Friday event initiated by a colleague who’s leaving at the end of the month. Only around 12 of us were in office, and some teammates were hesitant to join due to pending work. I felt bad for the person who took the initiative — it’s disheartening when efforts go unnoticed. So, I spoke to those who were reluctant and explained that if we discourage such initiatives, others will hesitate to step forward in the future. I reminded them that participation builds a positive culture, and we should support such efforts. They agreed and joined — and the outcome was amazing. Everyone ended up having a great time, bonding over games and conversations. Sometimes, it just takes one conversation to shift the mood and make things happen.
-
-There are three new projects coming into our business Sainsbury's Bank, A2A application, Virtual cards, and I can already see multiple opportunities where automation and the use of technology can greatly improve efficiency. With the current team size at around 270 colleagues under Ashwani — including you and me — I’m curious: based on the direction we’re heading and the impact of automation, what’s your view on how our team size might evolve over the next 2–3 years? Do you foresee it growing, stabilizing, or potentially shrinking due to tech-led efficiencies?
-
-
-Personal Finance - Accounting of personal inc and exp since 2022, now over 3 years. Actively read and watch videos/hear podcast about others perspective over finance and learn from it.
-Interest in Psychology, Economics - Having a good amount of interest in Economics and psychology other than technology. I've written a own theory in an exam while being at college. Professor called me in front of everyone in call and appreciated for having this much understanding over the concepts in economics, which I'll never forget.
-Health - Do calisthenics workout, and eat healthy. does a lot of physical activities, which sometimes involves part time work also.
-
-
-improver innovator - While exploring areas for improvement beyond process work, I identified a UX issue in the Routematic app. Each time a user tries to book a shuttle, they must scroll extensively to find their preferred route — a repetitive and inefficient experience. I proposed a simple feature enhancement: allowing users to pin their frequently used route for quick access. I documented this as feedback and shared it with Routematic, who acknowledged the idea and confirmed they’d escalate it to the appropriate team. This reflects my natural inclination to spot inefficiencies and suggest intuitive, user-friendly improvements — a quality that aligns with the Improver Innovator mindset.
-
-change ready - During the transition from BPM to DRS in the INC process, I embraced the significant changes despite initial challenges and inefficiencies. I quickly adapted to the new system, identified process gaps, and contributed ideas to streamline workflows—playing an active role in stabilizing and improving the revised process.
-
-critical thinker - During the INC process transition, management proposed a flat £1 refund for all WIP cases due to time constraints. I identified the flaws in this approach, as many cases were entitled to less or more. I developed a formula-based method to accurately estimate fair refunds using transaction data, enabling us to process 60% of cases below £1 automatically while manually handling exceptions. This significantly reduced potential complaint volumes and saved costs.
-
-connected - My work on automation and process improvement helped me build meaningful connections with stakeholders across tech, operations, and senior leadership. I regularly collaborate across teams, conduct walkthroughs, and share insights that foster mutual understanding and drive joint solutions—not just superficial collaboration.
-
-trusted advisor - Recognized as a go-to person across teams for resolving process and automation-related queries, even beyond my domain. From advising a developer on GSI Production connectivity to identifying rare filter issues in automation files, I’ve consistently provided accurate guidance, earning trust through deep process knowledge and reliable support.
-
-🔹 Improver Innovator
-S: While using the RouteMatic app, I noticed users had to scroll repeatedly to find their preferred shuttle route.
-T: I wanted to improve this repetitive user experience.
-A: I suggested a feature to pin frequently used routes and shared it as formal feedback to the Routematic team.
-R: The idea was acknowledged and escalated by their team. It reflected my instinct to spot and solve usability inefficiencies beyond just process work.
-
-🔹 Change Ready
-S: During the transition from BPM to DRS in the INC process, many challenges and inefficiencies surfaced.
-T: I had to adapt quickly and ensure the process remained stable.
-A: I learned the new system rapidly, identified key gaps, and shared improvement ideas with the team.
-R: My contributions helped smoothen the transition and improve workflow consistency, reinforcing my adaptability.
-
-🔹 Critical Thinker
-S: Management proposed a flat £1 refund during high WIP, but I saw flaws in the logic.
-T: I needed to find a fairer, data-driven approach.
-A: I developed a formula-based method to accurately estimate fair refunds using transaction data, enabling us to process more than 60% of those cases which were below £1 by respective maximum amounts and rest of the cases manually.
-R: This saved costs, reduced complaints, and maintained fairness — a clear example of thoughtful, impact-driven problem solving.
-
-🔹 Connected
-S: I’ve worked on automation and process improvement across INC, collaborating with multiple teams.
-T: I aimed to ensure alignment and shared understanding across functions.
-A: I conducted walkthroughs, shared knowledge with tech teams, and engaged senior leadership throughout projects.
-R: These efforts helped strengthen collaboration, build trust, and deliver solutions that worked across the board.
-
-🔹 Trusted Advisor
-S: Colleagues across teams often reach out to me for process and even technical queries.
-T: I ensure they get accurate, dependable support — even beyond my core responsibilities.
-A: I’ve helped troubleshoot rare automation issues and guided developers on system access and functionality.
-R: This has earned me a reputation as a go-to person, reflecting deep process understanding and a supportive mindset.
-
-
-1. How do you manage and prioritize tasks when volumes are high or SLAs are at risk?
-I first assess urgency versus impact — starting with tasks closest to breaching SLA or affecting customer experience. I also proactively communicate with stakeholders to set realistic expectations. That's why we always encourage colleagues to get cross trained in multiple processes. It helps at these times and also in times where extra leaves are requested on a same day. During high-volume periods, I’ve supported cross-trained processes like which I've mentioned earlier to share the load while still managing my own. I rely on trackers and MI to monitor progress and stay on top of priorities. 
-
-2. Tell us about a time you handled an unexpected exception or error.
-Once, a colleague faced an error while allocating automation files. The system seemed correct, but I suspected a rare case where filters weren’t properly applied before downloading reports. I asked them to recheck, and that indeed was the issue. My familiarity with edge cases helped resolve the problem quickly and avoid escalation just over a call.
-
-3. How do you handle changes in procedures or tools?
-I embrace change as a chance to improve. For example, during the BPM to DRS transition, I quickly adapted, understood the new system, and identified process gaps. I suggested fixes and supported others through the shift. Being adaptable and solution-focused helped keeping the process stable and maintain performance.
-
-4. How do you handle escalations or error cases from stakeholders?
-I approach escalations calmly, first by understanding the full context, then reviewing the data or case facts. If it’s a process error, I take ownership, correct it, and implement preventive steps. I also ensure transparent communication with stakeholders so they know we’re in control of the resolution and working toward improvement.
-
-5. What does process ownership mean to you?
-For me, process ownership means taking full responsibility — not just for delivery, but for quality, accuracy, improvement, and stakeholder satisfaction. I treat the process as if it’s my own business — constantly looking for better ways to run it and being accountable for every outcome.
-
-6. How do you align your work with business goals or customer impact?
-I always consider how each task contributes to bigger goals like customer satisfaction, compliance, or cost-efficiency. For example, I challenged a £1 flat refund approach and built a logic-based alternative that ensured fair treatment to customers while also reducing unnecessary payouts — aligning both business and customer interests.
-
-7. What would you focus on if given charge of this process as a Senior Analyst?
-I’d focus on strengthening process controls, improving speed through further automation, and building stronger documentation for knowledge continuity. I’d also look to mentor team members and create a culture where feedback and continuous improvement are part of daily practice.
-
-8. Have you taken any initiative that had a long-term impact on the team?
-Yes — the EUDA tool I built automated interest adjustments that were earlier done manually by 4–5 users. It has improved accuracy, reduced turnaround time, and freed up resources for higher-value work. It’s now registered in EUDA inventory and FFD and ready for deployment.
-
-9. Where do you see improvement potential in your current area?
-I see potential in simplifying data access — for example, reducing dependency on multiple reports and manual formatting. With small automations, we could reduce redundant steps and improve TAT. There’s also scope to better document edge-case scenarios so fewer errors are made by users.
-
-10. How do you handle conflicting priorities or stakeholder expectations?
-I focus on transparent communication and setting clear expectations. If two priorities clash, I evaluate based on urgency, risk, and business impact — and if needed, escalate early for alignment. I believe in solution-oriented discussions rather than silent juggling, which helps avoid missed deadlines or errors.
-
-11. Imagine the process has failed for a day. What would be your immediate actions?
-First, I’d isolate the cause — system, people, or data. Then I’d communicate the issue and estimated impact to stakeholders. Meanwhile, I’d coordinate a recovery plan — reallocating tasks, extending working windows, or prioritizing urgent cases. Post-recovery, I’d document the issue and propose preventive controls.
-
-12. If you find a peer making consistent errors, how would you address it?
-I’d approach it supportively and privately. I'd try to understand if it’s a knowledge gap or something else. I’d offer help, share the correct method, and guide them without making it uncomfortable. If the issue persists, I’d escalate with context so it can be resolved constructively.
-
-13. You’re asked to support a new process while managing your own – what do you do?
-I’d first understand the scope and urgency of the new process and align timelines. If it’s feasible, I’d adjust my day and use my time efficiently — possibly automating parts of my current process. If both demand full focus, I’d raise it with my manager early to prioritize effectively.
-
-14. How would you deal with resistance to an automation idea you proposed?
-I’d first try to understand the resistance — is it technical feasibility, data sensitivity, or just reluctance to change? Then I’d demonstrate the benefit clearly — time saved, reduced errors, or simplified tasks. I’ve found that a working prototype and a few real examples usually help shift perception. I believe leaders aren't reluctant to change
-
-15. "Have you ever disagreed with a management decision?"
-Yes — during a high WIP phase, management proposed a flat £1 refund for all cases. I pointed out the risk of unfair payouts and built a formula to calculate accurate refunds based on transaction details. This solution was accepted and used until the WIP is cleared, reducing complaints and saving cost.
-
+' modAutomationHelpers module
+
+Option Explicit ' Forces variable declaration
+
+'****************************************************************************************************
+' Declarations for Windows API functions
+'****************************************************************************************************
+
+' Used for pausing execution
+Public Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
+' Used for finding windows
+Public Declare Function FindWindow Lib "user32" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As Long
+Public Declare Function SetForegroundWindow Lib "user32" (ByVal hWnd As Long) As Long
+Public Declare Function FindWindowEx Lib "user32" Alias "FindWindowExA" (ByVal hWnd1 As Long, ByVal hWnd2 As Long, ByVal lpsz1 As String, ByVal lpsz2 As Any) As Long
+
+' Used for sending window messages
+Public Declare Function SendMessageByString Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As String) As Long
+Public Declare Function SendMessageByNum Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Declare Function SendMessageInt Lib "user32.dll" Alias "SendMessageA" (ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Declare Function SendMessageLong Lib "user32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Declare Function PostMessage Lib "user32" Alias "PostMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+
+' Used for getting window information
+Public Declare Function GetWindow Lib "user32" (ByVal hWnd As Long, ByVal wCmd As Long) As Long
+Public Declare Function GetWindowText Lib "user32" Alias "GetWindowTextA" (ByVal hWnd As Long, ByVal lpString As String, ByVal cch As Long) As Long
+Public Declare Function GetWindowTextLength Lib "user32" Alias "GetWindowTextLengthA" (ByVal hWnd As Long) As Long
+
+' Used for keyboard events
+Public Declare Function MapVirtualKey Lib "user32" Alias "MapVirtualKeyA" (ByVal wCode As Long, ByVal wMapType As Long) As Long
+
+' Using conditional compilation for 32-bit/64-bit compatibility
+#If VBA7 Then
+    Public Declare PtrSafe Sub keybd_event Lib "user32.dll" (ByVal bVk As Byte, ByVal bScan As Byte, _
+                                                              ByVal dwFlags As LongPtr, ByVal dwExtraInfo As LongPtr)
+    Public Declare PtrSafe Function GetKeyboardState Lib "user32.dll" (ByVal lpKeyState As LongPtr) As Boolean
+    Public Declare PtrSafe Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
+#Else
+    Public Declare Sub keybd_event Lib "user32.dll" (ByVal bVk As Byte, ByVal bScan As Byte, _
+                                                      ByVal dwFlags As Long, ByVal dwExtraInfo As Long)
+    Public Declare Function GetKeyboardState Lib "user32.dll" (ByVal lpKeyState As Long) As Boolean
+    Public Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
+#End If
+
+' Used for launching external processes
+Public Declare Function ShellExecute Lib "Shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+
+'****************************************************************************************************
+' Constants for Windows API / Key Events
+'****************************************************************************************************
+
+Public Const WM_SETTEXT = &HC
+Public Const BM_CLICK = &HF5
+Public Const VK_RETURN = &HD
+Public Const WM_CHAR = &H102
+Public Const KEYEVENTF_KEYUP = &H2
+Public Const VK_TAB = &H9
+Public Const VK_MENU = &H12 ' VK_MENU is Alt
+Public Const WM_KEYDOWN = &H100
+Public Const WM_KEYUP = &H101
+Public Const VK_CONTROL = &H11
+Public Const VK_SHIFT = &H10
+Public Const VK_BACK = &H8
+Public Const VK_LBUTTON = &H1
+Public Const WM_SYSKEYDOWN = &H104 ' System key down (e.g., Alt)
+Public Const WM_SYSKEYUP = &H105   ' System key up
+Public Const WM_LBUTTONDOWN = &H201
+Public Const WM_LBUTTONUP = &H202
+
+Public Const ENTER_KEY_CODE = 13
+
+Public Const KEYEVENTF_EXTENDEDKEY As Long = &H1
+
+Public Const VK_NUMLOCK As Byte = &H90
+Public Const NUM_LOCK_SCAN_CODE As Byte = &H45
+
+
+'****************************************************************************************************
+' Public Variables for UI Automation Objects and Patterns
+' Requires Microsoft UI Automation Client library reference (Tools -> References)
+'****************************************************************************************************
+
+' You MUST add a reference to the Microsoft UI Automation library in your VBA project.
+' Go to Tools -> References... and check "Microsoft UI Automation Client library".
+Public gUIA                                             As New CUIAutomation ' Main UIA object
+Public gDesktopElement                                  As IUIAutomationElement ' Desktop root element
+Public gApplicationElement                              As IUIAutomationElement ' Typically represents the main application window element
+Public gApplicationElement2                             As IUIAutomationElement ' Used as a temporary element variable
+
+Public gFoundElements                                   As IUIAutomationElementArray ' Used to hold collections of found elements
+Public gSubElements                                     As IUIAutomationElementArray ' Used to hold collections of found elements (alternative)
+
+' Pattern variables
+' Keeping global here for consistency with the original code structure.
+' They must be Set Nothing and Set for each element they are used with.
+Public gPatternLegacyAccessible                       As UIAutomationClient.IUIAutomationLegacyIAccessiblePattern
+Public gPatternValue                                  As UIAutomationClient.IUIAutomationValuePattern
+Public gPatternInvoke                                 As UIAutomationClient.IUIAutomationInvokePattern
+Public gPatternToggle                                 As UIAutomationClient.IUIAutomationTogglePattern
+Public gPatternSelectionItem                          As UIAutomationClient.IUIAutomationSelectionItemPattern
+Public gPatternItemContain                            As UIAutomationClient.IUIAutomationItemContainerPattern
+Public gPatternExpand                                 As UIAutomationClient.IUIAutomationExpandCollapsePattern
+Public gPatternCollapse                               As UIAutomationClient.IUIAutomationExpandCollapsePattern
+Public gPatternScroll                                 As UIAutomationClient.IUIAutomationScrollPattern
+Public gPatternScrollItem                             As UIAutomationClient.IUIAutomationScrollItemPattern
+Public gPatternWindow                                 As UIAutomationClient.IUIAutomationWindowPattern
+
+' Condition variables
+' Keeping global here for consistency with the original code structure.
+' They must be Set Nothing and Set for each condition created.
+Public gCondition1                                    As UIAutomationClient.IUIAutomationCondition
+Public gCondition2                                    As UIAutomationClient.IUIAutomationCondition
+Public gCondition3                                    As UIAutomationClient.IUIAutomationCondition
+
+'****************************************************************************************************
+' Constants for UI Automation Properties and Patterns
+'****************************************************************************************************
+
+Public Const PROP_NAME                                  As String = "NAME"
+Public Const PROP_CLASSNAME                             As String = "CLASSNAME"
+Public Const PROP_AUTOMATIONID                          As String = "AUTOMATIONID"
+Public Const PROP_LOCALISEDCONTROLTYPE                  As String = "LOCALISEDCONTROLTYPE"
+
+Public Const PATTERN_LEGACY                             As String = "LEGACY"
+Public Const PATTERN_VALUE                              As String = "VALUE"
+Public Const PATTERN_SELECTION                          As String = "SELECTION"
+Public Const PATTERN_INVOKE                             As String = "INVOKE"
+Public Const PATTERN_TOGGLE                             As String = "TOGGLE"
+Public Const PATTERN_ITEM_CONTAIN                       As String = "ITEM CONTAIN"
+Public Const PATTERN_EXPAND_COLLAPSE                    As String = "EXPAND COLLAPSE"
+Public Const PATTERN_SCROLL                             As String = "SCROLL"
+Public Const PATTERN_SCROLL_ITEM                        As String = "SCROLL ITEM"
+
+Public Const ACTION_PUTSTRING                           As String = "PUTSTRING"
+Public Const ACTION_GETSTRING                           As String = "GETSTRING"
+Public Const ELEMENT_TYPE_BUTTON                        As String = "BUTTON"
+
+'****************************************************************************************************
+' Helper Functions (Automation Library)
+'****************************************************************************************************
+
+Public Function OpenBrowser(ByVal processName As String, ByVal url As String) As Boolean
+    ' Opens a new browser window (Edge or Chrome) at a specified URL.
+    ' Uses ShellExecute API and reads registry for process path.
+
+    Dim wshShell As Object
+    Dim processPath As String
+    Dim commandLine As String
+    Dim shellResult As Long ' Result from ShellExecute
+
+    OpenBrowser = False ' Initialize return value
+
+    On Error GoTo ErrorHandler
+
+    Set wshShell = CreateObject("WScript.Shell")
+
+    ' Read the default path for the browser executable from the registry
+    On Error Resume Next ' Handle case where registry key might not exist
+    processPath = wshShell.RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\" & processName & "\")
+    On Error GoTo ErrorHandler ' Resume normal error handling
+
+    Set wshShell = Nothing ' Clean up object
+
+    If processPath <> "" Then
+        commandLine = processPath & " /new-window " & url
+        shellResult = ShellExecute(0, "open", commandLine, "", "", 1)
+
+        If shellResult > 32 Then
+            Application.Wait VBA.DateAdd("s", 1, Now)
+            OpenBrowser = True
+        Else
+            Debug.Print "ShellExecute failed with error code: " & shellResult & ". Could not open browser: " & processName
+            MsgBox "Failed to open browser. Check if " & processName & " is installed correctly.", vbCritical
+        End If
+    Else
+        Debug.Print "Could not find registry path for browser process: " & processName
+        MsgBox "Could not find installation path for browser: " & processName & vbCritical
+    End If
+
+ExitProcedure:
+    Exit Function
+
+ErrorHandler:
+    OpenBrowser = False
+    Debug.Print "Error in OpenBrowser: " & Err.Description & " (Error " & Err.Number & ")"
+    If Not wshShell Is Nothing Then Set wshShell = Nothing
+    Resume ExitProcedure
+End Function
+
+
+Public Function SendKeyToWindow(ByVal windowTitle As String, ByVal keyString As String, Optional ByVal X As Integer, Optional ByVal Y As Integer) As Boolean
+    ' Sends a key press or mouse click to a window by title and class name.
+    ' Uses Windows API PostMessage.
+    ' Requires various API declarations (FindWindow, PostMessage, etc.) and constants (WM_KEYDOWN, etc.).
+    ' Requires MakeDWord and CleanString helper functions.
+
+    Dim windowHandle As Long
+    Dim actualWindowTitle As String
+    Dim specialKeyCode As Long
+    Dim vkCode As Long
+    Dim paramL As Long
+
+    SendKeyToWindow = False
+    specialKeyCode = 0
+
+    Select Case LCase(keyString)
+        Case "control":   specialKeyCode = VK_CONTROL
+        Case "shift":     specialKeyCode = VK_SHIFT
+        Case "alt":       specialKeyCode = VK_MENU
+        Case "mouseclick":specialKeyCode = VK_LBUTTON
+        Case "backspace": specialKeyCode = VK_BACK
+        Case "tab":       specialKeyCode = VK_TAB
+        Case "enter":     specialKeyCode = VK_RETURN
+        Case Else:        specialKeyCode = 0
+    End Select
+
+    windowHandle = FindWindow("Chrome_WidgetWin_1", vbNullString)
+
+    Do While windowHandle <> 0
+        Dim titleLength As Long
+        titleLength = GetWindowTextLength(windowHandle)
+
+        If titleLength > 0 Then
+            Dim windowTitleBuffer As String * 256
+            GetWindowText windowHandle, windowTitleBuffer, 256
+            actualWindowTitle = Left(windowTitleBuffer, titleLength)
+        Else
+            actualWindowTitle = ""
+        End If
+
+        If InStr(1, CleanString(VBA.Trim(UCase(actualWindowTitle))), CleanString(VBA.Trim(UCase(windowTitle))), vbTextCompare) > 0 Then
+
+            If specialKeyCode = VK_LBUTTON Then
+                If Not IsMissing(X) And Not IsMissing(Y) Then
+                    paramL = MakeDWord(CInt(X), CInt(Y))
+                    PostMessage windowHandle, WM_LBUTTONDOWN, 1, paramL
+                    Sleep 100
+                    PostMessage windowHandle, WM_LBUTTONUP, 0, paramL
+                    SendKeyToWindow = True
+                Else
+                    Debug.Print "SendKeyToWindow: X and Y coordinates are required for 'mouseclick'."
+                    SendKeyToWindow = False
+                End If
+
+            ElseIf specialKeyCode <> 0 Then
+                 vkCode = specialKeyCode
+                 paramL = 1 + MapVirtualKey(vkCode, 0) * &H10000
+                 PostMessage windowHandle, WM_KEYDOWN, vkCode, paramL
+                 Sleep 100
+                 PostMessage windowHandle, WM_KEYUP, vkCode, paramL
+                 SendKeyToWindow = True
+
+            Else
+                 vkCode = Asc(keyString)
+                 If vkCode = 0 Then vkCode = CStr(keyString)
+                 paramL = 1 + MapVirtualKey(vkCode, 0) * &H10000
+                 PostMessage windowHandle, WM_KEYDOWN, vkCode, paramL
+                 PostMessage windowHandle, WM_KEYDOWN, vkCode, paramL
+                 Sleep 100
+                 SendKeyToWindow = True
+
+            End If
+
+            Exit Do
+
+        End If
+
+        windowHandle = FindWindowEx(0, windowHandle, "Chrome_WidgetWin_1", vbNullString)
+
+    Loop
+
+    If windowHandle = 0 Then
+        Debug.Print "SendKeyToWindow: Window '" & windowTitle & "' with class 'Chrome_WidgetWin_1' not found."
+        SendKeyToWindow = False
+    End If
+
+End Function
+
+Public Function MakeDWord(ByVal lowWord As Integer, ByVal highWord As Integer) As Long
+    ' Helper function to construct a 32-bit Long from two 16-bit Integers.
+    MakeDWord = (CLng(highWord) * &H10000) Or (lowWord And &HFFFF&)
+End Function
+
+Public Sub PressEnter()
+    ' Simulates pressing and releasing the Enter key using keybd_event.
+    On Error GoTo ErrorHandler
+
+    keybd_event VK_RETURN, 0, 0, 0&
+    keybd_event VK_RETURN, 0, KEYEVENTF_KEYUP, 0&
+
+ExitProcedure:
+    Exit Sub
+
+ErrorHandler:
+    Debug.Print "Error in PressEnter: " & Err.Description & " (Error " & Err.Number & ")"
+    Resume ExitProcedure
+End Sub
+
+Public Function CleanString(ByVal inputString As String) As String
+    ' Helper function to remove non-alphanumeric characters and replace with spaces.
+
+    Dim cleanedString As String
+    Dim char As Variant
+    Dim i As Long
+
+    cleanedString = ""
+
+    For i = 1 To Len(inputString)
+        char = Mid(inputString, i, 1)
+        If (char >= "a" And char <= "z") Or (char >= "0" And char <= "9") Or (char >= "A" And char <= "Z") Then
+            cleanedString = cleanedString & char
+        Else
+            cleanedString = cleanedString & " "
+        End If
+    Next
+
+    CleanString = cleanedString
+End Function
+
+
+Public Function AttachBrowserUIA(ByVal browserTitle As String, ByVal maxWaitSeconds As Integer, Optional ByVal browserType As String) As IUIAutomationElement
+    ' Attaches to an existing browser window using UI Automation.
+    ' Requires UIA declarations and Sleep.
+
+    Dim childIndex As Long
+    Dim attempts As Long
+    Dim isAttached As Boolean
+
+    On Error GoTo ErrorHandler
+
+    isAttached = False
+    Set AttachBrowserUIA = Nothing
+    Set gDesktopElement = Nothing
+    Set gCondition1 = Nothing
+    Set gCondition2 = Nothing
+    Set gCondition3 = Nothing
+    Set gFoundElements = Nothing
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryAttach:
+
+        Sleep 500
+
+        Set gDesktopElement = gUIA.GetRootElement
+
+        Set gCondition1 = gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, "window")
+
+        Select Case UCase(browserType)
+            Case "IE": Set gCondition2 = gUIA.CreatePropertyCondition(UIA_ClassNamePropertyId, "IEFrame")
+            Case Else: Set gCondition2 = gUIA.CreatePropertyCondition(UIA_ClassNamePropertyId, "Chrome_WidgetWin_1")
+        End Select
+
+        Set gCondition3 = gUIA.CreateAndCondition(gCondition1, gCondition2)
+
+        Set gFoundElements = gDesktopElement.FindAll(TreeScope_Children, gCondition3)
+
+        If Not gFoundElements Is Nothing And gFoundElements.length > 0 Then
+            For childIndex = 0 To gFoundElements.length - 1
+                Dim currentBrowserElement As IUIAutomationElement
+                Set currentBrowserElement = gFoundElements.GetElement(childIndex)
+
+                If InStr(1, UCase(currentBrowserElement.CurrentName), UCase(browserTitle), vbTextCompare) > 0 Then
+                    Set AttachBrowserUIA = currentBrowserElement
+                    isAttached = True
+                    Exit For
+                End If
+            Next
+        End If
+
+        Set gFoundElements = Nothing
+
+        If isAttached Then Exit For
+
+    Next attempts
+
+ExitProcedure:
+    Set gCondition1 = Nothing
+    Set gCondition2 = Nothing
+    Set gCondition3 = Nothing
+    Set gDesktopElement = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    Set AttachBrowserUIA = Nothing
+
+    Set gCondition1 = Nothing
+    Set gCondition2 = Nothing
+    Set gCondition3 = Nothing
+    Set gDesktopElement = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in AttachBrowserUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+        If attempts < maxWaitSeconds Then
+             Resume RetryAttach
+        Else
+             Debug.Print "Max retries reached for AttachBrowserUIA."
+             Resume ExitProcedure
+        End If
+    Else
+        Resume ExitProcedure
+    End If
+End Function
+
+
+Public Function AttachBrowserUIA_NoCondition(ByVal browserTitle As String, ByVal maxWaitSeconds As Integer) As IUIAutomationElement
+    ' Similar to AttachBrowserUIA, but finds ALL immediate desktop children.
+
+    Dim childIndex As Long
+    Dim attempts As Long
+    Dim isAttached As Boolean
+
+    Set gDesktopElement = Nothing
+    Set gFoundElements = Nothing
+    isAttached = False
+    Set AttachBrowserUIA_NoCondition = Nothing
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryAttach:
+
+        Sleep 1000
+
+        Set gDesktopElement = gUIA.GetRootElement
+        Set gFoundElements = gDesktopElement.FindAll(TreeScope_Children, gUIA.CreateTrueCondition)
+
+        If Not gFoundElements Is Nothing And gFoundElements.length > 0 Then
+            For childIndex = 0 To gFoundElements.length - 1
+                 Dim currentElement As IUIAutomationElement
+                 Set currentElement = gFoundElements.GetElement(childIndex)
+
+                If InStr(1, UCase(currentElement.CurrentName), UCase(browserTitle), vbTextCompare) > 0 Then
+                    Set AttachBrowserUIA_NoCondition = currentElement
+                    isAttached = True
+                    Exit For
+                End If
+            Next
+        End If
+
+        Set gFoundElements = Nothing
+
+        If isAttached Then Exit For
+
+    Next attempts
+
+ExitProcedure:
+     Set gDesktopElement = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    Set AttachBrowserUIA_NoCondition = Nothing
+
+    Set gDesktopElement = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in AttachBrowserUIA_NoCondition (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+        If attempts < maxWaitSeconds Then
+            Resume RetryAttach
+        Else
+             Debug.Print "Max retries reached for AttachBrowserUIA_NoCondition."
+             Resume ExitProcedure
+        End If
+    Else
+         Resume ExitProcedure
+    End If
+End Function
+
+Public Function NavigateUrlInTabUIA(ByRef browserElement As IUIAutomationElement, ByVal url As String, ByVal maxWaitSeconds As Integer) As Boolean
+    ' Navigates a given browser element to a URL by interacting with the address bar.
+    ' Requires UIA declarations and SendKeyToWindow helper.
+
+    Dim childIndex As Long
+    Dim attempts As Long
+    Dim addressBarElement As IUIAutomationElement
+    Dim editElements As IUIAutomationElementArray
+
+    NavigateUrlInTabUIA = False
+    Set addressBarElement = Nothing
+
+    On Error GoTo ErrorHandler
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryNavigate:
+
+        Sleep 1000
+
+        On Error Resume Next
+        browserElement.SetFocus
+        On Error GoTo ErrorHandler
+
+        Set editElements = Nothing
+        Set editElements = browserElement.FindAll(TreeScope_Descendants, gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, "edit"))
+
+        If Not editElements Is Nothing And editElements.length > 0 Then
+            For childIndex = 0 To editElements.length - 1
+                Dim currentEditElement As IUIAutomationElement
+                Set currentEditElement = editElements.GetElement(childIndex)
+
+                If InStr(1, UCase(currentEditElement.CurrentName), UCase("address and search bar"), vbTextCompare) > 0 Then
+                    Set addressBarElement = currentEditElement
+                    Exit For
+                End If
+            Next
+        End If
+
+        Set editElements = Nothing
+
+        If Not addressBarElement Is Nothing Then
+            Set gPatternValue = Nothing
+            On Error Resume Next
+            Set gPatternValue = addressBarElement.GetCurrentPattern(UIA_ValuePatternId)
+            On Error GoTo ErrorHandler
+
+            If Not gPatternValue Is Nothing Then
+                gPatternValue.SetValue url
+                addressBarElement.SetFocus
+                Call SendKeyToWindow(browserElement.CurrentName, "Enter")
+                Sleep 500
+                NavigateUrlInTabUIA = True
+            End If
+        End If
+
+        If NavigateUrlInTabUIA Then Exit For
+
+    Next attempts
+
+ExitProcedure:
+    Set gPatternValue = Nothing
+    Set addressBarElement = Nothing
+    Set editElements = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    NavigateUrlInTabUIA = False
+
+    Set gPatternValue = Nothing
+    Set addressBarElement = Nothing
+    Set editElements = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in NavigateUrlInTabUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+         If attempts < maxWaitSeconds Then
+            Resume RetryNavigate
+        Else
+             Debug.Print "Max retries reached for NavigateUrlInTabUIA."
+             Resume ExitProcedure
+        End If
+    Else
+         Resume ExitProcedure
+    End If
+End Function
+
+Public Function FindElementUIA(ByRef parentElement As IUIAutomationElement, ByVal propertyType As String, Optional ByVal controlType As String, Optional ByVal propertyValue As String, Optional ByVal maxWaitSeconds As Integer, Optional ByVal elementIndex As Integer) As IUIAutomationElement
+    ' Generic function to find a single element within a parent element.
+    ' Searches by various UIA properties.
+    ' Requires UIA declarations and conditions.
+
+    Dim attempts As Long
+    Dim foundElements As IUIAutomationElementArray
+    Dim isFound As Boolean
+
+    Set FindElementUIA = Nothing
+    isFound = False
+
+    On Error GoTo ErrorHandler
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+    If IsMissing(elementIndex) Then elementIndex = 0
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryFind:
+
+        Set foundElements = Nothing
+        Set gCondition1 = Nothing
+
+        Select Case UCase(propertyType)
+
+            Case PROP_NAME
+                 If controlType = "" Then
+                    Set gCondition1 = gUIA.CreatePropertyCondition(UIA_NamePropertyId, propertyValue)
+                    Set foundElements = parentElement.FindAll(TreeScope_Descendants, gCondition1)
+                 Else
+                    Set gCondition1 = gUIA.CreateAndCondition(gUIA.CreatePropertyCondition(UIA_NamePropertyId, propertyValue), gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType))
+                    Set FindElementUIA = parentElement.FindFirst(TreeScope_Descendants, gCondition1)
+                    isFound = Not FindElementUIA Is Nothing
+                 End If
+
+            Case PROP_CLASSNAME
+                 If controlType = "" Then
+                    Set gCondition1 = gUIA.CreatePropertyCondition(UIA_ClassNamePropertyId, propertyValue)
+                    Set foundElements = parentElement.FindAll(TreeScope_Descendants, gCondition1)
+                 Else
+                    Set gCondition1 = gUIA.CreateAndCondition(gUIA.CreatePropertyCondition(UIA_ClassNamePropertyId, propertyValue), gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType))
+                    Set FindElementUIA = parentElement.FindFirst(TreeScope_Descendants, gCondition1)
+                    isFound = Not FindElementUIA Is Nothing
+                 End If
+
+            Case PROP_AUTOMATIONID
+                 If controlType = "" Then
+                    Set gCondition1 = gUIA.CreatePropertyCondition(UIA_AutomationIdPropertyId, propertyValue)
+                    Set foundElements = parentElement.FindAll(TreeScope_Descendants, gCondition1)
+                 Else
+                    Set gCondition1 = gUIA.CreateAndCondition(gUIA.CreatePropertyCondition(UIA_AutomationIdPropertyId, propertyValue), gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType))
+                    Set FindElementUIA = parentElement.FindFirst(TreeScope_Descendants, gCondition1)
+                    isFound = Not FindElementUIA Is Nothing
+                 End If
+
+            Case PROP_LOCALISEDCONTROLTYPE
+                 If propertyValue = "" Then
+                    Set gCondition1 = gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType)
+                    Set foundElements = parentElement.FindAll(TreeScope_Descendants, gCondition1)
+                 Else
+                    Set gCondition1 = gUIA.CreateAndCondition(gUIA.CreatePropertyCondition(UIA_NamePropertyId, propertyValue), gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType))
+                    Set FindElementUIA = parentElement.FindFirst(TreeScope_Descendants, gCondition1)
+                    isFound = Not FindElementUIA Is Nothing
+                 End If
+
+            Case Else
+                Debug.Print "FindElementUIA: Invalid propertyType '" & propertyType & "'"
+                GoTo ExitLoop
+
+        End Select
+
+        If Not foundElements Is Nothing And foundElements.length > 0 Then
+            Dim targetIndex As Long
+            If CInt(elementIndex) <> 0 Then
+                 targetIndex = CInt(elementIndex)
+            Else
+                 targetIndex = 0
+            End If
+
+            If targetIndex >= 0 And targetIndex < foundElements.length Then
+                 Set FindElementUIA = foundElements.GetElement(targetIndex)
+                 isFound = True
+            Else
+                 Debug.Print "FindElementUIA: elementIndex " & elementIndex & " is out of bounds (Array length " & foundElements.length & ")"
+            End If
+        End If
+
+ExitLoop:
+
+        If isFound Then Exit For
+
+        Sleep 500
+
+    Next attempts
+
+ExitProcedure:
+    Set foundElements = Nothing
+    Set gCondition1 = Nothing
+    Set gCondition2 = Nothing
+    Set gCondition3 = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    Set FindElementUIA = Nothing
+    Set foundElements = Nothing
+    Set gCondition1 = Nothing
+    Set gCondition2 = Nothing
+    Set gCondition3 = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in FindElementUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+        If attempts < maxWaitSeconds Then
+            Resume RetryFind
+        Else
+            Debug.Print "Max retries reached for FindElementUIA."
+            Resume ExitProcedure
+        End If
+    Else
+        Resume ExitProcedure
+    End If
+End Function
+
+
+Public Function FindElementByTypeUIA(ByRef parentElement As IUIAutomationElement, ByVal controlType As String, ByVal nameValue As String, ByVal maxWaitSeconds As Integer, Optional ByVal elementIndex As Integer) As UIAutomationClient.IUIAutomationElement
+    ' Finds a single element of a specific control type whose name matches a value.
+    ' Requires UIA declarations.
+
+    Dim attempts As Long
+    Dim typedElements As IUIAutomationElementArray
+    Dim isFound As Boolean
+
+    Set FindElementByTypeUIA = Nothing
+    isFound = False
+
+    On Error GoTo ErrorHandler
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+    If IsMissing(elementIndex) Then elementIndex = 0
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryFind:
+
+        ' Sleep 1000 ' Original code had Sleep here, commented out.
+
+        On Error Resume Next
+        parentElement.SetFocus
+        On Error GoTo ErrorHandler
+
+
+        Set typedElements = Nothing
+        Set typedElements = parentElement.FindAll(TreeScope_Descendants, gUIA.CreatePropertyCondition(UIA_LocalizedControlTypePropertyId, controlType))
+
+        If Not typedElements Is Nothing And typedElements.length > 0 Then
+            Dim childIndex As Long
+            For childIndex = 0 To typedElements.length - 1
+                 Dim currentElement As IUIAutomationElement
+                 Set currentElement = typedElements.GetElement(childIndex)
+
+                If UCase(currentElement.CurrentName) = UCase(nameValue) Then
+                    Set FindElementByTypeUIA = currentElement
+                    isFound = True
+                    ' Application.Wait VBA.DateAdd("s", 2, Now) ' Original code waits 2s after finding.
+                    Exit For
+                End If
+
+            Next childIndex
+        End If
+        Set typedElements = Nothing
+
+
+        If isFound Then Exit For
+
+        Sleep 500
+
+    Next attempts
+
+ExitProcedure:
+    Set typedElements = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    Set FindElementByTypeUIA = Nothing
+    Set typedElements = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in FindElementByTypeUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+        If attempts < maxWaitSeconds Then
+            Resume RetryFind
+        Else
+            Debug.Print "Max retries reached for FindElementByTypeUIA."
+            Resume ExitProcedure
+        End If
+    Else
+         Resume ExitProcedure
+    End If
+End Function
+
+
+Public Function SetTextUIA(ByRef targetElement As IUIAutomationElement, ByVal textValue As String, ByVal patternType As String, ByVal maxWaitSeconds As Integer) As Boolean
+    ' Sets the text value of a UI Automation element using ValuePattern or LegacyIAccessiblePattern.
+    ' Requires UIA declarations and pattern variables.
+
+    Dim attempts As Long
+    SetTextUIA = False
+
+    On Error GoTo ErrorHandler
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+
+    For attempts = 1 To maxWaitSeconds
+
+RetrySetText:
+
+        On Error Resume Next
+        Select Case UCase(patternType)
+            Case PATTERN_LEGACY
+                Set gPatternLegacyAccessible = Nothing
+                Set gPatternLegacyAccessible = targetElement.GetCurrentPattern(UIA_LegacyIAccessiblePatternId)
+                If Not gPatternLegacyAccessible Is Nothing Then
+                     gPatternLegacyAccessible.SetValue textValue
+                     SetTextUIA = True
+                End If
+
+            Case PATTERN_VALUE
+                Set gPatternValue = Nothing
+                Set gPatternValue = targetElement.GetCurrentPattern(UIA_ValuePatternId)
+                If Not gPatternValue Is Nothing Then
+                     gPatternValue.SetValue textValue
+                     SetTextUIA = True
+                End If
+
+            Case Else
+                Debug.Print "SetTextUIA: Invalid Pattern '" & patternType & "'"
+                 SetTextUIA = False
+                GoTo ExitLoopSuccessCheck
+
+        End Select
+        On Error GoTo ErrorHandler
+
+ExitLoopSuccessCheck:
+        If SetTextUIA Then Exit For
+
+        Sleep 500
+
+    Next attempts
+
+ExitProcedure:
+    Set gPatternLegacyAccessible = Nothing
+    Set gPatternValue = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    SetTextUIA = False
+
+    Set gPatternLegacyAccessible = Nothing
+    Set gPatternValue = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in SetTextUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+        If attempts < maxWaitSeconds Then
+            Resume RetrySetText
+        Else
+            Debug.Print "Max retries reached for SetTextUIA."
+            Resume ExitProcedure
+        End If
+    Else
+         Resume ExitProcedure
+    End If
+End Function
+
+
+Public Function ClickUIA(ByRef targetElement As IUIAutomationElement, ByVal patternType As String, ByVal maxWaitSeconds As Integer) As Boolean
+    ' Clicks a UI Automation element using various patterns (Invoke, Legacy, Expand/Collapse).
+    ' Requires UIA declarations and pattern variables, and Sleep.
+
+    Dim attempts As Long
+    ClickUIA = False
+
+    On Error GoTo ErrorHandler
+
+    If maxWaitSeconds <= 0 Then maxWaitSeconds = 1
+
+    For attempts = 1 To maxWaitSeconds
+
+RetryClick:
+
+        On Error Resume Next
+        Select Case UCase(patternType)
+            Case PATTERN_INVOKE
+                Set gPatternInvoke = Nothing
+                Set gPatternInvoke = targetElement.GetCurrentPattern(UIA_InvokePatternId)
+                If Not gPatternInvoke Is Nothing Then
+                    gPatternInvoke.Invoke
+                    Sleep 500
+                    ClickUIA = True
+                End If
+
+            Case PATTERN_LEGACY
+                Set gPatternLegacyAccessible = Nothing
+                Set gPatternLegacyAccessible = targetElement.GetCurrentPattern(UIA_LegacyIAccessiblePatternId)
+                 If Not gPatternLegacyAccessible Is Nothing Then
+                    gPatternLegacyAccessible.DoDefaultAction
+                    Sleep 500
+                    ClickUIA = True
+                End If
+
+            Case PATTERN_EXPAND_COLLAPSE
+                Set gPatternExpand = Nothing
+                Set gPatternExpand = targetElement.GetCurrentPattern(UIA_ExpandCollapsePatternId)
+                If Not gPatternExpand Is Nothing Then
+                     gPatternExpand.expand
+                     Sleep 500
+                     ClickUIA = True
+                End If
+
+            Case "COLLAPSE"
+                 Set gPatternCollapse = Nothing
+                 Set gPatternCollapse = targetElement.GetCurrentPattern(UIA_ExpandCollapsePatternId)
+                 If Not gPatternCollapse Is Nothing Then
+                     gPatternCollapse.Collapse
+                     Sleep 500
+                     ClickUIA = True
+                 End If
+
+            Case Else
+                Debug.Print "ClickUIA: Invalid Pattern '" & patternType & "'"
+                ClickUIA = False
+                GoTo ExitLoopSuccessCheck
+
+        End Select
+        On Error GoTo ErrorHandler
+
+ExitLoopSuccessCheck:
+        If ClickUIA Then Exit For
+
+        Sleep 500
+
+    Next attempts
+
+ExitProcedure:
+    Set gPatternInvoke = Nothing
+    Set gPatternLegacyAccessible = Nothing
+    Set gPatternExpand = Nothing
+    Set gPatternCollapse = Nothing
+
+    Exit Function
+
+ErrorHandler:
+    ClickUIA = False
+
+    Set gPatternInvoke = Nothing
+    Set gPatternLegacyAccessible = Nothing
+    Set gPatternExpand = Nothing
+    Set gPatternCollapse = Nothing
+
+    If Err.Number <> 0 Then
+        Debug.Print "Error in ClickUIA (attempt " & attempts & "): " & Err.Description & " (Error " & Err.Number & ")"
+        Err.Clear
+         If attempts < maxWaitSeconds Then
+            Resume RetryClick
+        Else
+             Debug.Print "Max retries reached for ClickUIA."
+             Resume ExitProcedure
+        End If
+    Else
+         Resume ExitProcedure
+    End If
+End Function
+
+
+Public Sub EnsureNumLockOn()
+    ' Ensures Num Lock is turned ON if it's currently OFF.
+    ' Uses keybd_event and GetKeyState.
+    On Error GoTo ErrorHandler
+
+    Dim keyStateBuffer(0 To 255) As Byte
+    If Not (GetKeyState(VK_NUMLOCK) And 1) Then
+        keybd_event VK_NUMLOCK, NUM_LOCK_SCAN_CODE, KEYEVENTF_EXTENDEDKEY, 0&
+        keybd_event VK_NUMLOCK, NUM_LOCK_SCAN_CODE, KEYEVENTF_EXTENDEDKEY Or KEYEVENTF_KEYUP, 0&
+    End If
+
+ExitProcedure:
+    Exit Sub
+
+ErrorHandler:
+    Debug.Print "Error in EnsureNumLockOn: " & Err.Description & " (Error " & Err.Number & ")"
+    Resume ExitProcedure
+End Sub
+
+' Add any other helper functions you need from your original VCG_ code here,
+' remembering to update their names and any internal calls to other helper functions.
