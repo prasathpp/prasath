@@ -1,32 +1,37 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-
-# ... (the rest of your code)
-
-def main():
-    """
-    Main function to run the browser automation.
-    """
-    try:
-        # --- CHANGE THIS LINE ---
-        # Instead of webdriver.Chrome(), use webdriver.Edge()
-        print("Attempting to start Microsoft Edge...")
-        driver = webdriver.Edge()
-        print("SUCCESS: Microsoft Edge driver started successfully!")
-        
-        # Now you can use the driver object just like before
-        driver.get("https://www.bing.com") # Let's go to bing for fun
-        print(f"Current page title: {driver.title}")
-        time.sleep(5)
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    finally:
-        if 'driver' in locals() and driver:
-            print("Closing the browser.")
-            driver.quit()
-
-if __name__ == "__main__":
-    main()
+Sub ConvertTextToDate_ddmmyyyy()
+    Dim cell As Range
+    Dim dt As Date
+    Dim parts() As String
+    Dim dayPart As Integer, monthPart As Integer, yearPart As Integer
+    
+    For Each cell In Selection
+        If Not IsEmpty(cell.Value) And IsNumeric(cell.Value) = False Then
+            On Error Resume Next
+            parts = Split(cell.Value, "/")
+            If UBound(parts) = 2 Then
+                ' Try interpreting it as mm/dd/yyyy or m/d/yyyy
+                monthPart = Val(parts(0))
+                dayPart = Val(parts(1))
+                yearPart = Val(parts(2))
+                
+                ' Attempt to build a valid date
+                dt = DateSerial(yearPart, monthPart, dayPart)
+                
+                ' If invalid, try swapping month and day
+                If Err.Number <> 0 Or Not IsDate(dt) Then
+                    Err.Clear
+                    monthPart = Val(parts(1))
+                    dayPart = Val(parts(0))
+                    dt = DateSerial(yearPart, monthPart, dayPart)
+                End If
+                
+                ' If still valid, update cell
+                If Err.Number = 0 And IsDate(dt) Then
+                    cell.Value = dt
+                    cell.NumberFormat = "dd/mm/yyyy"
+                End If
+            End If
+            On Error GoTo 0
+        End If
+    Next cell
+End Sub
