@@ -1,37 +1,85 @@
-Sub ConvertTextToDate_ddmmyyyy()
-    Dim cell As Range
-    Dim dt As Date
-    Dim parts() As String
-    Dim dayPart As Integer, monthPart As Integer, yearPart As Integer
+import base64
+import getpass
+from emu3270 import MFRobot
+import time
+import os
+import pandas as pd
+import datetime
+
+
+wc3270 = ';W:\;'
+ 
+# get Path variable
+path_var = os.environ['Path']
+ 
+# add wc3270 to the Path variable
+if wc3270 not in path_var:
+    os.environ["Path"] = path_var + wc3270
+else:
+    print("no need to add")
+
+mf=MFRobot(visible=True)
+
+mf.connect_n_login(racf='raosx', password='pooja016')
+
+df=pd.read_excel(r"Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx")
+df.sort_values(by=['Brand', 'Account'], inplace=True)
+print(df)
+
+def goto_masterIndex(Brand, Row):
+    if mf.wait_for_text("MASTER INDEX"):
+        return
+    while not mf.wait_for_text("APPLICATION SELECTION"):
+        mf.send_pf2()
+        mf.send_pf3()
+
+    mf.wait_for_text("APPLICATION SELECTION")
+
+    if Brand.upper() == "NWB":
+        mf.move_to(12,11)
+    elif Brand.upper() == "RBS":
+        mf.move_to(13,11)
+    elif Brand.upper() == "UBN":
+        mf.move_to(14,11)
+    else:
+        mf.move_to(15,11)
     
-    For Each cell In Selection
-        If Not IsEmpty(cell.Value) And IsNumeric(cell.Value) = False Then
-            On Error Resume Next
-            parts = Split(cell.Value, "/")
-            If UBound(parts) = 2 Then
-                ' Try interpreting it as mm/dd/yyyy or m/d/yyyy
-                monthPart = Val(parts(0))
-                dayPart = Val(parts(1))
-                yearPart = Val(parts(2))
-                
-                ' Attempt to build a valid date
-                dt = DateSerial(yearPart, monthPart, dayPart)
-                
-                ' If invalid, try swapping month and day
-                If Err.Number <> 0 Or Not IsDate(dt) Then
-                    Err.Clear
-                    monthPart = Val(parts(1))
-                    dayPart = Val(parts(0))
-                    dt = DateSerial(yearPart, monthPart, dayPart)
-                End If
-                
-                ' If still valid, update cell
-                If Err.Number = 0 And IsDate(dt) Then
-                    cell.Value = dt
-                    cell.NumberFormat = "dd/mm/yyyy"
-                End If
-            End If
-            On Error GoTo 0
-        End If
-    Next cell
-End Sub
+    mf.send_string("s")
+    mf.send_enter()
+
+    mf.wait_for_text("Option Handler Function Screen")
+    mf.send_string("19")
+    mf.send_enter()
+
+    mf.wait_for_text("BACK OFFICE SYSTEM")
+    mf.send_string("1")
+    mf.send_enter()
+
+def check_limit(Row):
+    mf.wait_for_text("MASTER INDEX")
+    mf.move_to(22,8)
+    mf.send_string("20")
+    mf.move_to(22,74)
+    mf.send_string(f"{df.at[Row,'Sort Code']:06d}")
+    mf.send_enter()
+    
+    mf.wait_for_text("FILE MAINTENANCE INPUT INDEX")
+    mf.send_string("01")
+    mf.send_string(f"{df.at[Row,'Account']:08d}")
+    mf.send_enter()
+    
+    mf.wait_for_text("CUSTOMER INFORMATION INDEX") 
+    mf.send_enter()
+    
+    mf.wait_for_text("BALANCE ENQUIRY")
+    limit = mf.string_get(6,58,10).strip()
+    if limit == "":
+        limit = "0"
+    df.at[i,"limit"] = float(limit.replace(',', ''))
+    
+    for _ in range(3):
+        mf.send_pf2()
+
+for i in range(50):
+    goto_masterIndex(df.at[i,'Brand'], i)
+    check_limit(i)
