@@ -1,272 +1,47 @@
-import base64
-import getpass
-from emu3270 import MFRobot
-import time
-import os
-import pandas as pd
-import datetime
-import re
-import json
+Loading Excel file: Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx
+Extracted Refund Date: 07-Jul-2025
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\site-packages\pandas\core\tools\datetimes.py in _convert_listlike(arg, box, format, name, tz)
+    443             try:
+--> 444                 values, tz = tslib.datetime_to_datetime64(arg)
+    445                 return DatetimeIndex._simple_new(values, name=name, tz=tz)
 
-# --- Configuration & Setup ---
-wc3270 = ';W:\\;'
-excel_file_path = r"Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx"
+pandas/_libs/tslib.pyx in pandas._libs.tslib.datetime_to_datetime64 (pandas\_libs\tslib.c:33275)()
 
-# --- Add wc3270 to Path Environment Variable ---
-path_var = os.environ.get('Path', '')
-if wc3270 not in path_var:
-    os.environ["Path"] = path_var + wc3270
-    print("wc3270 path added to environment.")
-else:
-    print("wc3270 path already exists.")
+TypeError: Unrecognized value type: <class 'str'>
 
-# --- Helper Function to Parse Date from Filename ---
-def get_refund_date_from_filename(path):
-    """Parses a date like 'ddmmmyyyy' from the filename."""
-    # This regex looks for two digits, three letters, and four digits.
-    match = re.search(r'(\d{2}[a-zA-Z]{3}\d{4})', path)
-    if not match:
-        print(f"FATAL ERROR: Could not find a date (e.g., 07jul2025) in the filename: {path}")
-        exit()
-    date_str = match.group(1).upper()
-    try:
-        # Convert the string (e.g., '07JUL2025') into a datetime object
-        return datetime.datetime.strptime(date_str, "%d%b%Y")
-    except ValueError as e:
-        print(f"FATAL ERROR: Matched string '{date_str}' from filename, but could not parse it as a date. {e}")
-        exit()
+During handling of the above exception, another exception occurred:
 
-# --- Main Processing Functions ---
+ValueError                                Traceback (most recent call last)
+<ipython-input-90-5f1d997b621e> in <module>()
+      5 
+      6 df = pd.read_excel(excel_file_path)
+----> 7 df['Hit Date DT'] = pd.to_datetime(df['Hit Date'], format='%d%b%Y')
+      8 df.sort_values(by=['Brand', 'Account'], inplace=True)
+      9 
 
-def goto_masterIndex(brand):
-    """Navigates from APPLICATION SELECTION to the correct brand's MASTER INDEX."""
-    if mf.wait_for_text("MASTER INDEX", wait_for=1):
-        return
-    # Escape from any nested screen back to the selection menu
-    while not mf.wait_for_text("APPLICATION SELECTION", wait_for=1):
-        mf.send_pf2()
-        mf.send_pf3() # Sending both ensures escape from most situations
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\site-packages\pandas\core\tools\datetimes.py in to_datetime(arg, errors, dayfirst, yearfirst, utc, box, format, exact, unit, infer_datetime_format, origin)
+    507     elif isinstance(arg, ABCSeries):
+    508         from pandas import Series
+--> 509         values = _convert_listlike(arg._values, False, format)
+    510         result = Series(values, index=arg.index, name=arg.name)
+    511     elif isinstance(arg, (ABCDataFrame, MutableMapping)):
 
-    mf.wait_for_text("APPLICATION SELECTION")
-    brand_map = {"NWB": (12, 11), "RBS": (13, 11), "UBN": (14, 11)}
-    # Default to Uls (15,11) if brand not in map
-    row, col = brand_map.get(brand.upper(), (15, 11))
-    
-    mf.move_to(row, col)
-    mf.send_string("s")
-    mf.send_enter()
-    mf.wait_for_text("Option Handler Function Screen")
-    mf.send_string("19")
-    mf.send_enter()
-    mf.wait_for_text("BACK OFFICE SYSTEM")
-    mf.send_string("1")
-    mf.send_enter()
-    mf.wait_for_text("MASTER INDEX")
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\site-packages\pandas\core\tools\datetimes.py in _convert_listlike(arg, box, format, name, tz)
+    445                 return DatetimeIndex._simple_new(values, name=name, tz=tz)
+    446             except (ValueError, TypeError):
+--> 447                 raise e
+    448 
+    449     if arg is None:
 
-def check_limit(row_index):
-    """From MASTER INDEX, checks account limit and leaves on BALANCE ENQUIRY screen."""
-    mf.wait_for_text("MASTER INDEX")
-    mf.move_to(22, 8)
-    mf.send_string("20")
-    mf.move_to(22, 74)
-    mf.send_string(f"{df.at[row_index, 'Sort Code']:06d}")
-    mf.send_enter()
-    
-    mf.wait_for_text("FILE MAINTENANCE INPUT INDEX")
-    mf.send_string("01")
-    mf.send_string(f"{df.at[row_index, 'Account']:08d}")
-    mf.send_enter()
-    
-    mf.wait_for_text("CUSTOMER INFORMATION INDEX") 
-    mf.send_enter()
-    
-    mf.wait_for_text("BALANCE ENQUIRY")
-    limit = mf.string_get(6, 58, 10).strip()
-    if limit == "" or limit.isalpha():
-        limit = "0"
-    df.at[row_index, "limit"] = float(limit.replace(',', ''))
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\site-packages\pandas\core\tools\datetimes.py in _convert_listlike(arg, box, format, name, tz)
+    412                     try:
+    413                         result = tslib.array_strptime(arg, format, exact=exact,
+--> 414                                                       errors=errors)
+    415                     except tslib.OutOfBoundsDatetime:
+    416                         if errors == 'raise':
 
-def extract_unpaid_data_from_page(source_page_number):
-    """
-    Drills down into 'U-UNPAIDS', scrapes all pages of transactions, and returns.
-    USES PF2 TO RETURN.
-    """
-    page_data = {"transactions": {}}
-    # Navigate into the Unpaid Items History
-    mf.move_to(22, 45)
-    mf.send_string("u")
-    mf.send_enter()
+pandas/_libs/tslib.pyx in pandas._libs.tslib.array_strptime (pandas\_libs\tslib.c:63619)()
 
-    # Inner loop for paginating through the "UNPAID ITEMS HISTORY"
-    for _ in range(10): # Safety break after 10 pages
-        mf.wait_for_text("UNPAID ITEMS HISTORY")
-        screen_text = mf.get_screen_text()
-
-        # Extract charges (only stored once per page cycle)
-        if "accrued_charge" not in page_data:
-            accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            if accrued_match:
-                page_data["accrued_charge"] = float(accrued_match.group(1).replace(',', ''))
-            if applied_match:
-                page_data["applied_charge"] = float(applied_match.group(1).replace(',', ''))
-
-        # Extract all transactions marked with a '*'
-        # Regex: Finds ddMMMyy date, any text, a numeric amount, and a literal * at the end of the line
-        unpaid_matches = re.findall(r"^(\d{2}[A-Z]{3}\d{2})\s+.*\s+([\d,.]+)\s+\*$", screen_text, re.MULTILINE)
-        for date_str, amount_str in unpaid_matches:
-            amount = float(amount_str.replace(',', ''))
-            page_data["transactions"][date_str] = {"amount": amount}
-
-        # Check if there is another page
-        if "PAGE 01 OF 01" in screen_text or "MORE..." not in screen_text.upper():
-            break # Exit inner loop if last page
-        else:
-            mf.send_pf8() # Go to next page of unpaid items
-            time.sleep(0.5)
-
-    mf.send_pf2() # CRITICAL: Use PF2 to go back to SERVICE CHARGE HISTORY
-    mf.wait_for_text("SERVICE CHARGE HISTORY") # Wait to ensure we are back
-    return page_data
-
-def process_account_history(row_index, hit_date_dt, refund_date_dt):
-    """
-    Main logic to navigate history, collect data, and filter it.
-    """
-    # 1. Navigate from BALANCE ENQUIRY to SERVICE CHARGE HISTORY
-    mf.wait_for_text("BALANCE ENQUIRY")
-    mf.move_to(22, 8)
-    mf.send_string("13")
-    mf.send_enter()
-    mf.wait_for_text("SERVICE CHARGE ENQIUIRY INXED")
-    mf.move_to(22, 8)
-    mf.send_string("01")
-    mf.send_enter()
-
-    # 2. Outer loop to paginate backwards through "SERVICE CHARGE HISTORY"
-    all_collected_unpaids = {}
-    date_range_found = False
-    for _ in range(24): # Safety break after 24 months
-        mf.wait_for_text("SERVICE CHARGE HISTORY")
-        screen_text = mf.get_screen_text()
-
-        # Get the current page number
-        page_num_match = re.search(r"PAGE\s+(\d+)", screen_text)
-        page_num = page_num_match.group(1) if page_num_match else "Unknown"
-
-        # If U-UNPAIDS exists, drill down and scrape the data
-        if "U-UNPAIDS" in screen_text:
-            unpaid_data = extract_unpaid_data_from_page(page_num)
-            if unpaid_data.get("transactions"): # Only add if transactions were found
-                all_collected_unpaids[page_num] = unpaid_data
-        
-        # Check if the Hit Date falls within this page's charge period
-        start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", screen_text)
-        end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", screen_text)
-        if start_date_match and end_date_match:
-            screen_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
-            screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
-            if screen_start_dt <= hit_date_dt <= screen_end_dt:
-                date_range_found = True
-                break # Found the target page, exit outer loop
-
-        mf.send_pf8() # Go to the previous charge cycle
-        time.sleep(0.5)
-
-    # 3. Filter the collected data
-    final_filtered_data = {}
-    if all_collected_unpaids:
-        for page, data in all_collected_unpaids.items():
-            filtered_transactions = {}
-            for trans_date_str, trans_details in data.get("transactions", {}).items():
-                trans_dt = datetime.datetime.strptime(trans_date_str, "%d%b%y")
-                # THE CRITICAL FILTER: Hit Date < Transaction Date < Refund Date
-                if hit_date_dt < trans_dt < refund_date_dt:
-                    filtered_transactions[trans_date_str] = trans_details
-            
-            # Only add the page to the final output if it has matching transactions
-            if filtered_transactions:
-                final_filtered_data[page] = {
-                    "accrued_charge": data.get("accrued_charge"),
-                    "applied_charge": data.get("applied_charge"),
-                    "transactions": filtered_transactions
-                }
-    
-    # 4. Update DataFrame
-    if not date_range_found:
-        df.at[row_index, 'Processing_Status'] = 'Error: Hit Date Range Not Found'
-    elif not final_filtered_data:
-        df.at[row_index, 'Processing_Status'] = 'Success: No Qualifying Unpaids'
-    else:
-        df.at[row_index, 'Processing_Status'] = 'Success: Data Found'
-        # Serialize the dictionary to a JSON string and store it
-        df.at[row_index, 'Final_Unpaid_Transactions'] = json.dumps(final_filtered_data, indent=2)
-
-# --- Script Execution ---
-
-# 1. Initialize and Login
-mf = MFRobot(visible=True)
-mf.connect_n_login(racf='raosx', password='pooja016')
-
-# 2. Prepare DataFrame
-print(f"Loading Excel file: {excel_file_path}")
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
-
-df = pd.read_excel(excel_file_path)
-df['Hit Date DT'] = pd.to_datetime(df['Hit Date'], format='%d%b%Y')
-df.sort_values(by=['Brand', 'Account'], inplace=True)
-
-# Initialize new columns
-df['limit'] = 0.0
-df['Processing_Status'] = 'Pending'
-df['Final_Unpaid_Transactions'] = ''
-
-print(f"Starting processing for {len(df)} accounts...")
-
-# 3. Main Loop
-previous_brand = None
-for i, row in df.iterrows():
-    try:
-        current_brand = row['Brand']
-        print(f"\nProcessing row {i}: Account {row['Account']} ({current_brand})...")
-
-        # Navigate to MASTER INDEX, changing brand session if necessary
-        if current_brand != previous_brand:
-            print(f"Changing brand to {current_brand}")
-            goto_masterIndex(current_brand)
-        
-        # Perform the data extraction tasks
-        check_limit(i)
-        process_account_history(i, row['Hit Date DT'], refund_date)
-
-        previous_brand = current_brand
-        print(f"Status for account {row['Account']}: {df.at[i, 'Processing_Status']}")
-
-        # Save progress every 10 rows
-        if (i + 1) % 10 == 0:
-            print("\n--- Saving intermediate progress ---")
-            df.to_excel("limit_output_backup.xlsx", index=False)
-
-    except Exception as e:
-        print(f"CRITICAL ERROR on row {i}, account {row['Account']}: {e}")
-        df.at[i, 'Processing_Status'] = f"Error: {e}"
-        # In case of an emulator crash, try to re-establish connection for the next item
-        try:
-            mf.terminate()
-        except:
-            pass # Ignore errors if already terminated
-        mf = MFRobot(visible=True)
-        mf.connect_n_login(racf='raosx', password='pooja016')
-        previous_brand = None # Force re-login to brand menu
-
-
-# 4. Final Save
-print("\nProcessing complete. Saving final output file.")
-df.sort_index(inplace=True) # Return to original order
-# drop the temporary datetime column before saving
-df.drop(columns=['Hit Date DT'], inplace=True)
-df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final.xlsx", index=False)
-
-print("Script finished successfully.")
-mf.terminate()
+ValueError: time data '03JUL25' does not match format '%d%b%Y' (match)
