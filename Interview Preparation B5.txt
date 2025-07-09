@@ -80,6 +80,17 @@ def check_limit(Row):
     for _ in range(3):
         mf.send_pf2()
 
+previous_brand = None
 for i in range(50):
-    goto_masterIndex(df.at[i,'Brand'], i)
+    current_brand = df.at[i, 'Brand']
+    if current_brand != previous_brand:
+        while not mf.wait_for_text("APPLICATION SELECTION", wait_for=1):
+            mf.send_pf2()
+            mf.send_pf3()
+    goto_masterIndex(current_brand, i)
     check_limit(i)
+    previous_brand = current_brand
+
+df.to_excel("limit_output.xlsx", index=False)
+df.sort_index(inplace=True)
+df.to_excel(r"C:\Users\raosx\Downloads\limit_output.xlsx", index=False)
