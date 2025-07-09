@@ -1,262 +1,31 @@
-import base64
-import getpass
-from emu3270 import MFRobot, TimeoutError # Import TimeoutError to catch it
-import time
-import os
-import pandas as pd
-import datetime
-import re
-import json
-
-# --- Configuration & Setup ---
-wc3270 = ';W:\\;'
-excel_file_path = r"Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx"
-
-# --- Add wc3270 to Path Environment Variable ---
-path_var = os.environ.get('Path', '')
-if wc3270 not in path_var:
-    os.environ["Path"] = path_var + wc3270
-    print("wc3270 path added to environment.")
-else:
-    print("wc3270 path already exists.")
-
-# --- Helper Function to Parse Date from Filename ---
-def get_refund_date_from_filename(path):
-    """Parses a date like 'ddmmmyyyy' from the filename."""
-    match = re.search(r'(\d{2}[a-zA-Z]{3}\d{4})', path)
-    if not match:
-        print(f"FATAL ERROR: Could not find a date (e.g., 07jul2025) in the filename: {path}")
-        exit()
-    date_str = match.group(1).upper()
-    try:
-        return datetime.datetime.strptime(date_str, "%d%b%Y")
-    except ValueError as e:
-        print(f"FATAL ERROR: Matched string '{date_str}' from filename, but could not parse it as a date. {e}")
-        exit()
-
-# --- Main Processing Functions ---
-
-def goto_masterIndex(brand):
-    """Navigates from APPLICATION SELECTION to the correct brand's MASTER INDEX."""
-    if mf.wait_for_text("MASTER INDEX", wait_for=1):
-        return
-    while not mf.wait_for_text("APPLICATION SELECTION", wait_for=1):
-        mf.send_pf2()
-        mf.send_pf3()
-
-    mf.wait_for_text("APPLICATION SELECTION")
-    brand_map = {"NWB": (12, 11), "RBS": (13, 11), "UBN": (14, 11)}
-    row, col = brand_map.get(brand.upper(), (15, 11))
-    
-    mf.move_to(row, col)
-    mf.send_string("s")
-    mf.send_enter()
-    mf.wait_for_text("Option Handler Function Screen")
-    mf.send_string("19")
-    mf.send_enter()
-    mf.wait_for_text("BACK OFFICE SYSTEM")
-    mf.send_string("1")
-    mf.send_enter()
-    mf.wait_for_text("MASTER INDEX")
-
-def check_limit(row_index):
-    """From MASTER INDEX, checks account limit and leaves on BALANCE ENQUIRY screen."""
-    mf.wait_for_text("MASTER INDEX")
-    mf.move_to(22, 8)
-    mf.send_string("20")
-    mf.move_to(22, 74)
-    mf.send_string(f"{df.at[row_index, 'Sort Code']:06d}")
-    mf.send_enter()
-    
-    mf.wait_for_text("FILE MAINTENANCE INPUT INDEX")
-    mf.send_string("01")
-    mf.send_string(f"{df.at[row_index, 'Account']:08d}")
-    mf.send_enter()
-    
-    mf.wait_for_text("CUSTOMER INFORMATION INDEX") 
-    mf.send_enter()
-    
-    mf.wait_for_text("BALANCE ENQUIRY")
-    limit = mf.string_get(6, 58, 10).strip()
-    if limit == "" or limit.isalpha():
-        limit = "0"
-    df.at[row_index, "limit"] = float(limit.replace(',', ''))
-
-def extract_unpaid_data_from_page(source_page_number):
-    """
-    Drills down into 'U-UNPAIDS', scrapes all pages of transactions, and returns.
-    USES PF2 TO RETURN.
-    """
-    page_data = {"transactions": {}}
-    mf.move_to(22, 45)
-    mf.send_string("u")
-    mf.send_enter()
-
-    for _ in range(10): 
-        mf.wait_for_text("UNPAID ITEMS HISTORY")
-        screen_text = mf.get_screen_text()
-
-        if "accrued_charge" not in page_data:
-            accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            if accrued_match:
-                page_data["accrued_charge"] = float(accrued_match.group(1).replace(',', ''))
-            if applied_match:
-                page_data["applied_charge"] = float(applied_match.group(1).replace(',', ''))
-
-        unpaid_matches = re.findall(r"^(\d{2}[A-Z]{3}\d{2})\s+.*\s+([\d,.]+)\s+\*$", screen_text, re.MULTILINE)
-        for date_str, amount_str in unpaid_matches:
-            amount = float(amount_str.replace(',', ''))
-            page_data["transactions"][date_str] = {"amount": amount}
-
-        if "MORE..." not in screen_text.upper():
-            break 
-        else:
-            mf.send_pf8()
-            time.sleep(0.5)
-
-    mf.send_pf2()
-    mf.wait_for_text("SERVICE CHARGE HISTORY")
-    return page_data
-
-def process_account_history(row_index, hit_date_dt, refund_date_dt):
-    """
-    Main logic to navigate history, collect data, and filter it.
-    """
-    try:
-        mf.wait_for_text("BALANCE ENQUIRY")
-        mf.move_to(22, 8)
-        mf.send_string("13")
-        mf.send_enter()
-        
-        mf.wait_for_text("SERVICE CHARGE ENQUIRY INDEX") 
-        mf.move_to(22, 8)
-        mf.send_string("01")
-        mf.send_enter()
-
-        found_screen = mf.wait_for_text(
-            ["SERVICE CHARGE HISTORY", "ACCOUNT IS NON-CHARGEABLE"],
-            wait_for=10
-        )
-
-        if found_screen == "ACCOUNT IS NON-CHARGEABLE":
-            print("  -> Info: Account is non-chargeable. Skipping.")
-            df.at[row_index, 'Processing_Status'] = 'Success: Account is Non-Chargeable'
-            while not mf.wait_for_text("MASTER INDEX", wait_for=1): mf.send_pf2()
-            return
-        
-    except TimeoutError:
-        print("  -> Info: No Service Charge History found or unexpected screen. Skipping.")
-        df.at[row_index, 'Processing_Status'] = 'Success: No Service Charge History'
-        while not mf.wait_for_text("MASTER INDEX", wait_for=1): mf.send_pf2()
-        return
-
-    # 2. Outer loop to paginate backwards through "SERVICE CHARGE HISTORY"
-    all_collected_unpaids = {}
-    date_range_found = False
-    for _ in range(24): 
-        # --- NEW LOGIC: Wait for the next page OR the end-of-history message ---
-        try:
-            found_text = mf.wait_for_text(["SERVICE CHARGE HISTORY", "NO HISTORY DETAILS AVAILABLE"])
-        except TimeoutError:
-            print("  -> Error: Unexpected screen after pressing PF8. Breaking loop.")
-            break
-            
-        if found_text == "NO HISTORY DETAILS AVAILABLE":
-            print("  -> Info: Reached the end of available history pages.")
-            break # Gracefully exit the loop
-        
-        # If we get here, it means "SERVICE CHARGE HISTORY" was found.
-        screen_text = mf.get_screen_text()
-
-        page_num_match = re.search(r"PAGE\s+(\d+)", screen_text)
-        page_num = page_num_match.group(1) if page_num_match else "Unknown"
-
-        if "U-UNPAIDS" in screen_text:
-            unpaid_data = extract_unpaid_data_from_page(page_num)
-            if unpaid_data.get("transactions"):
-                all_collected_unpaids[page_num] = unpaid_data
-        
-        start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", screen_text)
-        end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", screen_text)
-        if start_date_match and end_date_match:
-            screen_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
-            screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
-            if screen_start_dt <= hit_date_dt <= screen_end_dt:
-                date_range_found = True
-                break # Stop condition met
-
-        mf.send_pf8()
-        time.sleep(0.5)
-
-    # 3. Filter the collected data
-    final_filtered_data = {}
-    if all_collected_unpaids:
-        for page, data in all_collected_unpaids.items():
-            filtered_transactions = {}
-            for trans_date_str, trans_details in data.get("transactions", {}).items():
-                trans_dt = datetime.datetime.strptime(trans_date_str, "%d%b%y")
-                if hit_date_dt < trans_dt < refund_date_dt:
-                    filtered_transactions[trans_date_str] = trans_details
-            
-            if filtered_transactions:
-                final_filtered_data[page] = {
-                    "accrued_charge": data.get("accrued_charge"),
-                    "applied_charge": data.get("applied_charge"),
-                    "transactions": filtered_transactions
-                }
-    
-    # 4. Update DataFrame
-    if not date_range_found:
-        df.at[row_index, 'Processing_Status'] = 'Error: Hit Date Range Not Found'
-    elif not final_filtered_data:
-        df.at[row_index, 'Processing_Status'] = 'Success: No Qualifying Unpaids'
-    else:
-        df.at[row_index, 'Processing_Status'] = 'Success: Data Found'
-        df.at[row_index, 'Final_Unpaid_Transactions'] = json.dumps(final_filtered_data, indent=2)
-
-    while not mf.wait_for_text("MASTER INDEX", wait_for=1):
-        mf.send_pf2()
-
-# --- Script Execution ---
-mf = MFRobot(visible=True)
-mf.connect_n_login(racf='raosx', password='pooja016')
-
-print(f"Loading Excel file: {excel_file_path}")
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
-
-df = pd.read_excel(excel_file_path)
-df['Hit Date DT'] = pd.to_datetime(df['Hit Date'], format='%d%b%y')
-df.sort_values(by=['Brand', 'Account'], inplace=True, ignore_index=True)
-
-df['limit'] = 0.0
-df['Processing_Status'] = 'Pending'
-df['Final_Unpaid_Transactions'] = ''
-
-print(f"Starting processing for {len(df)} accounts...")
-
 previous_brand = None
 for i, row in df.iterrows():
     try:
-        current_brand = row['Brand']
-        print(f"\nProcessing row {i}: Account {row['Account']} ({current_brand})...")
+        # --- NEW LOGIC: Conditional check on 'Charges' column ---
+        # The str().strip().upper() makes the check case-insensitive and safe against extra spaces
+        if str(row.get('Charges', 'No')).strip().upper() == 'YES':
+            current_brand = row['Brand']
+            print(f"\nProcessing row {i}: Account {row['Account']} ({current_brand})...")
 
-        if current_brand != previous_brand:
-            print(f"Changing brand to {current_brand}")
-            goto_masterIndex(current_brand)
-        
-        check_limit(i)
-        process_account_history(i, row['Hit Date DT'], refund_date)
+            if current_brand != previous_brand:
+                print(f"Changing brand to {current_brand}")
+                goto_masterIndex(current_brand)
+            
+            check_limit(i)
+            process_account_history(i, row['Hit Date DT'], refund_date)
 
-        previous_brand = current_brand
-        print(f"Status for account {row['Account']}: {df.at[i, 'Processing_Status']}")
+            previous_brand = current_brand
+            print(f"Status for account {row['Account']}: {df.at[i, 'Processing_Status']}")
 
-        if (i + 1) % 10 == 0:
-            print("\n--- Saving intermediate progress ---")
-            temp_df = df.copy()
-            temp_df.drop(columns=['Hit Date DT'], inplace=True)
-            temp_df.to_excel("limit_output_backup.xlsx", index=False)
+            if (i + 1) % 10 == 0:
+                print("\n--- Saving intermediate progress ---")
+                temp_df = df.copy()
+                temp_df.drop(['Hit Date DT'], axis=1, inplace=True)
+                temp_df.to_excel("limit_output_backup.xlsx", index=False)
+        else:
+            # This block runs for rows where 'Charges' is not 'Yes'
+            print(f"\nSkipping row {i}: Account {row['Account']}. Reason: 'Charges' column is not 'Yes'.")
+            df.at[i, 'Processing_Status'] = 'Skipped (Charges column not Yes)'
 
     except Exception as e:
         print(f"CRITICAL ERROR on row {i}, account {row['Account']}: {e}")
@@ -267,11 +36,3 @@ for i, row in df.iterrows():
         mf = MFRobot(visible=True)
         mf.connect_n_login(racf='raosx', password='pooja016')
         previous_brand = None
-
-print("\nProcessing complete. Saving final output file.")
-df.sort_index(inplace=True)
-df.drop(columns=['Hit Date DT'], inplace=True)
-df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final.xlsx", index=False)
-
-print("Script finished successfully.")
-mf.terminate()
