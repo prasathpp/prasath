@@ -124,7 +124,6 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
     Main logic to navigate history, collect data, and filter it.
     """
     try:
-        # 1. Navigate from BALANCE ENQUIRY to SERVICE CHARGE ENQUIRY
         mf.wait_for_text("BALANCE ENQUIRY")
         mf.move_to(22, 8)
         mf.send_string("13")
@@ -135,34 +134,39 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
         mf.send_string("01")
         mf.send_enter()
 
-        # --- NEW LOGIC: Wait for one of multiple possible screens ---
         found_screen = mf.wait_for_text(
             ["SERVICE CHARGE HISTORY", "ACCOUNT IS NON-CHARGEABLE"],
-            wait_for=10 # Wait for 10 seconds
+            wait_for=10
         )
 
         if found_screen == "ACCOUNT IS NON-CHARGEABLE":
             print("  -> Info: Account is non-chargeable. Skipping.")
             df.at[row_index, 'Processing_Status'] = 'Success: Account is Non-Chargeable'
-            # Go back to a known state to continue with the next account
-            while not mf.wait_for_text("MASTER INDEX", wait_for=1):
-                mf.send_pf2()
-            return # Exit this function for the current account
+            while not mf.wait_for_text("MASTER INDEX", wait_for=1): mf.send_pf2()
+            return
         
-        # If we get here, it means "SERVICE CHARGE HISTORY" was found, so we proceed.
-
     except TimeoutError:
         print("  -> Info: No Service Charge History found or unexpected screen. Skipping.")
         df.at[row_index, 'Processing_Status'] = 'Success: No Service Charge History'
-        while not mf.wait_for_text("MASTER INDEX", wait_for=1):
-            mf.send_pf2()
+        while not mf.wait_for_text("MASTER INDEX", wait_for=1): mf.send_pf2()
         return
 
     # 2. Outer loop to paginate backwards through "SERVICE CHARGE HISTORY"
     all_collected_unpaids = {}
     date_range_found = False
     for _ in range(24): 
-        mf.wait_for_text("SERVICE CHARGE HISTORY")
+        # --- NEW LOGIC: Wait for the next page OR the end-of-history message ---
+        try:
+            found_text = mf.wait_for_text(["SERVICE CHARGE HISTORY", "NO HISTORY DETAILS AVAILABLE"])
+        except TimeoutError:
+            print("  -> Error: Unexpected screen after pressing PF8. Breaking loop.")
+            break
+            
+        if found_text == "NO HISTORY DETAILS AVAILABLE":
+            print("  -> Info: Reached the end of available history pages.")
+            break # Gracefully exit the loop
+        
+        # If we get here, it means "SERVICE CHARGE HISTORY" was found.
         screen_text = mf.get_screen_text()
 
         page_num_match = re.search(r"PAGE\s+(\d+)", screen_text)
@@ -180,7 +184,7 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
             screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
             if screen_start_dt <= hit_date_dt <= screen_end_dt:
                 date_range_found = True
-                break
+                break # Stop condition met
 
         mf.send_pf8()
         time.sleep(0.5)
@@ -211,7 +215,6 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
         df.at[row_index, 'Processing_Status'] = 'Success: Data Found'
         df.at[row_index, 'Final_Unpaid_Transactions'] = json.dumps(final_filtered_data, indent=2)
 
-    # Return to MASTER INDEX to be ready for the next account
     while not mf.wait_for_text("MASTER INDEX", wait_for=1):
         mf.send_pf2()
 
