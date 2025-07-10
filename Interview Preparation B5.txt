@@ -1,59 +1,103 @@
-def extract_unpaid_data_from_page(source_page_number):
-    """Drills down into 'U-UNPAIDS', scrapes all pages of transactions, and returns."""
-    page_data = {"transactions": {}}
-    mf.move_to(22, 45)
-    mf.send_string("u")
-    mf.send_enter()
+txt = mf.get_screen_text()
+unpaid = re.findall(r"^\s*(\d{2}[A-Z]{3}\d{2}).*\*.*([\d,.]+)$", txt, re.MULTILINE)
+print(unpaid)
 
-    try:
-        mf.wait_for_field()
-    except Exception as e:
-        print(f"  -> Warning: Timeout or error while waiting for host response after sending 'u'. Error: {e}")
-        return page_data
+output for the above code:
 
-    screen_text = mf.get_screen_text()
-    
-    if "UNPAID ITEMS HISTORY" not in screen_text:
-        print("  -> Info: Did not navigate to UNPAID ITEMS HISTORY. Assuming no unpaids for this cycle.")
-        return page_data
-
-    for i in range(3):
-        try:
-            if i > 0:
-                mf.wait_for_field()
-                screen_text = mf.get_screen_text()
-
-            if "accrued_charge" not in page_data:
-                accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
-                applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
-                
-                if accrued_match:
-                    value_str = accrued_match.group(1).strip()
-                    page_data["accrued_charge"] = float(value_str.replace(',', '')) if value_str.upper() != 'N/A' else 'N/A'
-                
-                if applied_match:
-                    value_str = applied_match.group(1).strip()
-                    page_data["applied_charge"] = float(value_str.replace(',', '')) if value_str.upper() != 'N/A' else 'N/A'
-
-            # --- THE FINAL, BULLETPROOF REGEX ---
-            unpaid_matches = re.findall(r"^\s*(\d{2}[A-Z]{3}\d{2}).*\*.*([\d,.]+)$", screen_text, re.MULTILINE)
-            
-            for date_str, amount_str in unpaid_matches:
-                amount = float(amount_str.replace(',', ''))
-                page_data["transactions"][date_str] = {"amount": amount}
-
-            page_match = re.search(r"PAGE\s+(\d+)\s+OF\s+(\d+)", screen_text)
-            if page_match and int(page_match.group(1)) < int(page_match.group(2)):
-                mf.send_pf8()
-            else:
-                break
-
-        except Exception as page_error:
-            print(f"  -> WARNING: An error occurred while scraping UNPAID ITEMS page. Error: {page_error}")
-            print("  -> Skipping this page and attempting to continue.")
-            break
-
-    mf.send_pf2()
-    mf.wait_for_field()
-    
-    return page_data
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                            UNPAID ITEMS HISTORY     10JUL25 11:31 PAGE 01 OF 01 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.035\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:  606005   46045953   JAGAN MOHAN D          SELECT PLATINUM ACCOUNT             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:  CHARGE PERIOD START DATE : 07JUN25         CHARGE PERIOD END DATE : 07JUL25    \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.007\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:        DATE       TRANS DESCRIPTION           AMOUNT                            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.010\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:        -------    ------------------------    ----------------                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:        02JUL25    D/D PARENTPAY          *                8.00                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.008\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.003\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:  APPLN ACCOUNT : 46045953    APPLN DATE : 28JUL25   APPLIED CHARGE : N/A        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:  * - ITEM INCLUDED IN ACCRUED CHARGE                ACCRUED CHARGE : 1.55       \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX  1.   ACCOUNT  46045953   QUALIFIER  .......               BRANCH 606005 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
+[]
