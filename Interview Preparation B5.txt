@@ -9,14 +9,31 @@ def extract_unpaid_data_from_page(source_page_number):
         mf.wait_for_text("UNPAID ITEMS HISTORY")
         screen_text = mf.get_screen_text()
 
+        # --- FIX #2: Handle 'N/A' for charges ---
         if "accrued_charge" not in page_data:
-            accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+)", screen_text)
-            if accrued_match: page_data["accrued_charge"] = float(accrued_match.group(1).replace(',', ''))
-            if applied_match: page_data["applied_charge"] = float(applied_match.group(1).replace(',', ''))
+            # New regex accepts numbers OR "N/A"
+            accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
+            applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
+            
+            if accrued_match:
+                value_str = accrued_match.group(1).strip()
+                # New logic to handle the value safely
+                if value_str.upper() == 'N/A':
+                    page_data["accrued_charge"] = 'N/A'
+                else:
+                    page_data["accrued_charge"] = float(value_str.replace(',', ''))
 
-        # --- THIS IS THE CORRECTED REGEX ---
-        unpaid_matches = re.findall(r"^(\d{2}[A-Z]{3}\d{2}).*? \* .*?([\d,.]+)$", screen_text, re.MULTILINE)
+            if applied_match:
+                value_str = applied_match.group(1).strip()
+                # New logic to handle the value safely
+                if value_str.upper() == 'N/A':
+                    page_data["applied_charge"] = 'N/A'
+                else:
+                    page_data["applied_charge"] = float(value_str.replace(',', ''))
+
+        # --- FIX #1: Allow for leading whitespace on transaction lines ---
+        # The new '^\s*' at the beginning is the key fix.
+        unpaid_matches = re.findall(r"^\s*(\d{2}[A-Z]{3}\d{2}).*? \* .*?([\d,.]+)$", screen_text, re.MULTILINE)
         
         for date_str, amount_str in unpaid_matches:
             amount = float(amount_str.replace(',', ''))
@@ -27,9 +44,8 @@ def extract_unpaid_data_from_page(source_page_number):
             current_page = int(page_match.group(1))
             total_pages = int(page_match.group(2))
             if current_page >= total_pages:
-                break # Last page, exit loop
+                break 
         else:
-            # If "PAGE X OF Y" is not found, assume it's a single page and exit.
             break 
         
         mf.send_pf8()
