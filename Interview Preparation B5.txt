@@ -9,7 +9,16 @@ import re
 import json
 
 # --- Configuration & Setup ---
+wc3270 = ';W:\\;'
 excel_file_path = r"Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx"
+
+# --- Add wc3270 to Path Environment Variable ---
+path_var = os.environ.get('Path', '')
+if wc3270 not in path_var:
+    os.environ["Path"] = path_var + wc3270
+    print("wc3270 path added to environment.")
+else:
+    print("wc3270 path already exists.")
 
 # --- Helper Function to Parse Date from Filename ---
 def get_refund_date_from_filename(path):
@@ -90,7 +99,7 @@ def extract_unpaid_data_from_page(source_page_number):
             if accrued_match: page_data["accrued_charge"] = float(accrued_match.group(1).replace(',', ''))
             if applied_match: page_data["applied_charge"] = float(applied_match.group(1).replace(',', ''))
 
-        unpaid_matches = re.findall(r"^(\d{2}[A-Z]{3}\d{2})\s+.*\s+([\d,.]+)\s+\*$", screen_text, re.MULTILINE)
+        unpaid_matches = re.findall(r"^(\d{2}[A-Z]{3}\d{2})\s+.*?\*s+([\d,]+\.\.{2})$", screen_text, re.MULTILINE)
         for date_str, amount_str in unpaid_matches:
             amount = float(amount_str.replace(',', ''))
             page_data["transactions"][date_str] = {"amount": amount}
@@ -212,7 +221,7 @@ if 'Charges' not in df.columns:
     df['Charges'] = 'Yes'
 
 df['Hit Date DT'] = pd.to_datetime(df['Hit Date'], format='%d%b%y')
-df.sort_values(by=['Brand', 'Account'], inplace=True, ignore_index=True)
+df.sort_values(by=['Brand', 'Account'], inplace=True)
 
 df['limit'] = 0.0
 df['Processing_Status'] = 'Pending'
@@ -241,7 +250,7 @@ for i, row in df.iterrows():
                 print("\n--- Saving intermediate progress ---")
                 temp_df = df.copy()
                 temp_df.drop(['Hit Date DT'], axis=1, inplace=True)
-                temp_df.to_excel("limit_output_backup.xlsx", index=False)
+                temp_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_backup.xlsx", index=False)
         else:
             print(f"\nSkipping row {i}: Account {row['Account']}. Reason: 'Charges' column is not 'Yes'.")
             df.at[i, 'Processing_Status'] = 'Skipped (Charges column not Yes)'
@@ -262,4 +271,4 @@ df.drop(['Hit Date DT'], axis=1, inplace=True)
 df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final.xlsx", index=False)
 
 print("Script finished successfully.")
-mf.terminate()
+# mf.terminate()
