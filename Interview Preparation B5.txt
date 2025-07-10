@@ -1,66 +1,60 @@
-import pandas as pd
-import json
+--- Example output for Account 44323115 ---
+---------------------------------------------------------------------------
+TypeError                                 Traceback (most recent call last)
+<ipython-input-183-02c36715e847> in <module>()
+      9 if 46575200 in account_data:
+     10     print("--- Example output for Account 44323115 ---")
+---> 11     print(json.dumps(account_data[46575200], indent=4))
+     12 
+     13 # Verify the total number of unique accounts processed
 
-def structure_account_data(excel_path):
-    """
-    Reads an Excel file, filters for rows where 'Charges' is 'Yes',
-    groups the remaining data by 'Account', and structures it
-    into a nested dictionary.
-    """
-    # 1. Load the Excel file into a pandas DataFrame
-    df = pd.read_excel(excel_path)
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\__init__.py in dumps(obj, skipkeys, ensure_ascii, check_circular, allow_nan, cls, indent, separators, default, sort_keys, **kw)
+    236         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
+    237         separators=separators, default=default, sort_keys=sort_keys,
+--> 238         **kw).encode(obj)
+    239 
+    240 
 
-    # 2. --- NEW FILTERING STEP ---
-    # Create a new DataFrame containing only the rows where 'Charges' is 'Yes'.
-    # We use .str.strip().str.upper() to make the comparison robust (handles " yes ", "YES", etc.)
-    # We use .copy() to avoid potential SettingWithCopyWarning later.
-    df_chargeable = df[df['Charges'].str.strip().str.upper() == 'YES'].copy()
-    
-    # If no chargeable rows are found, return an empty dictionary.
-    if df_chargeable.empty:
-        print("No rows found with 'Charges' set to 'Yes'.")
-        return {}
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in encode(self, o)
+    199         chunks = self.iterencode(o, _one_shot=True)
+    200         if not isinstance(chunks, (list, tuple)):
+--> 201             chunks = list(chunks)
+    202         return ''.join(chunks)
+    203 
 
-    # 3. Convert 'Hit Date' to a real datetime object for correct sorting.
-    #    This is performed on the smaller, filtered DataFrame.
-    df_chargeable['Hit Date DT'] = pd.to_datetime(df_chargeable['Hit Date'], format='%d%b%y')
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode(o, _current_indent_level)
+    428             yield from _iterencode_list(o, _current_indent_level)
+    429         elif isinstance(o, dict):
+--> 430             yield from _iterencode_dict(o, _current_indent_level)
+    431         else:
+    432             if markers is not None:
 
-    # 4. Prepare the final output dictionary
-    structured_data = {}
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode_dict(dct, _current_indent_level)
+    402                 else:
+    403                     chunks = _iterencode(value, _current_indent_level)
+--> 404                 yield from chunks
+    405         if newline_indent is not None:
+    406             _current_indent_level -= 1
 
-    # 5. Group the chargeable DataFrame by the 'Account' column
-    for account_number, group_df in df_chargeable.groupby('Account'):
-        
-        # 6. Find the row with the oldest 'Hit Date' within the chargeable group
-        oldest_row = group_df.loc[group_df['Hit Date DT'].idxmin()]
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode_dict(dct, _current_indent_level)
+    402                 else:
+    403                     chunks = _iterencode(value, _current_indent_level)
+--> 404                 yield from chunks
+    405         if newline_indent is not None:
+    406             _current_indent_level -= 1
 
-        # 7. Extract the 'base_info' from this oldest row.
-        base_info_cols = oldest_row.drop(['Amount', 'Hit Date', 'Account', 'Hit Date DT'])
-        base_info = base_info_cols.to_dict()
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode(o, _current_indent_level)
+    435                     raise ValueError("Circular reference detected")
+    436                 markers[markerid] = o
+--> 437             o = _default(o)
+    438             yield from _iterencode(o, _current_indent_level)
+    439             if markers is not None:
 
-        # 8. Extract the list of all transactions for this account from the chargeable group.
-        transactions_df = group_df[['Amount', 'Hit Date']]
-        transactions = transactions_df.to_dict(orient='records')
-        
-        # 9. Assemble the final structure for this account
-        structured_data[account_number] = {
-            'base_info': base_info,
-            'transactions': transactions
-        }
-        
-    return structured_data
+C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in default(self, o)
+    178         """
+    179         raise TypeError("Object of type '%s' is not JSON serializable" %
+--> 180                         o.__class__.__name__)
+    181 
+    182     def encode(self, o):
 
-# --- Execution ---
-excel_file_path = r"path/to/your/excel_file.xlsx"  # <--- IMPORTANT: Update this path
-
-# Call the function to get the structured data
-account_data = structure_account_data(excel_file_path)
-
-# Print the result for an account that has "Yes" to verify the structure
-# We use json.dumps for pretty printing
-if 44323115 in account_data:
-    print("--- Example output for Account 44323115 ---")
-    print(json.dumps(account_data[44323115], indent=2))
-
-# Verify the total number of unique accounts processed
-print(f"\nTotal unique accounts with 'Charges=Yes' processed: {len(account_data)}")
+TypeError: Object of type 'int64' is not JSON serializable
