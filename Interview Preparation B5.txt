@@ -33,7 +33,7 @@ def get_refund_date_from_filename(path):
         print(f"FATAL ERROR: Matched string '{date_str}' from filename, but could not parse it as a date. {e}")
         exit()
 
-# --- Main Processing Functions (Now fully compatible with your MFRobot) ---
+# --- Main Processing Functions ---
 
 def goto_masterIndex(brand):
     """Navigates from APPLICATION SELECTION to the correct brand's MASTER INDEX."""
@@ -118,7 +118,6 @@ def extract_unpaid_data_from_page(source_page_number):
                     value_str = applied_match.group(1).strip()
                     page_data["applied_charge"] = float(value_str.replace(',', '')) if value_str.upper() != 'N/A' else 'N/A'
 
-            # --- THE DEFINITIVE REGEX THAT HANDLES TRAILING SPACES ---
             unpaid_matches = re.findall(r"^\s*(\d{2}[A-Z]{3}\d{2}).*\*.*?([\d,.]+)\s*$", screen_text, re.MULTILINE)
             
             for date_str, amount_str in unpaid_matches:
@@ -128,6 +127,8 @@ def extract_unpaid_data_from_page(source_page_number):
             page_match = re.search(r"PAGE\s+(\d+)\s+OF\s+(\d+)", screen_text)
             if page_match and int(page_match.group(1)) < int(page_match.group(2)):
                 mf.send_pf8()
+                # OPTIMIZATION: Wait for the next page to be ready
+                mf.wait_for_field() 
             else:
                 break
 
@@ -150,12 +151,12 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
     mf.send_enter()
     
     mf.wait_for_text("SERVICE CHARGE ENQUIRY INDEX") 
-    # --- CORRECTION: Changed column from 8 to 9 ---
     mf.move_to(22, 9)
     mf.send_string("01")
     mf.send_enter()
 
-    time.sleep(2)
+    # OPTIMIZATION: Replace dumb wait with a smart wait for the host to respond.
+    mf.wait_for_field()
     screen_text = mf.get_screen_text()
 
     if "ACCOUNT IS NON-CHARGEABLE" in screen_text:
@@ -171,7 +172,6 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
 
     all_collected_unpaids = {}
     date_range_found = False
-    # --- CORRECTION: Outer loop safety break changed to 16 ---
     for _ in range(16):
         current_page_text = mf.get_screen_text()
         
@@ -197,7 +197,8 @@ def process_account_history(row_index, hit_date_dt, refund_date_dt):
                 break
         
         mf.send_pf8()
-        time.sleep(1)
+        # OPTIMIZATION: Wait for the next page to load before continuing the loop.
+        mf.wait_for_field()
 
     final_filtered_data = {}
     if all_collected_unpaids:
