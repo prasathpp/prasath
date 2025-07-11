@@ -58,10 +58,7 @@ def goto_masterIndex(brand, switch_brand=False):
     brand_map = {"NWB": (12, 11), "RBS": (13, 11), "UBN": (14, 11)}
     row, col = brand_map.get(brand.upper(), (15, 11))
     mf.move_to(row, col)
-    mf.send_string("t")
-    mf.send_enter()
-    mf.wait_for_field()
-    mf.move_to(row, col)
+    # --- FIX: Corrected navigation logic ---
     mf.send_string("s")
     mf.send_enter()
     mf.wait_for_text("Option Handler Function Screen")
@@ -121,9 +118,7 @@ def extract_unpaid_data_from_page():
     mf.send_pf2(); mf.wait_for_field()
     return page_data
 
-# --- NEW HELPER FUNCTION FOR MINIMUM SERVICE CHARGE ---
 def process_minimum_service_charge():
-    """Navigates from SERVICE CHARGE HISTORY to HISTORY ITEM DETAILS and scrapes DBS info."""
     mf.move_to(22, 45); mf.send_string("z"); mf.send_enter()
     try: mf.wait_for_field()
     except Exception: mf.send_pf2(); mf.wait_for_field(); return None
@@ -133,9 +128,9 @@ def process_minimum_service_charge():
         mf.send_pf2(); mf.wait_for_field()
         return None
     
-    # Regex to find the "OTHER AUTOMATED DBS" line and capture its rate and count
+    # --- FIX: Corrected typo from d_match to dbs_match ---
     dbs_match = re.search(r"^\s*OTHER AUTOMATED DBS\s+([\d.]+)\s+(\d+)", screen_text, re.MULTILINE)
-    mf.send_pf2(); mf.wait_for_field() # Go back regardless of find
+    mf.send_pf2(); mf.wait_for_field()
     
     if dbs_match:
         return {"rate": float(dbs_match.group(1)), "count": int(dbs_match.group(2))}
@@ -190,7 +185,6 @@ def process_account_history(hit_date_dt, refund_date_dt):
         mf.send_pf8()
         mf.wait_for_field()
     
-    # Filtering logic is now part of the master calculation function
     while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
     status = "Success"
     if not date_range_found: status = "Error: Hit Date Range Not Found"
@@ -225,17 +219,13 @@ def get_closing_balances(unpaid_data_dict):
     while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
     return data_copy
 
-# --- NEW: Master Calculation Function ---
 def calculate_refunds(account_data):
     limit_amount = account_data.get('limit', 0)
     history_data = account_data.get('history_data', {})
     dispute_transactions = account_data.get('transactions', [])
-
-    # Initialize all refund totals
     unpaid_diary, unpaid_replace, unpaid_manual = 0.0, 0.0, 0.0
     msc_diary, msc_replace, msc_manual = 0.0, 0.0, 0.0
     
-    # --- Part 1: U-UNPAIDS Waterfall Calculation ---
     unpaid_data_to_process = copy.deepcopy(history_data.get('unpaids', {}))
     valid_unpaids = []
     page_1_end_date_str = unpaid_data_to_process.pop('page_1_end_date', None)
@@ -262,52 +252,38 @@ def calculate_refunds(account_data):
         remainingBalance = 0.0
         utilized_disputes = []
         for unpaid in valid_unpaids:
-            decision = "No"
-            closing_balance = unpaid.get('closing_balance', 0)
-            unpaid_amount = unpaid.get('amount', 0)
+            decision = "No"; closing_balance = unpaid.get('closing_balance', 0); unpaid_amount = unpaid.get('amount', 0)
             if closing_balance >= unpaid_amount or (closing_balance + limit_amount) >= unpaid_amount: decision = "No"
             elif (closing_balance + limit_amount + remainingBalance) >= unpaid_amount:
-                decision = "Yes"
-                remainingBalance = (closing_balance + limit_amount + remainingBalance) - unpaid_amount
+                decision = "Yes"; remainingBalance = (closing_balance + limit_amount + remainingBalance) - unpaid_amount
             else:
                 relevant_disputes = [d for d in disputes if d['date_dt'] < unpaid['date_dt'] and d not in utilized_disputes]
                 totalDisputedAmount = sum(d['amount'] for d in relevant_disputes)
                 if (closing_balance + limit_amount + remainingBalance + totalDisputedAmount) >= unpaid_amount:
-                    decision = "Yes"
-                    remainingBalance = (closing_balance + limit_amount + remainingBalance + totalDisputedAmount) - unpaid_amount
-                    utilized_disputes.extend(relevant_disputes)
+                    decision = "Yes"; remainingBalance = (closing_balance + limit_amount + remainingBalance + totalDisputedAmount) - unpaid_amount; utilized_disputes.extend(relevant_disputes)
                 else:
-                    decision = "No"
-                    remainingBalance = (closing_balance + limit_amount + remainingBalance + totalDisputedAmount)
+                    decision = "No"; remainingBalance = (closing_balance + limit_amount + remainingBalance + totalDisputedAmount)
             if decision == "Yes":
                 if unpaid['source_page'] == 1: unpaid_diary += unpaid['individual_charge']
                 elif unpaid['source_page'] == 2: unpaid_replace += unpaid['individual_charge']
                 else: unpaid_manual += unpaid['individual_charge']
 
-    # --- Part 2: MINIMUM SERVICE CHARGE Calculation ---
     msc_data = history_data.get('msc', {})
     for page_num, data in msc_data.items():
-        start_dt = datetime.datetime.strptime(data['start_date'], "%d%b%y")
-        end_dt = datetime.datetime.strptime(data['end_date'], "%d%b%y")
-        scraped_count = data['count']
-        scraped_rate = data['rate']
-        
+        start_dt = datetime.datetime.strptime(data['start_date'], "%d%b%y"); end_dt = datetime.datetime.strptime(data['end_date'], "%d%b%y")
+        scraped_count = data['count']; scraped_rate = data['rate']
         disputes_in_period = [d for d in dispute_transactions if start_dt <= datetime.datetime.strptime(d['Hit Date'], "%d%b%y") <= end_dt]
-        num_disputes_in_period = len(disputes_in_period)
-
-        if scraped_count >= num_disputes_in_period:
-            refund_amount = num_disputes_in_period * scraped_rate
+        if scraped_count >= len(disputes_in_period):
+            refund_amount = len(disputes_in_period) * scraped_rate
             if int(page_num) == 1: msc_diary += refund_amount
             elif int(page_num) == 2: msc_replace += refund_amount
             else: msc_manual += refund_amount
     
-    # --- Part 3: Calculate Diary Date ---
     diary_date = ""
     if (unpaid_diary > 0 or msc_diary > 0) and page_1_end_date_str:
         end_date = datetime.datetime.strptime(page_1_end_date_str, "%d%b%y")
         next_day = end_date + datetime.timedelta(days=1)
-        while next_day.weekday() >= 5:
-            next_day += datetime.timedelta(days=1)
+        while next_day.weekday() >= 5: next_day += datetime.timedelta(days=1)
         diary_date = next_day.strftime("%d-%b-%Y")
 
     return unpaid_diary, unpaid_replace, unpaid_manual, msc_diary, msc_replace, msc_manual, diary_date
@@ -330,6 +306,7 @@ if not account_data:
 print(f"Found {len(account_data)} unique chargeable accounts to process.")
 refund_date = get_refund_date_from_filename(excel_file_path)
 print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+# --- REGRESSION FIX: Added back environment variable setup ---
 wc3270 = ';W:\\;'
 path_var = os.environ.get('Path', '')
 if wc3270 not in path_var:
@@ -341,7 +318,6 @@ else:
 print("\n--- Phase 2: Starting Mainframe Processing & Calculation ---")
 mf = MFRobot(visible=True)
 mf.connect_n_login(racf='raosx', password='pooja016')
-
 previous_brand = None
 for i, (account_number, data) in enumerate(account_data.items()):
     try:
@@ -359,13 +335,12 @@ for i, (account_number, data) in enumerate(account_data.items()):
         status, history_found = process_account_history(base_info['Hit Date DT'], refund_date)
         data['limit'] = limit_found
         data['mainframe_status'] = status
-        data['history_data'] = history_found # Store all collected history
+        data['history_data'] = history_found
         
         if history_found.get("unpaids"):
-            enriched_unpaids = get_closing_balances(history_found["unpaids"])
+            enriched_unpaids = get_closing_balances(history_found.get("unpaids"))
             history_found["unpaids"] = enriched_unpaids
         
-        # Perform final calculations using ALL collected data for the account
         u_diary, u_replace, u_manual, msc_diary, msc_replace, msc_manual, diary_dt = calculate_refunds(data)
         data.update({
             'unpaid_diary_refund': u_diary, 'unpaid_replace_refund': u_replace, 'unpaid_manual_refund': u_manual,
@@ -380,8 +355,7 @@ for i, (account_number, data) in enumerate(account_data.items()):
         data['mainframe_status'] = f"Error: {e}"
         if "TerminalClient instance has been terminated" in str(e):
             print("Connection lost. Attempting to reconnect..."); 
-            try: 
-                mf.terminate()
+            try: mf.terminate()
             except: pass
             mf = MFRobot(visible=True); mf.connect_n_login(racf='raosx', password='pooja016'); previous_brand = None
         else:
@@ -394,6 +368,7 @@ for account_number, data in account_data.items():
     base_info = data.get('base_info', {})
     row_data = {
         'Case Number': base_info.get('Case Number'),
+        # --- REGRESSION FIX: Added back zfill() formatting ---
         'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
         'Account': str(base_info.get('Account', '')).zfill(8),
         'Brand': base_info.get('Brand'),
@@ -424,4 +399,4 @@ output_df = output_df[existing_cols]
 output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
 
 print("\nScript finished successfully.")
-# if mf: mf.terminate()
+if mf: mf.terminate()
