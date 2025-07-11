@@ -152,9 +152,10 @@ def process_account_history(hit_date_dt, refund_date_dt):
 
     history_data = {"unpaids": {}, "msc": {}}
     date_range_found = False
+    
     for _ in range(16):
         current_page_text = mf.get_screen_text()
-        if "NO HISTORY DETAILS AVAILABLE" in current_page_text: break 
+        if "NO HISTORY DETAILS AVAILABLE" in current_page_text: break
         
         page_num_match = re.search(r"PAGE\s+(\d+)", current_page_text)
         page_num = page_num_match.group(1) if page_num_match else "Unknown"
@@ -162,37 +163,51 @@ def process_account_history(hit_date_dt, refund_date_dt):
         start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
         end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
         
+        # We must have dates to do any processing on this page
+        if not (start_date_match and end_date_match):
+            mf.send_pf8(); mf.wait_for_field(); continue
+
+        page_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
+        page_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
+
+        # --- REFINED FILTERING LOGIC ---
+        # Rule: Only collect data from pages that end *after* our hit date.
+        # This prevents collecting data from pages that are too old.
+        if page_end_dt < hit_date_dt:
+            # This page is entirely before our oldest dispute, so we can stop.
+            date_range_found = True # We've gone past our relevant date.
+            break
+
         if page_num == "1":
-            if end_date_match: history_data['page_1_end_date'] = end_date_match.group(1)
-            
+            history_data['page_1_end_date'] = end_date_match.group(1)
+
         if "U-UNPAIDS" in current_page_text:
             unpaid_data = extract_unpaid_data_from_page()
             if unpaid_data and unpaid_data.get("transactions"):
                 history_data["unpaids"][page_num] = unpaid_data
         
         if "MINIMUM SERVICE CHARGE" in current_page_text:
-            if start_date_match and end_date_match:
-                msc_data = process_minimum_service_charge()
-                if msc_data:
-                    msc_data['start_date'] = start_date_match.group(1)
-                    msc_data['end_date'] = end_date_match.group(1)
-                    history_data["msc"][page_num] = msc_data
+            msc_data = process_minimum_service_charge()
+            if msc_data:
+                msc_data['start_date'] = start_date_match.group(1)
+                msc_data['end_date'] = end_date_match.group(1)
+                history_data["msc"][page_num] = msc_data
         
-        if start_date_match and end_date_match and not date_range_found:
-            screen_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
-            screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
-            if screen_start_dt <= hit_date_dt <= screen_end_dt:
-                date_range_found = True
-                break
+        # Check if the current page contains our hit date
+        if page_start_dt <= hit_date_dt <= page_end_dt:
+            date_range_found = True
+            break # We found the page with the oldest dispute, stop paging back.
         
         mf.send_pf8()
         mf.wait_for_field()
+
+    # --- The filtering now happens in the calculate_refunds function ---
+    # This function's only job is to collect the raw history data.
     
-    # Filtering logic is now part of the master calculation function
     while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
     status = "Success"
     if not date_range_found: status = "Error: Hit Date Range Not Found"
-    elif not history_data.get("unpaids") and not history_data.get("msc"): status = "Success: No Qualifying Data"
+    
     return status, history_data
 
 def get_closing_balances(unpaid_data_dict):
@@ -224,12 +239,14 @@ def get_closing_balances(unpaid_data_dict):
     return data_copy
 
 # --- NEW: Master Calculation Function ---
-def calculate_refunds(account_data):
+def calculate_refunds(account_data, refund_date_dt):
+    # Extract the oldest hit date for this account
+    hit_date_dt = account_data['base_info']['Hit Date DT']
+    
     limit_amount = account_data.get('limit', 0)
     history_data = account_data.get('history_data', {})
     dispute_transactions = account_data.get('transactions', [])
 
-    # Initialize all refund totals
     unpaid_diary, unpaid_replace, unpaid_manual = 0.0, 0.0, 0.0
     msc_diary, msc_replace, msc_manual = 0.0, 0.0, 0.0
     
@@ -246,14 +263,16 @@ def calculate_refunds(account_data):
         if num_trans == 0: continue
         individual_charge = (page_data.get('accrued_charge', 0) / num_trans)
         for date_str, details in transactions.items():
+            trans_dt = datetime.datetime.strptime(date_str, "%d%b%y")
+            # --- THIS IS THE CRITICAL FILTER ---
+            if not (hit_date_dt < trans_dt < refund_date_dt):
+                continue # Skip this transaction if it's outside the date range
+            
             if details.get('closing_balance') == 'Error': continue
-            details.update({
-                'date_dt': datetime.datetime.strptime(date_str, "%d%b%y"),
-                'individual_charge': individual_charge,
-                'source_page': int(page_num)
-            })
+            details.update({ 'date_dt': trans_dt, 'individual_charge': individual_charge, 'source_page': int(page_num) })
             valid_unpaids.append(details)
     
+    # The rest of the calculation proceeds only on the correctly filtered 'valid_unpaids'
     if valid_unpaids:
         valid_unpaids.sort(key=lambda x: x['date_dt'])
         disputes = sorted([{'amount': d['Amount'], 'date_dt': datetime.datetime.strptime(d['Hit Date'], "%d%b%y")} for d in dispute_transactions], key=lambda x: x['date_dt'])
