@@ -37,11 +37,7 @@ def structure_account_data(excel_path):
     structured_data = {}
     for account_number, group_df in df_chargeable.groupby('Account'):
         oldest_row = group_df.loc[group_df['Hit Date DT'].idxmin()]
-        
-        # --- FIX #1: Keep the 'Hit Date DT' in base_info ---
-        # Convert the entire oldest row to a dictionary, including the datetime object
         base_info = oldest_row.to_dict()
-
         transactions_df = group_df[['Amount', 'Hit Date']]
         transactions = transactions_df.to_dict(orient='records')
         structured_data[account_number] = {
@@ -93,8 +89,7 @@ def extract_unpaid_data_from_page():
     mf.move_to(22, 45)
     mf.send_string("u")
     mf.send_enter()
-    try:
-        mf.wait_for_field()
+    try: mf.wait_for_field()
     except Exception: return page_data
     screen_text = mf.get_screen_text()
     if "UNPAID ITEMS HISTORY" not in screen_text:
@@ -139,7 +134,8 @@ def process_account_history(hit_date_dt, refund_date_dt):
     screen_text = mf.get_screen_text()
 
     if "ACCOUNT IS NON-CHARGEABLE" in screen_text or "SERVICE CHARGE HISTORY" not in screen_text:
-        while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
+        # --- MODIFIED: Return to Customer Info Index ---
+        while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
         return "Non-Chargeable or No History", {}
 
     all_collected_unpaids = {}
@@ -175,11 +171,63 @@ def process_account_history(hit_date_dt, refund_date_dt):
             if filtered_transactions:
                 final_filtered_data[page] = { "accrued_charge": data.get("accrued_charge"), "applied_charge": data.get("applied_charge"), "transactions": filtered_transactions }
     
-    while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
+    # --- MODIFIED: Return to Customer Info Index ---
+    while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
     status = "Success"
     if not date_range_found: status = "Error: Hit Date Range Not Found"
     elif not final_filtered_data: status = "Success: No Qualifying Unpaids"
     return status, final_filtered_data
+
+# --- NEW FUNCTION TO GET CLOSING BALANCES ---
+def get_closing_balances(unpaid_data_dict):
+    """
+    Starts from CUSTOMER INFORMATION INDEX, finds closing balances for each unpaid
+    transaction, enriches the dictionary, and returns to MASTER INDEX.
+    """
+    mf.wait_for_text("CUSTOMER INFORMATION INDEX")
+    mf.move_to(22, 8)
+    mf.send_string("09") # Option for ACCOUNT HISTORY
+    mf.send_enter()
+    mf.wait_for_text("ACCOUNT HISTORY ENQUIRY")
+    mf.send_enter() # Proceed with default options
+    
+    # This will land us on the Transaction History screen, ready to search
+    mf.wait_for_text("TRANSACTION HISTORY")
+    
+    # Iterate through all pages and transactions in the dictionary
+    for page_num, page_data in unpaid_data_dict.items():
+        for date_str, trans_details in page_data.get("transactions", {}).items():
+            try:
+                print(f"  -> Searching balance for transaction date: {date_str}")
+                mf.move_to(22, 56) # Position for start date
+                mf.send_string(date_str) # Send date like "11JUN25"
+                mf.send_enter()
+                mf.send_pf8() # Search backwards
+                mf.wait_for_field()
+
+                # Upward scrape logic
+                balance_found = None
+                for row_num in range(20, 5, -1): # Search from row 20 up to row 6
+                    balance_text = mf.string_get(row_num, 67, 14).strip()
+                    if balance_text:
+                        if "DR" in balance_text.upper():
+                            balance_found = -1 * float(balance_text.upper().replace("DR", "").strip())
+                        else:
+                            balance_found = float(balance_text.strip())
+                        break # Exit the upward scrape loop once a balance is found
+                
+                # Add the found balance back into the dictionary
+                trans_details['closing_balance'] = balance_found
+                
+            except Exception as e:
+                print(f"    -> WARNING: Could not get balance for {date_str}. Error: {e}")
+                trans_details['closing_balance'] = 'Error'
+
+    # After processing all unpaids, return to the master index for the next account
+    while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
+        
+    return unpaid_data_dict
+
 
 # --- JSON HELPER ---
 def convert_numpy_types(obj):
@@ -198,23 +246,12 @@ if not account_data:
     print("No chargeable accounts to process. Exiting.")
     exit()
 print(f"Found {len(account_data)} unique chargeable accounts to process.")
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
-
-# --- Configuration & Setup ---
-wc3270 = ';W:\\;'
-
-# --- Add wc3270 to Path Environment Variable ---
-path_var = os.environ.get('Path', '')
-if wc3270 not in path_var:
-    os.environ["Path"] = path_var + wc3270
-    print("wc3270 path added to environment.")
-else:
-    print("wc3270 path already exists.")
 
 print("\n--- Phase 2: Starting Mainframe Processing ---")
 mf = MFRobot(visible=True)
 mf.connect_n_login(racf='raosx', password='pooja016')
+refund_date = get_refund_date_from_filename(excel_file_path)
+print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
 
 previous_brand = None
 for i, (account_number, data) in enumerate(account_data.items()):
@@ -228,12 +265,17 @@ for i, (account_number, data) in enumerate(account_data.items()):
             goto_masterIndex(current_brand, switch_brand=True)
         
         limit_found = check_limit(base_info['Sort Code'], base_info['Account'])
-        # The KeyError was here: 'Oldest Hit Date DT' was missing. It is now present.
         status, unpaids_found = process_account_history(base_info['Hit Date DT'], refund_date)
+
+        # NEW: Check for unpaids and get closing balances if they exist
+        if unpaids_found:
+            enriched_unpaids = get_closing_balances(unpaids_found)
+            data['mainframe_unpaids'] = enriched_unpaids
+        else:
+            data['mainframe_unpaids'] = unpaids_found # Store the empty dict
 
         data['limit'] = limit_found
         data['mainframe_status'] = status
-        data['mainframe_unpaids'] = unpaids_found
         
         previous_brand = current_brand
         print(f"Status for account {account_number}: {status}")
@@ -241,68 +283,43 @@ for i, (account_number, data) in enumerate(account_data.items()):
     except Exception as e:
         print(f"CRITICAL ERROR on account {account_number}: {e}")
         data['mainframe_status'] = f"Error: {e}"
-        # --- FIX #2: Do NOT terminate on every error. Only try to recover if it's a connection issue ---
         if "TerminalClient instance has been terminated" in str(e):
-             # This error means the connection is truly lost.
             print("Connection lost. Attempting to reconnect...")
             try: mf.terminate()
             except: pass
             mf = MFRobot(visible=True)
             mf.connect_n_login(racf='raosx', password='pooja016')
-            previous_brand = None # Force re-login to brand menu
+            previous_brand = None
         else:
-            # For data errors (like KeyError), just continue to the next item.
             print("This was a data processing error, not a connection error. Continuing...")
             continue
 
+# --- Phase 3: Generating Final Report ---
 print("\n--- Phase 3: Generating Final Account-Wise Report ---")
 output_rows = []
 for account_number, data in account_data.items():
-    # .get() is used to safely access keys that might not exist for a failed item
     base_info = data.get('base_info', {})
-    
-    # Create a dictionary for the new, structured row
     row_data = {
-        # --- 1. Key Identifier Columns ---
         'Case Number': base_info.get('Case Number'),
-        'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
-        'Account': str(base_info.get('Account', '')).zfill(8),
+        'Sort Code': base_info.get('Sort Code'),
+        'Account': base_info.get('Account'),
         'Brand': base_info.get('Brand'),
-        
-        # --- 2. Richly Formatted JSON Columns ---
+        'Limit': data.get('limit'),
+        'Processing Status': data.get('mainframe_status'),
         'Basic Info': json.dumps(base_info, indent=4, default=convert_numpy_types),
         'Transaction Data': json.dumps(data.get('transactions'), indent=4, default=convert_numpy_types),
-        'Limit': data.get('limit'), # Limit is a simple value, no need for JSON formatting unless you want it
-        'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=convert_numpy_types),
-        
-        # --- 3. Diagnostic Column (Good to keep) ---
-        'Processing Status': data.get('mainframe_status')
+        'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=convert_numpy_types)
     }
     output_rows.append(row_data)
 
-# Create the final DataFrame from our list of structured rows
 output_df = pd.DataFrame(output_rows)
-
-# Define the exact column order for the final Excel file
 final_column_order = [
-    'Case Number', 
-    'Sort Code', 
-    'Account', 
-    'Brand',
-    'Processing Status',
-    'Limit',
-    'Basic Info', 
-    'Transaction Data',
-    'Unpaid Data'
+    'Case Number', 'Sort Code', 'Account', 'Brand', 'Processing Status', 'Limit',
+    'Basic Info', 'Transaction Data', 'Unpaid Data'
 ]
-
-# Ensure all columns exist before trying to reorder, to prevent errors
 existing_cols = [col for col in final_column_order if col in output_df.columns]
 output_df = output_df[existing_cols]
-
-# Save the final, structured report
 output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
 
-
 print("\nScript finished successfully.")
-# if mf: mf.terminate()
+if mf: mf.terminate()
