@@ -1,277 +1,1421 @@
-import base64
-import getpass
-from emu3270 import MFRobot
-import time
-import os
-import pandas as pd
-import datetime
-import re
-import json
-import numpy as np
+Processing account 1/28: 46045953 (NWB)...
+Changing brand to NWB
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:  Date :11/07/2025          APPLICATION SELECTION MENU            Userid:RAOSX   \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.003\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:  Time :08:05                                                   Terminal:TQB23994\n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:           ***          TECHNOLOGY HELPDESK 0131-523-2222         ***            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:           S   ID PFK DESCRIPTION OF APPLICATION               STATUS            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:           _    1     PRCIN#T# - NWB production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:           _    2     PRCIR#T# RBS PRODUCTION CICS ACCESS                        \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:           _    3     PRCIJ#T# - UBN Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:           _    4     PRCIK#T# - RoI Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:  Date :11/07/2025          APPLICATION SELECTION MENU            Userid:RAOSX   \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.010\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:  Time :08:05                                                   Terminal:TQB23994\n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:           ***          TECHNOLOGY HELPDESK 0131-523-2222         ***            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.008\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:           S   ID PFK DESCRIPTION OF APPLICATION               STATUS            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:           _    1     PRCIN#T# - NWB production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:           _    2     PRCIR#T# RBS PRODUCTION CICS ACCESS                        \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:           _    3     PRCIJ#T# - UBN Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:           _    4     PRCIK#T# - RoI Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.014\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:  Date :11/07/2025          APPLICATION SELECTION MENU            Userid:RAOSX   \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:  Time :08:05                                                   Terminal:TQB23994\n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:           ***          TECHNOLOGY HELPDESK 0131-523-2222         ***            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:           S   ID PFK DESCRIPTION OF APPLICATION               STATUS            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:           _    1     PRCIN#T# - NWB production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:           _    2     PRCIR#T# RBS PRODUCTION CICS ACCESS                        \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:           _    3     PRCIJ#T# - UBN Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:           _    4     PRCIK#T# - RoI Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:  Date :11/07/2025          APPLICATION SELECTION MENU            Userid:RAOSX   \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.003\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:  Time :08:05                                                   Terminal:TQB23994\n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.003\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:           ***          TECHNOLOGY HELPDESK 0131-523-2222         ***            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:           S   ID PFK DESCRIPTION OF APPLICATION               STATUS            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.005\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:           _    1     PRCIN#T# - NWB production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:           _    2     PRCIR#T# RBS PRODUCTION CICS ACCESS                        \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:           _    3     PRCIJ#T# - UBN Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:           _    4     PRCIK#T# - RoI Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.003\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:  Date :11/07/2025          APPLICATION SELECTION MENU            Userid:RAOSX   \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:  Time :08:05                                                   Terminal:TQB23994\n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:           ***          TECHNOLOGY HELPDESK 0131-523-2222         ***            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:           **********************************************************            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:           S   ID PFK DESCRIPTION OF APPLICATION               STATUS            \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:           _    1     PRCIN#T# - NWB production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:           _    2     PRCIR#T# RBS PRODUCTION CICS ACCESS                        \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:           _    3     PRCIJ#T# - UBN Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:           _    4     PRCIK#T# - RoI Production CICS Access                      \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.004\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F P C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'MoveCursor(11, 10)'
+in execute b'MoveCursor(11, 10)'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 11 10 0x0 0.001\n'
+s
+b'String("s")'
+in execute b'String("s")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 12 10 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.229\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.002\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.004\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.001\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U U U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 0 0 0x0 0.000\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:       SP2001             Option Handler Function Screen           11/07/25 08:06\n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:    4  CARD SERVICE CENTRE AUTH/CSM                                              \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:   19  NEW BACK OFFICE                                                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:  122  HOIS - MAINLAND BRANCHES                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:  124  HOIS - INTERNATIONAL BRANCHES                                             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:  124A HOIS - OFFSHORE                                                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:  195  AC INFO SYS                                                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:  787  COUTTS AND CO HOIS                                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:  791  IOM BANK HOIS                                                             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:  795  NATWEST OFFSHORE HOIS                                                     \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  883  ULSTER BANK (NORTH) HOIS                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  893  ULSTER BANK (ROI) HOIS                                                    \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  922  FRAUD DETECTION - OPERATOR MENU                                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:  946  DEBIT CARD REFERRAL SYSTEM                                                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:  Select Option                                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:  Please enter an option.                                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:  PF3-Exit      PF7-Page Back      PF8-Page Forward                              \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 15 0x0 0.001\n'
+19
+b'String("19")'
+in execute b'String("19")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 20 17 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.025\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:       BACK OFFICE SYSTEM                                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:  1. NEW BACK OFFICE                                                             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.004\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                         32. SIGN OFF                            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:        Details                                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  Select Option                                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:        Command                                                                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:  PF3-Return    PF4-Home    PF5-Refresh    PF12-List of Functions                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 15 0x0 0.001\n'
+1
+b'String("1")'
+in execute b'String("1")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 16 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.007\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                            MASTER INDEX                                         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                           17. INTEREST & EXCHANGE RATES         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.006\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:   3. WASTE                                                                      \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:   4. CUSTOMER INFORMATION                 20. FILE MAINTENANCE INPUT            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:   5. TOTALS                               21. FILE MAINTENANCE CHECKING         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.002\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:   7. MAINFRAME USER ADMINISTRATION                                              \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:   8. AUTOMATED REPORTS                                                          \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:   9. CASHLINE                             25. BRANCH MANAGEMENT INPUT           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  10. MESSAGE INFORMATION                                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  11. MARKETING INFORMATION                27. CUSTOMER MESSAGES                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  12. FOREIGN ACCOUNTS                                                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:  14. SYSTEM NEWS                                                                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX ..                                                         BRANCH 830001 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                            MASTER INDEX                                         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:                                           17. INTEREST & EXCHANGE RATES         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:   3. WASTE                                                                      \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:   4. CUSTOMER INFORMATION                 20. FILE MAINTENANCE INPUT            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:   5. TOTALS                               21. FILE MAINTENANCE CHECKING         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:   7. MAINFRAME USER ADMINISTRATION                                              \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:   8. AUTOMATED REPORTS                                                          \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:   9. CASHLINE                             25. BRANCH MANAGEMENT INPUT           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.007\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  10. MESSAGE INFORMATION                                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  11. MARKETING INFORMATION                27. CUSTOMER MESSAGES                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  12. FOREIGN ACCOUNTS                                                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:  14. SYSTEM NEWS                                                                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX ..                                                         BRANCH 830001 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'MoveCursor(21, 7)'
+in execute b'MoveCursor(21, 7)'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+20
+b'String("20")'
+in execute b'String("20")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 73 0x0 0.000\n'
+b'MoveCursor(21, 73)'
+in execute b'MoveCursor(21, 73)'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 73 0x0 0.001\n'
+606005
+b'String("606005")'
+in execute b'String("606005")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.016\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                     FILE MAINTENANCE INPUT INDEX                                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:   1. CUSTOMER INFORMATION           18. ACCOUNT CLOSURE                         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:   2. STANDING ORDERS                19. SERVICE CHARGE DETAILS                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:                                     20. INTERNAL TRANSACTIONS                   \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.010\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:   4. MATURING ACCOUNT INSTRUCTIONS  21. CERTIFICATES OF INTEREST                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:                                     22. SECURITY RECORDS                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:   6. ACCOUNT DETAILS                23. NOTICE ACCOUNTS                         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:   7. CUSTOMER DATA BASE             24. ORIGINATING DIRECT DEBITS               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:   8. CHEQUE AND CREDIT BOOKS        25. MISCELLANEOUS FILE MAINTENANCE          \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:   9. PLASTIC CARDS DETAILS          26. CHEQUES OUT                             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  10. RESPONSIBILITY CODES           27. INDIVIDUAL SAVINGS ACCOUNTS             \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  11. RECORDED ITEMS                 28. MORTGAGE SYSTEM                         \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  12. CUSTOMER MESSAGES                                                          \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:  13. ARRANGEMENT MAINTENANCE        30. REWARD/BONUS DETAILS                    \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:  14. CASH AND TRAVEL                31. LOCATE SERVICE PROVIDER                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:  15. PAYMENTS                                                                   \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:  16. ACCOUNT OPEN                   33. CAM ALR ELIGIBILITY UPDATE              \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:  17. OVERDRAFT REQUEST              34. PENDING DORMANT ACCOUNTS                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX ..   ACCOUNT ....................     QUALIFIER .......    BRANCH 606005 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+01
+b'String("01")'
+in execute b'String("01")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 20 0x0 0.000\n'
+46045953
+b'String("46045953")'
+in execute b'String("46045953")'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 28 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.016\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:                        CUSTOMER INFORMATION INDEX                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:    (FROM FILE MAINTENANCE INPUT    - USER 50 RAOSX         830001 SIGNED ON)    \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:   1. BALANCE ENQUIRY                18. CREDIT CARD ENQUIRY                     \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:   2. STATEMENT DETAILS              19. TODAYS FOREIGN ITEMS                    \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:   3. ACCOUNTING INFORMATION 1       20. TODAYS WASTE ITEMS                      \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:   4. ACCOUNTING INFORMATION 2       21. CHEQUE AND CREDIT BOOK ENQUIRIES        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:   5. CARD DETAILS                   22. ACCOUNT LIMIT DETAILS                   \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:   6. COURSING INFORMATION           23. PERSONAL LOAN ENQUIRIES                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:   7. STANDING ORDERS                24. COSTING ACCOUNT ENQUIRIES               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:   8. STOPS LIST                     25. BRANCH ACCOUNT ENQUIRY                  \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:   9. ACCOUNT HISTORY                26. ADDITIONAL ACCOUNT INFORMATION          \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  10. CUSTOMER ACCOUNT RELATIONSHIPS 27. PAYMENT ENQUIRIES                       \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  11. RCM INFORMATION                28. MORTGAGE ENQUIRIES                      \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.007\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  12. NAME KEY LIST                  29. DIRECT DEBITS                           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:  13. SERVICE CHARGE DETAILS         30. ACCOUNT CLOSURE ENQUIRY                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:  14. TRANSACTION HISTORY SEARCH     31. INTEREST/FEES HISTORY ENQUIRY           \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:  15. SUPPLEMENTARY LIST HISTORY     32. SECURITY RECORDS ENQUIRY                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:  16. FORWARD POSTED TRANSACTIONS    98. APPLICATION STATUS ENQUIRIES            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:  17. INTRA DAY TRANSACTIONS         99. CUSTOMER DATA BASE ENQUIRIES            \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX 01   ACCOUNT 46045953............     QUALIFIER .......    BRANCH 606005 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Enter'
+in execute b'Enter'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.041\n'
+b'Ascii(0,0,80)'
+in execute b'Ascii(0,0,80)'
+line b'data:            BALANCE ENQUIRY                        11JUL25  8:06                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(1,0,80)'
+in execute b'Ascii(1,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(2,0,80)'
+in execute b'Ascii(2,0,80)'
+line b'data:  606005 46045953 JAGAN MOHAN D        (A)  TYPE - SELECT PLATINUM ACCOUNT       \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(3,0,80)'
+in execute b'Ascii(3,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.009\n'
+b'Ascii(4,0,80)'
+in execute b'Ascii(4,0,80)'
+line b'data:  BALANCE               CLEARED             LEDGER          LIMIT          EXCESS\n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(5,0,80)'
+in execute b'Ascii(5,0,80)'
+line b'data:  LAST NIGHT            197.13-            197.13-            250                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(6,0,80)'
+in execute b'Ascii(6,0,80)'
+line b'data:  RECORDED              197.13-            197.13-                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(7,0,80)'
+in execute b'Ascii(7,0,80)'
+line b'data:  INTRA DAY              10.90+                                 -                \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(8,0,80)'
+in execute b'Ascii(8,0,80)'
+line b'data:  BALANCE INCL PENDING            239.10-                                        \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(9,0,80)'
+in execute b'Ascii(9,0,80)'
+line b'data:  10JUL25 D/D            60.37-            550.49+                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(10,0,80)'
+in execute b'Ascii(10,0,80)'
+line b'data:  10JUL25 D/D           501.55-             48.94+                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(11,0,80)'
+in execute b'Ascii(11,0,80)'
+line b'data:  10JUL25 D/D            73.00-             24.06-                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(12,0,80)'
+in execute b'Ascii(12,0,80)'
+line b'data:  10JUL25 D/D           140.00-            164.06-                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(13,0,80)'
+in execute b'Ascii(13,0,80)'
+line b'data:  10JUL25 D/D            33.07-            197.13-                               \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(14,0,80)'
+in execute b'Ascii(14,0,80)'
+line b'data:  10JUL25 DPC            40.00+            157.13-       LAST CREDIT      10JUL25\n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(15,0,80)'
+in execute b'Ascii(15,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(16,0,80)'
+in execute b'Ascii(16,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(17,0,80)'
+in execute b'Ascii(17,0,80)'
+line b'data:  ACCRUED                DR            NET CR          GROSS CR              TAX \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(18,0,80)'
+in execute b'Ascii(18,0,80)'
+line b'data:  INTEREST             0.57              0.00              0.00             0.00 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.005\n'
+b'Ascii(19,0,80)'
+in execute b'Ascii(19,0,80)'
+line b'data:  CHARGES             20.00                                                      \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(20,0,80)'
+in execute b'Ascii(20,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(21,0,80)'
+in execute b'Ascii(21,0,80)'
+line b'data:  INDEX 01   ACCOUNT 46045953............     QUALIFIER .......    BRANCH 606005 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(22,0,80)'
+in execute b'Ascii(22,0,80)'
+line b'data:                                                                          MORE...\n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+b'Ascii(23,0,80)'
+in execute b'Ascii(23,0,80)'
+line b'data:                                                                                 \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.001\n'
+b'Ascii(5,57,10)'
+in execute b'Ascii(5,57,10)'
+line b'data:     250   \n'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
+CRITICAL ERROR on account 46045953: 'Oldest Hit Date DT'
+b'Quit'
+in execute b'Quit'
+line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 7 0x0 0.000\n'
 
-# --- Helper Function to Parse Date from Filename ---
-def get_refund_date_from_filename(path):
-    match = re.search(r'(\d{2}[a-zA-Z]{3}\d{4})', path)
-    if not match:
-        print(f"FATAL ERROR: Could not find a date (e.g., 07jul2025) in the filename: {path}")
-        exit()
-    date_str = match.group(1).upper()
-    try:
-        return datetime.datetime.strptime(date_str, "%d%b%Y")
-    except ValueError as e:
-        print(f"FATAL ERROR: Matched string '{date_str}' from filename, but could not parse it as a date. {e}")
-        exit()
+Processing account 2/28: 46575200 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 46575200: this TerminalClient instance has been terminated
 
-# --- Data Preparation Function ---
-def structure_account_data(excel_path):
-    """
-    Reads an Excel file, filters for rows where 'Charges' is 'Yes',
-    groups the remaining data by 'Account', and structures it
-    into a nested dictionary.
-    """
-    df = pd.read_excel(excel_path)
-    
-    if 'Charges' not in df.columns:
-        print("FATAL ERROR: 'Charges' column not found in Excel file.")
-        exit()
-    df['Charges'] = df['Charges'].astype(str)
+Processing account 3/28: 47174250 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 47174250: this TerminalClient instance has been terminated
 
-    df_chargeable = df[df['Charges'].str.strip().str.upper() == 'YES'].copy()
-    
-    if df_chargeable.empty:
-        print("No rows found with 'Charges' set to 'Yes'.")
-        return {}
+Processing account 4/28: 47248645 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 47248645: this TerminalClient instance has been terminated
 
-    df_chargeable['Hit Date DT'] = pd.to_datetime(df_chargeable['Hit Date'], format='%d%b%y')
+Processing account 5/28: 47305576 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 47305576: this TerminalClient instance has been terminated
 
-    structured_data = {}
-    for account_number, group_df in df_chargeable.groupby('Account'):
-        # Find the single row with the oldest 'Hit Date' within the group
-        oldest_row = group_df.loc[group_df['Hit Date DT'].idxmin()]
-        
-        # --- THIS IS THE CORRECTED LOGIC ---
-        # Create base_info by taking ALL columns from that oldest row.
-        # We just drop the temporary datetime column ('Hit Date DT') that we created for sorting.
-        base_info = oldest_row.drop('Hit Date DT').to_dict()
+Processing account 6/28: 48304891 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 48304891: this TerminalClient instance has been terminated
 
-        # The transactions list still only needs Amount and Hit Date from the whole group.
-        transactions_df = group_df[['Amount', 'Hit Date']]
-        transactions = transactions_df.to_dict(orient='records')
-        
-        # Assemble the final structure for this account
-        structured_data[account_number] = {
-            'base_info': base_info,
-            'transactions': transactions
-        }
-        
-    return structured_data
+Processing account 7/28: 48520438 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 48520438: this TerminalClient instance has been terminated
 
-# --- Mainframe Functions ---
+Processing account 8/28: 48559520 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 48559520: this TerminalClient instance has been terminated
 
-# --- YOUR SUPERIOR GOTO_MASTERINDEX FUNCTION ---
-def goto_masterIndex(brand, switch_brand=False):
-    """Navigates to the correct brand's MASTER INDEX, with explicit brand switching."""
-    if mf.wait_for_text("MASTER INDEX") and not switch_brand:
-        return
-    while not mf.wait_for_text("APPLICATION SELECTION"):
-        mf.send_pf2()
-        mf.send_pf3() 
+Processing account 9/28: 48571148 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 48571148: this TerminalClient instance has been terminated
 
-    mf.wait_for_text("APPLICATION SELECTION")
-    brand_map = {"NWB": (12, 11), "RBS": (13, 11), "UBN": (14, 11)}
-    row, col = brand_map.get(brand.upper(), (15, 11))
-    mf.move_to(row, col)
-    mf.send_string("s")
-    mf.send_enter()
-    mf.wait_for_text("Option Handler Function Screen")
-    mf.send_string("19")
-    mf.send_enter()
-    mf.wait_for_text("BACK OFFICE SYSTEM")
-    mf.send_string("1")
-    mf.send_enter()
-    mf.wait_for_text("MASTER INDEX")
+Processing account 10/28: 51260735 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 51260735: this TerminalClient instance has been terminated
 
-def check_limit(sort_code, account_number):
-    mf.wait_for_text("MASTER INDEX")
-    mf.move_to(22, 8)
-    mf.send_string("20")
-    mf.move_to(22, 74)
-    mf.send_string(f"{sort_code:06d}")
-    mf.send_enter()
-    mf.wait_for_text("FILE MAINTENANCE INPUT INDEX")
-    mf.send_string("01")
-    mf.send_string(f"{account_number:08d}")
-    mf.send_enter()
-    mf.wait_for_text("CUSTOMER INFORMATION INDEX") 
-    mf.send_enter()
-    mf.wait_for_text("BALANCE ENQUIRY")
-    limit = mf.string_get(6, 58, 10).strip()
-    return float(limit.replace(',', '')) if limit and not limit.isalpha() else 0.0
+Processing account 11/28: 51313227 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 51313227: this TerminalClient instance has been terminated
 
-def extract_unpaid_data_from_page():
-    page_data = {"transactions": {}}
-    mf.move_to(22, 45)
-    mf.send_string("u")
-    mf.send_enter()
-    try:
-        mf.wait_for_field()
-    except Exception: return page_data
-    screen_text = mf.get_screen_text()
-    if "UNPAID ITEMS HISTORY" not in screen_text:
-        return page_data
-    for i in range(3):
-        try:
-            if i > 0:
-                mf.wait_for_field()
-                screen_text = mf.get_screen_text()
-            if "accrued_charge" not in page_data:
-                accrued_match = re.search(r"ACCRUED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
-                applied_match = re.search(r"APPLIED CHARGE\s*:\s*([\d,.]+|N/A)", screen_text)
-                if accrued_match:
-                    value_str = accrued_match.group(1).strip()
-                    page_data["accrued_charge"] = float(value_str.replace(',', '')) if value_str.upper() != 'N/A' else 'N/A'
-                if applied_match:
-                    value_str = applied_match.group(1).strip()
-                    page_data["applied_charge"] = float(value_str.replace(',', '')) if value_str.upper() != 'N/A' else 'N/A'
-            unpaid_matches = re.findall(r"^\s*(\d{2}[A-Z]{3}\d{2}).*\*.*?([\d,.]+)\s*$", screen_text, re.MULTILINE)
-            for date_str, amount_str in unpaid_matches:
-                page_data["transactions"][date_str] = {"amount": float(amount_str.replace(',', ''))}
-            page_match = re.search(r"PAGE\s+(\d+)\s+OF\s+(\d+)", screen_text)
-            if page_match and int(page_match.group(1)) < int(page_match.group(2)):
-                mf.send_pf8()
-                mf.wait_for_field() 
-            else: break
-        except Exception: break
-    mf.send_pf2()
-    mf.wait_for_field()
-    return page_data
+Processing account 12/28: 52182452 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 52182452: this TerminalClient instance has been terminated
 
-def process_account_history(hit_date_dt, refund_date_dt):
-    mf.wait_for_text("BALANCE ENQUIRY")
-    mf.move_to(22, 8)
-    mf.send_string("13")
-    mf.send_enter()
-    mf.wait_for_text("SERVICE CHARGE ENQUIRY INDEX") 
-    mf.move_to(22, 9)
-    mf.send_string("01")
-    mf.send_enter()
-    mf.wait_for_field()
-    screen_text = mf.get_screen_text()
+Processing account 13/28: 55649599 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 55649599: this TerminalClient instance has been terminated
 
-    if "ACCOUNT IS NON-CHARGEABLE" in screen_text or "SERVICE CHARGE HISTORY" not in screen_text:
-        while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
-        return "Non-Chargeable or No History", {}
+Processing account 14/28: 55856438 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 55856438: this TerminalClient instance has been terminated
 
-    all_collected_unpaids = {}
-    date_range_found = False
-    for _ in range(16):
-        current_page_text = mf.get_screen_text()
-        if "NO HISTORY DETAILS AVAILABLE" in current_page_text: break 
-        if "U-UNPAIDS" in current_page_text:
-            page_num_match = re.search(r"PAGE\s+(\d+)", current_page_text)
-            page_num = page_num_match.group(1) if page_num_match else "Unknown"
-            unpaid_data = extract_unpaid_data_from_page()
-            if unpaid_data: all_collected_unpaids[page_num] = unpaid_data
-        
-        start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
-        end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
-        if start_date_match and end_date_match:
-            screen_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
-            screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
-            if screen_start_dt <= hit_date_dt <= screen_end_dt:
-                date_range_found = True
-                break
-        mf.send_pf8()
-        mf.wait_for_field()
+Processing account 15/28: 56309562 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 56309562: this TerminalClient instance has been terminated
 
-    final_filtered_data = {}
-    if all_collected_unpaids:
-        for page, data in all_collected_unpaids.items():
-            filtered_transactions = {}
-            for trans_date_str, trans_details in data.get("transactions", {}).items():
-                trans_dt = datetime.datetime.strptime(trans_date_str, "%d%b%y")
-                if hit_date_dt < trans_dt < refund_date_dt:
-                    filtered_transactions[trans_date_str] = trans_details
-            if filtered_transactions:
-                final_filtered_data[page] = { "accrued_charge": data.get("accrued_charge"), "applied_charge": data.get("applied_charge"), "transactions": filtered_transactions }
-    
-    while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
-    status = "Success"
-    if not date_range_found: status = "Error: Hit Date Range Not Found"
-    elif not final_filtered_data: status = "Success: No Qualifying Unpaids"
-    return status, final_filtered_data
+Processing account 16/28: 56313489 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 56313489: this TerminalClient instance has been terminated
 
-# --- JSON HELPER ---
-def convert_numpy_types(obj):
-    if isinstance(obj, np.integer): return int(obj)
-    elif isinstance(obj, np.floating): return float(obj)
-    elif isinstance(obj, np.ndarray): return obj.tolist()
-    return obj
+Processing account 17/28: 58455124 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 58455124: this TerminalClient instance has been terminated
 
-# --- SCRIPT EXECUTION ---
-excel_file_path = r"Z:\Business Unit Team Management\Chargebacks\8. Interest & Charges (Chargebacks) (LD1700 Active+6 years)-Classification Internal & Confidential\Chennai\3.0 India\4. Work Allocation\2025\DRS Manual files\July\08072025\07jul2025_part4_srini.xlsx"
+Processing account 18/28: 59536853 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 59536853: this TerminalClient instance has been terminated
 
-print("--- Phase 1: Preparing account data from Excel ---")
-account_data = structure_account_data(excel_file_path)
-if not account_data:
-    print("No chargeable accounts to process. Exiting.")
-    exit()
-print(f"Found {len(account_data)} unique chargeable accounts to process.")
+Processing account 19/28: 60185546 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 60185546: this TerminalClient instance has been terminated
 
-print("\n--- Phase 2: Starting Mainframe Processing ---")
-mf = MFRobot(visible=True)
-mf.connect_n_login(racf='raosx', password='pooja016')
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+Processing account 20/28: 60882174 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 60882174: this TerminalClient instance has been terminated
 
-previous_brand = None
-for i, (account_number, data) in enumerate(account_data.items()):
-    try:
-        base_info = data['base_info']
-        current_brand = base_info['Brand']
-        print(f"\nProcessing account {i+1}/{len(account_data)}: {account_number} ({current_brand})...")
+Processing account 21/28: 61168580 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 61168580: this TerminalClient instance has been terminated
 
-        # --- YOUR IMPROVED BRAND SWITCHING LOGIC ---
-        if current_brand != previous_brand:
-            print(f"Changing brand to {current_brand}")
-            goto_masterIndex(current_brand, switch_brand=True)
-        
-        limit_found = check_limit(base_info['Sort Code'], base_info['Account'])
-        status, unpaids_found = process_account_history(base_info['Oldest Hit Date DT'], refund_date)
+Processing account 22/28: 61227676 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 61227676: this TerminalClient instance has been terminated
 
-        data['limit'] = limit_found
-        data['mainframe_status'] = status
-        data['mainframe_unpaids'] = unpaids_found
-        
-        previous_brand = current_brand
-        print(f"Status for account {account_number}: {status}")
+Processing account 23/28: 63515733 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 63515733: this TerminalClient instance has been terminated
 
-    except Exception as e:
-        print(f"CRITICAL ERROR on account {account_number}: {e}")
-        data['mainframe_status'] = f"Error: {e}"
-        try: mf.terminate()
-        except: pass
-        mf = MFRobot(visible=True)
-        mf.connect_n_login(racf='raosx', password='pooja016')
-        previous_brand = None
+Processing account 24/28: 64344428 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 64344428: this TerminalClient instance has been terminated
 
-print("\n--- Phase 3: Generating Final Account-Wise Report ---")
-output_rows = []
-for account_number, data in account_data.items():
-    row_data = {
-        'Sort Code': data['base_info']['Sort Code'],
-        'Account': data['base_info']['Account'],
-        'Brand': data['base_info']['Brand'],
-        'Case Number': data['base_info']['Case Number'],
-        'limit': data.get('limit'),
-        'mainframe_status': data.get('mainframe_status'),
-        'mainframe_unpaids': json.dumps(data.get('mainframe_unpaids'), default=convert_numpy_types),
-        'original_transactions': json.dumps(data.get('transactions'), default=convert_numpy_types)
-    }
-    output_rows.append(row_data)
+Processing account 25/28: 65574141 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 65574141: this TerminalClient instance has been terminated
 
-output_df = pd.DataFrame(output_rows)
-output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_accountwise.xlsx", index=False)
+Processing account 26/28: 65831543 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 65831543: this TerminalClient instance has been terminated
 
-print("\nScript finished successfully.")
-if mf: mf.terminate()
+Processing account 27/28: 66302196 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 66302196: this TerminalClient instance has been terminated
+
+Processing account 28/28: 67050220 (NWB)...
+Changing brand to NWB
+CRITICAL ERROR on account 67050220: this TerminalClient instance has been terminated
