@@ -255,25 +255,54 @@ for i, (account_number, data) in enumerate(account_data.items()):
             print("This was a data processing error, not a connection error. Continuing...")
             continue
 
-
 print("\n--- Phase 3: Generating Final Account-Wise Report ---")
 output_rows = []
 for account_number, data in account_data.items():
-    # We create the row from base_info, which now contains all original columns
-    row_data = data['base_info'].copy() 
-    # Add the new mainframe data
-    row_data['limit'] = data.get('limit')
-    row_data['mainframe_status'] = data.get('mainframe_status')
-    row_data['mainframe_unpaids'] = json.dumps(data.get('mainframe_unpaids'), default=convert_numpy_types)
-    # Add the aggregated original transactions
-    row_data['original_transactions'] = json.dumps(data.get('transactions'), default=convert_numpy_types)
-    # Remove the temporary datetime column before creating the row
-    if 'Hit Date DT' in row_data:
-        del row_data['Hit Date DT']
+    # .get() is used to safely access keys that might not exist for a failed item
+    base_info = data.get('base_info', {})
+    
+    # Create a dictionary for the new, structured row
+    row_data = {
+        # --- 1. Key Identifier Columns ---
+        'Case Number': base_info.get('Case Number'),
+        'Sort Code': base_info.get('Sort Code'),
+        'Account': base_info.get('Account'),
+        'Brand': base_info.get('Brand'),
+        
+        # --- 2. Richly Formatted JSON Columns ---
+        'Basic Info': json.dumps(base_info, indent=4, default=convert_numpy_types),
+        'Transaction Data': json.dumps(data.get('transactions'), indent=4, default=convert_numpy_types),
+        'Limit': data.get('limit'), # Limit is a simple value, no need for JSON formatting unless you want it
+        'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=convert_numpy_types),
+        
+        # --- 3. Diagnostic Column (Good to keep) ---
+        'Processing Status': data.get('mainframe_status')
+    }
     output_rows.append(row_data)
 
+# Create the final DataFrame from our list of structured rows
 output_df = pd.DataFrame(output_rows)
-output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_accountwise.xlsx", index=False)
+
+# Define the exact column order for the final Excel file
+final_column_order = [
+    'Case Number', 
+    'Sort Code', 
+    'Account', 
+    'Brand',
+    'Processing Status',
+    'Limit',
+    'Basic Info', 
+    'Transaction Data',
+    'Unpaid Data'
+]
+
+# Ensure all columns exist before trying to reorder, to prevent errors
+existing_cols = [col for col in final_column_order if col in output_df.columns]
+output_df = output_df[existing_cols]
+
+# Save the final, structured report
+output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
+
 
 print("\nScript finished successfully.")
 # if mf: mf.terminate()
