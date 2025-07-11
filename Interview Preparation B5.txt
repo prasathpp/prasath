@@ -198,12 +198,23 @@ if not account_data:
     print("No chargeable accounts to process. Exiting.")
     exit()
 print(f"Found {len(account_data)} unique chargeable accounts to process.")
+refund_date = get_refund_date_from_filename(excel_file_path)
+print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+
+# --- Configuration & Setup ---
+wc3270 = ';W:\\;'
+
+# --- Add wc3270 to Path Environment Variable ---
+path_var = os.environ.get('Path', '')
+if wc3270 not in path_var:
+    os.environ["Path"] = path_var + wc3270
+    print("wc3270 path added to environment.")
+else:
+    print("wc3270 path already exists.")
 
 print("\n--- Phase 2: Starting Mainframe Processing ---")
 mf = MFRobot(visible=True)
 mf.connect_n_login(racf='raosx', password='pooja016')
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
 
 previous_brand = None
 for i, (account_number, data) in enumerate(account_data.items()):
