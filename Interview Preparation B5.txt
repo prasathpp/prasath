@@ -335,13 +335,22 @@ for i, (account_number, data) in enumerate(account_data.items()):
         status, history_found = process_account_history(base_info['Hit Date DT'], refund_date)
         data['limit'] = limit_found
         data['mainframe_status'] = status
-        data['history_data'] = history_found
         
+        # --- THIS IS THE CORRECTED LOGIC BLOCK ---
         if history_found.get("unpaids"):
+            # If we found unpaids, get their balances. This function returns to MASTER INDEX.
             enriched_unpaids = get_closing_balances(history_found.get("unpaids"))
             history_found["unpaids"] = enriched_unpaids
+        else:
+            # If there are no unpaids, we are still on CUSTOMER INFORMATION INDEX.
+            # We must navigate back to MASTER INDEX manually.
+            print("  -> No unpaids found to check for balances. Returning to Master Index.")
+            while not mf.wait_for_text("MASTER INDEX"):
+                mf.send_pf2()
+
+        data['history_data'] = history_found
         
-        u_diary, u_replace, u_manual, msc_diary, msc_replace, msc_manual, diary_dt = calculate_refunds(data)
+        u_diary, u_replace, u_manual, msc_diary, msc_replace, msc_manual, diary_dt = calculate_refunds(data, refund_date)
         data.update({
             'unpaid_diary_refund': u_diary, 'unpaid_replace_refund': u_replace, 'unpaid_manual_refund': u_manual,
             'msc_diary_refund': msc_diary, 'msc_replace_refund': msc_replace, 'msc_manual_refund': msc_manual,
@@ -355,7 +364,8 @@ for i, (account_number, data) in enumerate(account_data.items()):
         data['mainframe_status'] = f"Error: {e}"
         if "TerminalClient instance has been terminated" in str(e):
             print("Connection lost. Attempting to reconnect..."); 
-            try: mf.terminate()
+            try: 
+                mf.terminate()
             except: pass
             mf = MFRobot(visible=True); mf.connect_n_login(racf='raosx', password='pooja016'); previous_brand = None
         else:
