@@ -209,7 +209,7 @@ def get_closing_balances(unpaid_data_dict):
     data_copy = copy.deepcopy(unpaid_data_dict)
 
     mf.wait_for_text("CUSTOMER INFORMATION INDEX")
-    mf.move_to(22, 8); mf.send_string("14"); mf.send_enter()
+    mf.move_to(22, 8); mf.send_string("48"); mf.send_enter()
     mf.wait_for_text("TRANSACTION HISTORY")
     
     # Iterate through all pages and transactions in the copied dictionary
