@@ -169,10 +169,10 @@ def process_account_history(hit_date_dt, refund_date_dt):
         mf.send_pf8()
         mf.wait_for_field()
 
+    # --- FIX #2: Only add page_1_end_date if there are qualifying unpaids ---
     final_filtered_data = {}
+    page_1_end_date = all_collected_unpaids.pop('page_1_end_date', None) # Safely get the date
     if all_collected_unpaids:
-        if 'page_1_end_date' in all_collected_unpaids:
-            final_filtered_data['page_1_end_date'] = all_collected_unpaids.pop('page_1_end_date')
         for page, data in all_collected_unpaids.items():
             filtered_transactions = {}
             for trans_date_str, trans_details in data.get("transactions", {}).items():
@@ -182,10 +182,20 @@ def process_account_history(hit_date_dt, refund_date_dt):
             if filtered_transactions:
                 final_filtered_data[page] = { "accrued_charge": data.get("accrued_charge"), "applied_charge": data.get("applied_charge"), "transactions": filtered_transactions }
     
+    # After the loop, check if any data was actually added to the final dict
+    if final_filtered_data and page_1_end_date:
+        final_filtered_data['page_1_end_date'] = page_1_end_date
+
     while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
-    status = "Success"
-    if not date_range_found: status = "Error: Hit Date Range Not Found"
-    elif not final_filtered_data: status = "Success: No Qualifying Unpaids"
+
+    # --- FIX #1: Correct the status logic ---
+    if not final_filtered_data and date_range_found:
+        status = "Success: No Qualifying Unpaids"
+    elif not date_range_found:
+        status = "Error: Hit Date Range Not Found"
+    else:
+        status = "Success"
+        
     return status, final_filtered_data
 
 def get_closing_balances(unpaid_data_dict):
