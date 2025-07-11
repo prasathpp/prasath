@@ -57,6 +57,8 @@ def goto_masterIndex(brand, switch_brand=False):
     brand_map = {"NWB": (12, 11), "RBS": (13, 11), "UBN": (14, 11)}
     row, col = brand_map.get(brand.upper(), (15, 11))
     mf.move_to(row, col)
+    mf.send_string("t")
+    mf.send_enter()
     mf.send_string("s")
     mf.send_enter()
     mf.wait_for_text("Option Handler Function Screen")
@@ -186,14 +188,10 @@ def get_closing_balances(unpaid_data_dict):
     """
     mf.wait_for_text("CUSTOMER INFORMATION INDEX")
     mf.move_to(22, 8)
-    mf.send_string("09") # Option for ACCOUNT HISTORY
+    mf.send_string("48") # Option for ACCOUNT HISTORY
     mf.send_enter()
-    mf.wait_for_text("ACCOUNT HISTORY ENQUIRY")
-    mf.send_enter() # Proceed with default options
-    
-    # This will land us on the Transaction History screen, ready to search
     mf.wait_for_text("TRANSACTION HISTORY")
-    
+
     # Iterate through all pages and transactions in the dictionary
     for page_num, page_data in unpaid_data_dict.items():
         for date_str, trans_details in page_data.get("transactions", {}).items():
@@ -246,12 +244,23 @@ if not account_data:
     print("No chargeable accounts to process. Exiting.")
     exit()
 print(f"Found {len(account_data)} unique chargeable accounts to process.")
+refund_date = get_refund_date_from_filename(excel_file_path)
+print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+
+# --- Configuration & Setup ---
+wc3270 = ';W:\\;'
+
+# --- Add wc3270 to Path Environment Variable ---
+path_var = os.environ.get('Path', '')
+if wc3270 not in path_var:
+    os.environ["Path"] = path_var + wc3270
+    print("wc3270 path added to environment.")
+else:
+    print("wc3270 path already exists.")
 
 print("\n--- Phase 2: Starting Mainframe Processing ---")
 mf = MFRobot(visible=True)
 mf.connect_n_login(racf='raosx', password='pooja016')
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
 
 previous_brand = None
 for i, (account_number, data) in enumerate(account_data.items()):
@@ -322,4 +331,4 @@ output_df = output_df[existing_cols]
 output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
 
 print("\nScript finished successfully.")
-if mf: mf.terminate()
+# if mf: mf.terminate()
