@@ -265,8 +265,8 @@ for account_number, data in account_data.items():
     row_data = {
         # --- 1. Key Identifier Columns ---
         'Case Number': base_info.get('Case Number'),
-        'Sort Code': base_info.get('Sort Code'),
-        'Account': base_info.get('Account'),
+        'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
+        'Account': str(base_info.get('Account', '')).zfill(8)
         'Brand': base_info.get('Brand'),
         
         # --- 2. Richly Formatted JSON Columns ---
