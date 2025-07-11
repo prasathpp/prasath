@@ -189,8 +189,9 @@ def process_account_history(hit_date_dt, refund_date_dt):
 # --- FIX #2: Updated get_closing_balances navigation ---
 def get_closing_balances(unpaid_data_dict):
     mf.wait_for_text("CUSTOMER INFORMATION INDEX")
+    mf.wait_for_field()
     mf.move_to(22, 8)
-    mf.send_string("14") # More direct path: TRANSACTION HISTORY SEARCH
+    mf.send_string("48") # More direct path: TRANSACTION HISTORY SEARCH
     mf.send_enter()
     mf.wait_for_text("TRANSACTION HISTORY")
     
@@ -237,12 +238,22 @@ if not account_data:
     print("No chargeable accounts to process. Exiting.")
     exit()
 print(f"Found {len(account_data)} unique chargeable accounts to process.")
+refund_date = get_refund_date_from_filename(excel_file_path)
+print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+
+# --- Configuration & Setup ---
+wc3270 = ';W:\\;'
+path_var = os.environ.get('Path', '')
+if wc3270 not in path_var:
+    os.environ["Path"] = path_var + wc3270
+    print("wc3270 path added to environment.")
+else:
+    print("wc3270 path already exists.")
 
 print("\n--- Phase 2: Starting Mainframe Processing ---")
 mf = MFRobot(visible=True)
 mf.connect_n_login(racf='raosx', password='pooja016')
-refund_date = get_refund_date_from_filename(excel_file_path)
-print(f"Extracted Refund Date: {refund_date.strftime('%d-%b-%Y')}")
+
 
 previous_brand = None
 for i, (account_number, data) in enumerate(account_data.items()):
@@ -270,6 +281,8 @@ for i, (account_number, data) in enumerate(account_data.items()):
             data['mainframe_unpaids'] = enriched_unpaids
         else:
             data['mainframe_unpaids'] = unpaids_found
+            while not mf.wait_for_text("MASTER INDEX"):
+                mf.send_pf2()
 
         data['limit'] = limit_found
         data['mainframe_status'] = status
@@ -298,8 +311,8 @@ for account_number, data in account_data.items():
     base_info = data.get('base_info', {})
     row_data = {
         'Case Number': base_info.get('Case Number'),
-        'Sort Code': base_info.get('Sort Code'),
-        'Account': base_info.get('Account'),
+        'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
+        'Account': str(base_info.get('Account', '')).zfill(8),
         'Brand': base_info.get('Brand'),
         'Limit': data.get('limit'),
         'Processing Status': data.get('mainframe_status'),
@@ -319,4 +332,4 @@ output_df = output_df[existing_cols]
 output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
 
 print("\nScript finished successfully.")
-if mf: mf.terminate()
+# if mf: mf.terminate()
