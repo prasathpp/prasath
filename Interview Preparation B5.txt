@@ -40,6 +40,7 @@ def structure_account_data(excel_path):
         oldest_row = group_df.loc[group_df['Hit Date DT'].idxmin()]
         base_info = oldest_row.to_dict()
         transactions_df = group_df[['Amount', 'Hit Date']]
+        transactions_df['date_dt'] = pd.to_datetime(transactions_df['Hit Date'], format='%d%b%y')
         transactions = transactions_df.to_dict(orient='records')
         structured_data[account_number] = {
             'base_info': base_info,
@@ -129,7 +130,35 @@ def extract_unpaid_data_from_page():
     mf.wait_for_field()
     return page_data
 
-# --- THIS IS THE FULLY CORRECTED FUNCTION ---
+# --- NEW FUNCTION TO EXTRACT DBS DETAILS ---
+def extract_dbs_details_from_page():
+    mf.move_to(22, 45)
+    mf.send_string("z")
+    mf.send_enter()
+    try:
+        mf.wait_for_text("HISTORY ITEM DETAILS", timeout=5)
+    except Exception as e:
+        print(f"    -> WARNING: Did not find 'HISTORY ITEM DETAILS' screen. {e}")
+        mf.send_pf2() # Try to back out gracefully
+        mf.wait_for_field()
+        return None
+
+    screen_text = mf.get_screen_text()
+    dbs_count = 0
+    
+    # Regex to find "OTHER AUTOMATED DBS", skip the rate, and capture the count
+    dbs_match = re.search(r"OTHER AUTOMATED DBS\s+[\d.]+\s+(\d+)", screen_text)
+    if dbs_match:
+        dbs_count = int(dbs_match.group(1))
+        print(f"    -> Found OTHER AUTOMATED DBS with count: {dbs_count}")
+    else:
+        print("    -> 'OTHER AUTOMATED DBS' not found on this page.")
+
+    mf.send_pf2() # Navigate back from HISTORY ITEM DETAILS to SERVICE CHARGE HISTORY
+    mf.wait_for_field()
+    return dbs_count
+
+# --- MODIFIED FUNCTION TO PROCESS HISTORY FOR BOTH UNPAIDS AND DBS ---
 def process_account_history(hit_date_dt, refund_date_dt):
     mf.wait_for_text("BALANCE ENQUIRY")
     mf.move_to(22, 8)
@@ -143,37 +172,54 @@ def process_account_history(hit_date_dt, refund_date_dt):
     screen_text = mf.get_screen_text()
     if "ACCOUNT IS NON-CHARGEABLE" in screen_text or "SERVICE CHARGE HISTORY" not in screen_text:
         while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
-        return "Non-Chargeable or No History", {}
+        return "Non-Chargeable or No History", {}, {}
 
     all_collected_unpaids = {}
+    all_collected_dbs = {} # New dictionary for DBS data
     date_range_found = False
-    for _ in range(16):
+
+    for _ in range(16): # Loop through history pages
         current_page_text = mf.get_screen_text()
         if "NO HISTORY DETAILS AVAILABLE" in current_page_text: break 
         
         page_num_match = re.search(r"PAGE\s+(\d+)", current_page_text)
         page_num = page_num_match.group(1) if page_num_match else "Unknown"
         
-        if page_num == "1":
-            end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
-            if end_date_match: all_collected_unpaids['page_1_end_date'] = end_date_match.group(1)
+        start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
+        end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
+        
+        page_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y") if start_date_match else None
+        page_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y") if end_date_match else None
+
+        if page_num == "1" and end_date_match:
+            all_collected_unpaids['page_1_end_date'] = end_date_match.group(1)
             
+        # --- Logic for Unpaids (existing) ---
         if "U-UNPAIDS" in current_page_text:
+            print(f"  -> Found 'U-UNPAIDS' on history page {page_num}. Extracting...")
             unpaid_data = extract_unpaid_data_from_page()
             if unpaid_data and unpaid_data.get("transactions"): all_collected_unpaids[page_num] = unpaid_data
         
-        start_date_match = re.search(r"START DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
-        end_date_match = re.search(r"END DATE\s*:\s*(\d{2}[A-Z]{3}\d{2})", current_page_text)
-        if start_date_match and end_date_match:
-            screen_start_dt = datetime.datetime.strptime(start_date_match.group(1), "%d%b%y")
-            screen_end_dt = datetime.datetime.strptime(end_date_match.group(1), "%d%b%y")
-            if screen_start_dt <= hit_date_dt <= screen_end_dt:
+        # --- Logic for DBS (new) ---
+        if "MINIMUM SERVICE CHARGE" in current_page_text:
+            print(f"  -> Found 'MINIMUM SERVICE CHARGE' on history page {page_num}. Investigating DBS...")
+            dbs_count = extract_dbs_details_from_page()
+            if dbs_count is not None and page_start_dt and page_end_dt:
+                all_collected_dbs[page_num] = {
+                    "dbs_count": dbs_count,
+                    "start_dt": page_start_dt,
+                    "end_dt": page_end_dt
+                }
+
+        if page_start_dt and page_end_dt:
+            if page_start_dt <= hit_date_dt <= page_end_dt:
                 date_range_found = True
-                break # <-- Restored break statement
+                break
         
         mf.send_pf8()
         mf.wait_for_field()
 
+    # Filter unpaids by date (existing logic)
     final_filtered_data = {}
     page_1_end_date = all_collected_unpaids.pop('page_1_end_date', None)
     if all_collected_unpaids:
@@ -191,14 +237,12 @@ def process_account_history(hit_date_dt, refund_date_dt):
 
     while not mf.wait_for_text("CUSTOMER INFORMATION INDEX"): mf.send_pf2()
 
-    if not final_filtered_data and date_range_found:
-        status = "Success: No Qualifying Unpaids"
-    elif not date_range_found:
-        status = "Error: Hit Date Range Not Found"
+    if not final_filtered_data and not all_collected_dbs:
+        status = "Success: No Qualifying Unpaids or DBS Charges" if date_range_found else "Error: Hit Date Range Not Found"
     else:
         status = "Success"
         
-    return status, final_filtered_data
+    return status, final_filtered_data, all_collected_dbs
 
 
 def get_closing_balances(unpaid_data_dict):
@@ -210,7 +254,7 @@ def get_closing_balances(unpaid_data_dict):
         if not isinstance(page_data, dict): continue
         for date_str, trans_details in page_data.get("transactions", {}).items():
             try:
-                print(f"  -> Searching balance for transaction date: {date_str}")
+                print(f"  -> Searching balance for unpaid transaction date: {date_str}")
                 mf.move_to(22, 56); mf.send_string(date_str); mf.send_enter()
                 mf.send_pf8(); mf.wait_for_field()
                 balance_found = None
@@ -230,6 +274,7 @@ def get_closing_balances(unpaid_data_dict):
     return data_copy
 
 def calculate_refunds(account_data):
+    # This function calculates refunds for UNPAIDS only.
     limit_amount = account_data.get('limit', 0)
     mainframe_unpaids = copy.deepcopy(account_data.get('mainframe_unpaids', {}))
     dispute_transactions = account_data.get('transactions', [])
@@ -251,7 +296,7 @@ def calculate_refunds(account_data):
             details['source_page'] = int(page_num)
             valid_unpaids.append(details)
     valid_unpaids.sort(key=lambda x: x['date_dt'])
-    disputes = sorted([{'amount': d['Amount'], 'date_dt': datetime.datetime.strptime(d['Hit Date'], "%d%b%y")} for d in dispute_transactions], key=lambda x: x['date_dt'])
+    disputes = sorted([{'amount': d['Amount'], 'date_dt': d['date_dt']} for d in dispute_transactions], key=lambda x: x['date_dt'])
     remainingBalance = 0.0
     utilized_disputes = []
     diary_refund_total, replace_refund_total, refund_refund_total = 0.0, 0.0, 0.0
@@ -288,12 +333,54 @@ def calculate_refunds(account_data):
         diary_date = next_day.strftime("%d-%b-%Y")
     return diary_refund_total, replace_refund_total, refund_refund_total, diary_date
 
+# --- NEW FUNCTION TO CALCULATE DBS REFUNDS ---
+def calculate_dbs_refunds(account_data):
+    dbs_data = account_data.get('collected_dbs_data', {})
+    dispute_transactions = account_data.get('transactions', [])
+    dbs_diary_total, dbs_replace_total, dbs_manual_total = 0.0, 0.0, 0.0
+
+    if not dbs_data or not dispute_transactions:
+        return 0.0, 0.0, 0.0
+
+    print("  -> Calculating DBS refunds...")
+    for page_num_str, data in dbs_data.items():
+        page_num = int(page_num_str)
+        dbs_count = data.get('dbs_count', 0)
+        start_dt = data.get('start_dt')
+        end_dt = data.get('end_dt')
+
+        if dbs_count == 0 or not start_dt or not end_dt:
+            continue
+
+        # Count how many disputed transactions fall within this page's date range
+        relevant_disputes = [
+            t for t in dispute_transactions 
+            if start_dt <= t['date_dt'] <= end_dt
+        ]
+        num_relevant_disputes = len(relevant_disputes)
+        print(f"    -> History Page {page_num}: DBS count is {dbs_count}, found {num_relevant_disputes} disputes in range.")
+
+        # Apply the rule: if mainframe count >= number of disputes
+        if dbs_count >= num_relevant_disputes and num_relevant_disputes > 0:
+            page_refund_total = num_relevant_disputes * 0.35
+            print(f"    -> QUALIFIES: Refunding {page_refund_total:.2f} for {num_relevant_disputes} transactions.")
+            if page_num == 1:
+                dbs_diary_total += page_refund_total
+            elif page_num == 2:
+                dbs_replace_total += page_refund_total
+            else:
+                dbs_manual_total += page_refund_total
+    
+    return dbs_diary_total, dbs_replace_total, dbs_manual_total
+
+
 # --- JSON HELPER ---
 def convert_numpy_types(obj):
     if isinstance(obj, (np.integer, np.int64)): return int(obj)
     elif isinstance(obj, (np.floating, np.float64)): return float(obj)
     elif isinstance(obj, np.ndarray): return obj.tolist()
     elif isinstance(obj, pd.Timestamp): return obj.isoformat()
+    elif isinstance(obj, datetime.datetime): return obj.isoformat()
     return obj
 
 # --- SCRIPT EXECUTION ---
@@ -329,9 +416,13 @@ for i, (account_number, data) in enumerate(account_data.items()):
         if limit_status == "Account Not On File":
             data['mainframe_status'] = limit_status
             continue
-        status, unpaids_found = process_account_history(base_info['Hit Date DT'], refund_date)
+        
+        status, unpaids_found, dbs_data_found = process_account_history(base_info['Hit Date DT'], refund_date)
         data['limit'] = limit_found
         data['mainframe_status'] = status
+        data['collected_dbs_data'] = dbs_data_found
+
+        # Unpaid processing
         if unpaids_found:
             enriched_unpaids = get_closing_balances(unpaids_found)
             data['mainframe_unpaids'] = enriched_unpaids
@@ -343,6 +434,13 @@ for i, (account_number, data) in enumerate(account_data.items()):
         else:
             data['mainframe_unpaids'] = {}
             while not mf.wait_for_text("MASTER INDEX"): mf.send_pf2()
+        
+        # DBS processing
+        if dbs_data_found:
+            dbs_diary, dbs_replace, dbs_manual = calculate_dbs_refunds(data)
+            data['dbs_diary_refund_amount'] = dbs_diary
+            data['dbs_replace_refund_amount'] = dbs_replace
+            data['dbs_manual_refund_amount'] = dbs_manual
         
         previous_brand = current_brand
         print(f"Status for account {account_number}: {status}")
@@ -363,61 +461,54 @@ for i, (account_number, data) in enumerate(account_data.items()):
 print("\n--- Phase 3: Generating Final Account-Wise Report ---")
 output_rows = []
 for account_number, data in account_data.items():
-    # .get() is used to safely access keys that might not exist for a failed item
     base_info = data.get('base_info', {})
     
-    # --- THE DEFINITIVE FIX: Manually build a clean dictionary for JSON ---
-    # This guarantees there are no circular references from pandas objects.
     clean_base_info_for_json = {}
     for key, value in base_info.items():
-        # Use our converter to ensure every value is a standard Python type
         clean_base_info_for_json[key] = convert_numpy_types(value)
 
-    # We can safely remove the temporary datetime object now
     if 'Hit Date DT' in clean_base_info_for_json:
         del clean_base_info_for_json['Hit Date DT']
 
-    # Create a dictionary for the new, structured row
     row_data = {
-        # --- 1. Key Identifier Columns ---
+        # --- Key Identifier Columns ---
         'Case Number': base_info.get('Case Number'),
         'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
         'Account': str(base_info.get('Account', '')).zfill(8),
         'Brand': base_info.get('Brand'),
         
-        # --- 3. Diagnostic and Calculated Columns ---
+        # --- Diagnostic and Calculated Columns ---
         'Processing Status': data.get('mainframe_status'),
         'Limit': data.get('limit'),
         'Diary Refund Amount': data.get('diary_refund_amount'),
         'Replace Refund Amount': data.get('replace_refund_amount'),
         'Refund (Manual) Amount': data.get('refund_manual_amount'),
         'Diary Date': data.get('diary_date'),
+        'DBS Diary Refund': data.get('dbs_diary_refund_amount'),      # NEW
+        'DBS Replace Refund': data.get('dbs_replace_refund_amount'),  # NEW
+        'DBS Manual Refund': data.get('dbs_manual_refund_amount'),     # NEW
 
-        # --- 2. Richly Formatted JSON Columns ---
-        # Now we pass the guaranteed-clean dictionary to json.dumps
-        'Basic Info': json.dumps(clean_base_info_for_json, indent=4, default=str), # Use default=str as a final fallback
-        'Transaction Data': json.dumps(data.get('transactions'), indent=4, default=str),
-        'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=str),
+        # --- Richly Formatted JSON Columns ---
+        'Basic Info': json.dumps(clean_base_info_for_json, indent=4, default=convert_numpy_types),
+        'Transaction Data': json.dumps(data.get('transactions'), indent=4, default=convert_numpy_types),
+        'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=convert_numpy_types),
+        'DBS Data': json.dumps(data.get('collected_dbs_data'), indent=4, default=convert_numpy_types) # NEW
     }
     output_rows.append(row_data)
 
-# Create the final DataFrame from our list of structured rows
 output_df = pd.DataFrame(output_rows)
 
-# Define the exact column order for the final Excel file
 final_column_order = [
     'Case Number', 'Sort Code', 'Account', 'Brand', 'Processing Status', 'Limit',
     'Diary Refund Amount', 'Replace Refund Amount', 'Refund (Manual) Amount', 'Diary Date',
-    'Basic Info', 'Transaction Data', 'Unpaid Data'
+    'DBS Diary Refund', 'DBS Replace Refund', 'DBS Manual Refund', # NEW COLUMNS
+    'Basic Info', 'Transaction Data', 'Unpaid Data', 'DBS Data' # NEW JSON COLUMN
 ]
 
-# Ensure all columns exist before trying to reorder, to prevent errors
 existing_cols = [col for col in final_column_order if col in output_df.columns]
 output_df = output_df[existing_cols]
 
-# Save the final, structured report
 output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
-
 
 print("\nScript finished successfully.")
 # if mf: mf.terminate()
