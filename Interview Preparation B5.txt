@@ -1,2 +1,46 @@
-filename_date_str = refund_date.strftime('%d-%b-%Y')
-output_path = os.path.join(r"C:\Users\raosx\Downloads", f"charges_output_{filename_date_str}.xlsx")
+# --- DEBUGGING FUNCTION for DBS Extraction ---
+def extract_dbs_details_from_page():
+    mf.move_to(22, 45)
+    mf.send_string("z")
+    mf.send_enter()
+    try:
+        mf.wait_for_text("HISTORY ITEM DETAILS", timeout=5)
+    except Exception as e:
+        print(f"    -> FATAL DEBUG: Could not navigate to 'HISTORY ITEM DETAILS' screen. Error: {e}")
+        mf.send_pf2()
+        mf.wait_for_field()
+        return None
+
+    # --- Start of Debug Block ---
+    print("\n\n--- DBS EXTRACTION DEBUG ---")
+    screen_text = mf.get_screen_text()
+    
+    # 1. Print the raw screen text so we can see what the script is working with
+    print("1. Raw screen text received from mainframe:")
+    print("-------------------------------------------")
+    print(screen_text)
+    print("-------------------------------------------")
+
+    # 2. Define the exact regex pattern being used
+    pattern = r"^\s*OTHER AUTOMATED DBS\s+[\d.]+\s+(\d+)"
+    print(f"2. Using Regex Pattern: {pattern}")
+
+    # 3. Attempt the search
+    dbs_match = re.search(pattern, screen_text, re.MULTILINE)
+
+    # 4. Report the result of the search
+    if dbs_match:
+        print("3. RESULT: SUCCESS! A match was found.")
+        print(f"   - Full match object: {dbs_match}")
+        print(f"   - Captured Group 1 (the count): '{dbs_match.group(1)}'")
+        dbs_count = int(dbs_match.group(1))
+    else:
+        print("3. RESULT: FAILED. The regex pattern did not find a match.")
+        dbs_count = 0 # Ensure it returns 0 on failure
+
+    print("--- END OF DEBUG ---")
+    # --- End of Debug Block ---
+
+    mf.send_pf2() # Navigate back
+    mf.wait_for_field()
+    return dbs_count
