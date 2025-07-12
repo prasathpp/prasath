@@ -1,53 +1,64 @@
---- Phase 3: Generating Final Account-Wise Report ---
----------------------------------------------------------------------------
-ValueError                                Traceback (most recent call last)
-<ipython-input-67-ec5fd0ac0eb7> in <module>()
-     15         'Refund (Manual) Amount': data.get('refund_manual_amount'),
-     16         'Diary Date': data.get('diary_date'),
----> 17         'Basic Info': json.dumps(base_info, indent=4, default=convert_numpy_types),
-     18         'Transaction Data': json.dumps(data.get('transactions'), indent=4, default=convert_numpy_types),
-     19         'Unpaid Data': json.dumps(data.get('mainframe_unpaids'), indent=4, default=convert_numpy_types)
+# --- Phase 3: Generating Final Report ---
+print("\n--- Phase 3: Generating Final Account-Wise Report ---")
+output_rows = []
+for account_number, data in account_data.items():
+    # .get() is used to safely access keys that might not exist for a failed item
+    base_info = data.get('base_info', {})
+    
+    # --- THE DEFINITIVE FIX: Build clean, new dictionaries for serialization ---
+    
+    # 1. Create a clean dictionary for the 'Basic Info' JSON string.
+    #    This new dict has no link to the original 'data' object.
+    clean_base_info_for_json = {
+        key: value for key, value in base_info.items() if key != 'Hit Date DT'
+    }
+    
+    # 2. Create a clean list of dictionaries for the 'Transaction Data' JSON string.
+    clean_transactions_for_json = data.get('transactions', [])
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\__init__.py in dumps(obj, skipkeys, ensure_ascii, check_circular, allow_nan, cls, indent, separators, default, sort_keys, **kw)
-    236         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
-    237         separators=separators, default=default, sort_keys=sort_keys,
---> 238         **kw).encode(obj)
-    239 
-    240 
+    # 3. Create a clean dictionary for the 'Unpaid Data' JSON string.
+    clean_unpaids_for_json = data.get('mainframe_unpaids', {})
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in encode(self, o)
-    199         chunks = self.iterencode(o, _one_shot=True)
-    200         if not isinstance(chunks, (list, tuple)):
---> 201             chunks = list(chunks)
-    202         return ''.join(chunks)
-    203 
+    # Create a dictionary for the new, structured row
+    row_data = {
+        # Key Identifier Columns from the original base_info
+        'Case Number': base_info.get('Case Number'),
+        'Sort Code': str(base_info.get('Sort Code', '')).zfill(6),
+        'Account': str(base_info.get('Account', '')).zfill(8),
+        'Brand': base_info.get('Brand'),
+        
+        # Diagnostic and Calculated Columns
+        'Processing Status': data.get('mainframe_status'),
+        'Limit': data.get('limit'),
+        'Diary Refund Amount': data.get('diary_refund_amount'),
+        'Replace Refund Amount': data.get('replace_refund_amount'),
+        'Refund (Manual) Amount': data.get('refund_manual_amount'),
+        'Diary Date': data.get('diary_date'),
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode(o, _current_indent_level)
-    428             yield from _iterencode_list(o, _current_indent_level)
-    429         elif isinstance(o, dict):
---> 430             yield from _iterencode_dict(o, _current_indent_level)
-    431         else:
-    432             if markers is not None:
+        # Richly Formatted JSON Columns using the new, clean objects
+        'Basic Info': json.dumps(clean_base_info_for_json, indent=4, default=convert_numpy_types),
+        'Transaction Data': json.dumps(clean_transactions_for_json, indent=4, default=convert_numpy_types),
+        'Unpaid Data': json.dumps(clean_unpaids_for_json, indent=4, default=convert_numpy_types),
+    }
+    output_rows.append(row_data)
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode_dict(dct, _current_indent_level)
-    402                 else:
-    403                     chunks = _iterencode(value, _current_indent_level)
---> 404                 yield from chunks
-    405         if newline_indent is not None:
-    406             _current_indent_level -= 1
+# Create the final DataFrame from our list of structured rows
+output_df = pd.DataFrame(output_rows)
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode(o, _current_indent_level)
-    436                 markers[markerid] = o
-    437             o = _default(o)
---> 438             yield from _iterencode(o, _current_indent_level)
-    439             if markers is not None:
-    440                 del markers[markerid]
+# Define the exact column order for the final Excel file
+final_column_order = [
+    'Case Number', 'Sort Code', 'Account', 'Brand', 'Processing Status', 'Limit',
+    'Diary Refund Amount', 'Replace Refund Amount', 'Refund (Manual) Amount', 'Diary Date',
+    'Basic Info', 'Transaction Data', 'Unpaid Data'
+]
 
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\json\encoder.py in _iterencode(o, _current_indent_level)
-    433                 markerid = id(o)
-    434                 if markerid in markers:
---> 435                     raise ValueError("Circular reference detected")
-    436                 markers[markerid] = o
-    437             o = _default(o)
+# Ensure all columns exist before trying to reorder, to prevent errors
+existing_cols = [col for col in final_column_order if col in output_df.columns]
+output_df = output_df[existing_cols]
 
-ValueError: Circular reference detected
+# Save the final, structured report
+output_df.to_excel(r"C:\Users\raosx\Downloads\limit_output_final_structured.xlsx", index=False)
+
+
+print("\nScript finished successfully.")
+if mf: mf.terminate()
