@@ -1,8 +1,24 @@
---- Phase 1: Preparing account data from Excel ---
-C:\ProgramData\App-V\95FD7873-726E-40E9-B477-CC4010411846\9727BF3A-F7F8-45A4-AD38-2F35B6E0FB2A\Root\lib\site-packages\ipykernel_launcher.py:31: SettingWithCopyWarning: 
-A value is trying to be set on a copy of a slice from a DataFrame.
-Try using .loc[row_indexer,col_indexer] = value instead
-
-See the caveats in the documentation: http://pandas.pydata.org/pandas-docs/stable/indexing.html#indexing-view-versus-copy
-Found 23 unique chargeable accounts to process.
-Extracted Refund Date: 13-Jun-2025
+def structure_account_data(excel_path):
+    df = pd.read_excel(excel_path)
+    if 'Charges' not in df.columns:
+        print("FATAL ERROR: 'Charges' column not found in Excel file.")
+        exit()
+    df['Charges'] = df['Charges'].astype(str)
+    df_chargeable = df[df['Charges'].str.strip().str.upper() == 'YES'].copy()
+    if df_chargeable.empty:
+        print("No rows found with 'Charges' set to 'Yes'.")
+        return {}
+    df_chargeable['Hit Date DT'] = pd.to_datetime(df_chargeable['Hit Date'], format='%d%b%y')
+    structured_data = {}
+    for account_number, group_df in df_chargeable.groupby('Account'):
+        oldest_row = group_df.loc[group_df['Hit Date DT'].idxmin()]
+        base_info = oldest_row.to_dict()
+        transactions_df = group_df[['Amount', 'Hit Date']].copy() # Added .copy() here
+        
+        transactions_df['date_dt'] = pd.to_datetime(transactions_df['Hit Date'], format='%d%b%y')
+        transactions = transactions_df.to_dict(orient='records')
+        structured_data[account_number] = {
+            'base_info': base_info,
+            'transactions': transactions
+        }
+    return structured_data
