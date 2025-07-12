@@ -1,102 +1,27 @@
-screen_text = mf.get_screen_text()
-dbs_match = re.search(r"OTHER AUTOMATED DBS\s+[\d.]+\s+(\d+)", screen_text)
-print(dbs_match)
+# --- NEW FUNCTION TO EXTRACT DBS DETAILS (Corrected) ---
+def extract_dbs_details_from_page():
+    mf.move_to(22, 45)
+    mf.send_string("z")
+    mf.send_enter()
+    try:
+        mf.wait_for_text("HISTORY ITEM DETAILS", timeout=5)
+    except Exception as e:
+        print(f"    -> WARNING: Did not find 'HISTORY ITEM DETAILS' screen. {e}")
+        mf.send_pf2()
+        mf.wait_for_field()
+        return None
 
-output:
-b'Ascii(0,0,80)'
-in execute b'Ascii(0,0,80)'
-line b'data:                       HISTORY ITEM DETAILS          12JUL25 10:56 PAGE 01 OF 05 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.026\n'
-b'Ascii(1,0,80)'
-in execute b'Ascii(1,0,80)'
-line b'data:                                                                                 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
-b'Ascii(2,0,80)'
-in execute b'Ascii(2,0,80)'
-line b'data:  524131   45210039   THE JUNIPER CLUB LTD   BUSINESS CURRENT                    \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
-b'Ascii(3,0,80)'
-in execute b'Ascii(3,0,80)'
-line b'data:  CHG PRD STRT DATE : 05JUL25     END DATE : 01AUG25                             \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
-b'Ascii(4,0,80)'
-in execute b'Ascii(4,0,80)'
-line b'data:                                                                                 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(5,0,80)'
-in execute b'Ascii(5,0,80)'
-line b'data:  ITEM DESCRIPTION            RATE     COUNT       ITEM TOTAL                    \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.014\n'
-b'Ascii(6,0,80)'
-in execute b'Ascii(6,0,80)'
-line b'data:                                                                                 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(7,0,80)'
-in execute b'Ascii(7,0,80)'
-line b'data:  MANAGEMENT TIME             0.00                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(8,0,80)'
-in execute b'Ascii(8,0,80)'
-line b'data:  OTHER AUTOMATED DBS         0.35     3           1.05                          \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(9,0,80)'
-in execute b'Ascii(9,0,80)'
-line b'data:  STANDING ORDERS             0.35                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(10,0,80)'
-in execute b'Ascii(10,0,80)'
-line b'data:  CHQS & OTHER DEBITS         0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.003\n'
-b'Ascii(11,0,80)'
-in execute b'Ascii(11,0,80)'
-line b'data:  AUTOMATED CREDITS           0.35     3           1.05                          \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
-b'Ascii(12,0,80)'
-in execute b'Ascii(12,0,80)'
-line b'data:  MANUAL CREDITS              0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.003\n'
-b'Ascii(13,0,80)'
-in execute b'Ascii(13,0,80)'
-line b'data:  CHQS PAID IN BRANCH         0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.001\n'
-b'Ascii(14,0,80)'
-in execute b'Ascii(14,0,80)'
-line b'data:  FAST CASH PAID IN    *      0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(15,0,80)'
-in execute b'Ascii(15,0,80)'
-line b'data:  BRANCH CASH IN       *      0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(16,0,80)'
-in execute b'Ascii(16,0,80)'
-line b'data:  BRANCH CASH OUT      *      0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(17,0,80)'
-in execute b'Ascii(17,0,80)'
-line b'data:  BRANCH CASH EXCHG    *      0.70                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(18,0,80)'
-in execute b'Ascii(18,0,80)'
-line b'data:  AUTOPAY PAYMENTS            0.00                                               \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(19,0,80)'
-in execute b'Ascii(19,0,80)'
-line b'data:                                                                                 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.008\n'
-b'Ascii(20,0,80)'
-in execute b'Ascii(20,0,80)'
-line b'data:  * - CASH PRICES ARE SHOWN AS A RATE PER 100                                    \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
-b'Ascii(21,0,80)'
-in execute b'Ascii(21,0,80)'
-line b'data:  INDEX  1.   ACCOUNT  45210039   QUALIFIER  .......               BRANCH 524131 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(22,0,80)'
-in execute b'Ascii(22,0,80)'
-line b'data:                                                                         MORE... \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.000\n'
-b'Ascii(23,0,80)'
-in execute b'Ascii(23,0,80)'
-line b'data:                                                                                 \n'
-line b'U F U C(tn3270.plexq1.server.rbsgrp.net) I 4 24 80 21 8 0x0 0.002\n'
-<_sre.SRE_Match object; span=(649, 687), match='OTHER AUTOMATED DBS         0.35     3'>
+    screen_text = mf.get_screen_text()
+    dbs_count = 0
+    dbs_match = re.search(r"^\s*OTHER AUTOMATED DBS\s+[\d.]+\s+(\d+)", screen_text, re.MULTILINE)
+    
+    if dbs_match:
+        # The count is in the first (and only) captured group.
+        dbs_count = int(dbs_match.group(1))
+        print(f"    -> Found OTHER AUTOMATED DBS with count: {dbs_count}")
+    else:
+        print("    -> 'OTHER AUTOMATED DBS' not found on this page.")
+
+    mf.send_pf2()
+    mf.wait_for_field()
+    return dbs_count
